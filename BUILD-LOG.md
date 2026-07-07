@@ -496,4 +496,52 @@ Plano librarians often include the target age in the event title (e.g. "Rhyme Ti
 
 ---
 
+## Engineering Learnings
+
+A record of decisions that turned out to be wrong or unnecessary — and what we'd do differently.
+
+---
+
+### Learning 1 — The 1-month window was a premature optimisation
+
+**Date:** July 2026
+
+**What we built:** During the Plano age filter implementation, the ingest code only fetched event detail pages for events starting within 1 month of the ingest run. Events beyond that window fell back to `parseAgeRange(title)` — a regex that looks for age numbers in the event title.
+
+**The original reasoning:** Plano has 5 branches, each with an RSS feed covering up to 365 days of events. Fetching a detail page per event could mean 150–250 HTTP requests per ingest run. The concern was that this would slow the ingest down significantly or risk getting rate-limited by Communico's servers.
+
+**Why it was wrong:** We validated empirically by fetching 10 consecutive live Plano events — every single one had an AGE GROUP block. 10/10, 100% hit rate. Communico treats the age group field as required when librarians create events. The fallback was solving a problem that doesn't exist in practice.
+
+The `parseAgeRange(title)` fallback barely works for Plano titles anyway. Titles like `"Financial Intelligence Training"` or `"Saturday Science Lab"` carry no age signal, so events beyond 1 month silently got no age data and became invisible under any age filter — the exact opposite of what we wanted.
+
+The performance concern was also overstated: ingest runs as a background job, not on a user request. An extra 10–20 seconds of HTTP fetching is completely invisible to users.
+
+**The fix:** Remove the 1-month window entirely. Always fetch the detail page for every Plano event, regardless of how far out it is.
+
+**The lesson:** Don't optimise for scale problems that haven't been measured. The right sequence is: (1) validate data quality empirically first, (2) measure actual performance if it becomes a concern, (3) optimise only then. A premature cut to save HTTP requests cost us correctness across a significant portion of the event catalogue.
+
+---
+
+### Learning 2 — The Frisco Library audience_id filter was never actually working
+
+**Date:** July 2026
+
+**What we built:** The Frisco ingest loops through 3 BiblioCommons audience feeds — one each for Children (0–5), Children (6–12), and Teens — using `audience_id` URL parameters. The assumption was that each feed returned only events tagged for that audience, so we could assign `age_min`/`age_max` at the feed level as a reliable default before fetching individual event pages.
+
+**How we discovered the problem:** We tested all 3 audience-filtered URLs plus the unfiltered URL in parallel. All 4 returned identical results: 252 events, same titles, same order. The `audience_id` parameter is silently ignored by BiblioCommons when fetched server-side — it requires a browser session cookie to honour the filter.
+
+**What was actually happening during ingest:**
+- The 3-feed loop was fetching the full unfiltered catalogue of 252 events 3 times over
+- Each iteration assigned a different default age range based on which audience feed we *thought* we were in (0–5, 6–12, or Teens)
+- For events within 1 month, the "Suitable for:" page scrape overwrote those defaults with the correct value — masking the bug
+- For events beyond 1 month, the default age was set to whichever audience happened to come first in the loop (0–5), regardless of what the event actually was. Adult events, teen events, and kids events all got `age_min=0, age_max=5` if they were far enough out
+
+**Why it wasn't caught earlier:** The keyword blocklist (`FRISCO_ADULT_KEYWORDS`) and the `age_min.lt.18` DB filter were catching the most visible adult events before they reached users. The far-future age misclassification only affects events that rarely surface (users don't typically browse 2+ months out), so there was no obvious symptom.
+
+**The fix:** Drop the 3-feed loop entirely. Fetch all events from a single unfiltered paginated endpoint. Treat the "Suitable for:" page scrape as the sole source of age truth for Frisco — it was doing all the real work anyway.
+
+**The lesson:** Validate that an API filter is actually doing what you think it is before building logic on top of it. A quick empirical check — fetch with the filter, fetch without, compare the results — takes 2 minutes and would have caught this immediately. Assumptions about third-party API behaviour should be verified, not inherited.
+
+---
+
 *This log will be updated as each phase is completed.*

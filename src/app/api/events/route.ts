@@ -47,8 +47,6 @@ export async function GET(req: NextRequest) {
     // Event age range must overlap with the requested group
     query = query.lte('age_min', ageMax)
     query = query.gte('age_max', ageMin)
-    // Strict upper bound: exclude events clearly beyond this age group (+2 tolerance)
-    query = query.lte('age_max', ageMax + 2)
   }
 
   // Always exclude adults-only events (age_min >= 18 marks Frisco Library adult events)
@@ -84,7 +82,6 @@ export async function GET(req: NextRequest) {
     ongoingQuery = ongoingQuery.not('age_max', 'is', null)
     ongoingQuery = ongoingQuery.lte('age_min', ageMax)
     ongoingQuery = ongoingQuery.gte('age_max', ageMin)
-    ongoingQuery = ongoingQuery.lte('age_max', ageMax + 2)
   }
   ongoingQuery = ongoingQuery.or('age_min.is.null,age_min.lt.18')
   const { data: ongoing } = await ongoingQuery.limit(100)

@@ -13,11 +13,27 @@ interface Props {
   onChange: (patch: Partial<Filters>) => void
 }
 
-const FRISCO_AGES = [
+const AGE_CHIPS = [
   { label: 'Toddlers (0–5)', value: '0-5' },
   { label: 'Kids (6–12)',     value: '6-12' },
   { label: 'Teens',           value: '13-17' },
 ]
+
+function AgeChip({ label, value, active, onClick }: { label: string; value: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="px-3 py-1 rounded-full text-xs font-medium border transition-all"
+      style={{
+        backgroundColor: active ? 'var(--color-primary)' : 'var(--color-card)',
+        color: active ? '#fff' : 'var(--color-text)',
+        borderColor: active ? 'var(--color-primary)' : 'var(--color-border)',
+      }}
+    >
+      {label}
+    </button>
+  )
+}
 
 export default function SourceSubFilter({ filters, onChange }: Props) {
   const [branches, setBranches] = useState<string[]>([])
@@ -60,7 +76,7 @@ export default function SourceSubFilter({ filters, onChange }: Props) {
             color: 'var(--color-primary)',
           }}
         >
-          {friscoOnly ? '📚 Frisco Library · Age' : '🏛️ Plano Libraries - Branches'}
+          {friscoOnly ? '📚 Frisco Library · Age' : '🏛️ Plano Libraries'}
         </span>
         {hasActive && (
           <button
@@ -73,45 +89,60 @@ export default function SourceSubFilter({ filters, onChange }: Props) {
         )}
       </div>
 
-      {/* Chips — wrap to next line on mobile */}
-      <div className="flex flex-wrap gap-2">
-        {friscoOnly && FRISCO_AGES.map(opt => {
-          const active = filters.age === opt.value
-          return (
-            <button
+      {/* Frisco — age chips only */}
+      {friscoOnly && (
+        <div className="flex flex-wrap gap-2">
+          {AGE_CHIPS.map(opt => (
+            <AgeChip
               key={opt.value}
-              onClick={() => onChange({ age: active ? '' : opt.value })}
-              className="px-3 py-1 rounded-full text-xs font-medium border transition-all"
-              style={{
-                backgroundColor: active ? 'var(--color-primary)' : 'var(--color-card)',
-                color: active ? '#fff' : 'var(--color-text)',
-                borderColor: active ? 'var(--color-primary)' : 'var(--color-border)',
-              }}
-            >
-              {opt.label}
-            </button>
-          )
-        })}
+              label={opt.label}
+              value={opt.value}
+              active={filters.age === opt.value}
+              onClick={() => onChange({ age: filters.age === opt.value ? '' : opt.value })}
+            />
+          ))}
+        </div>
+      )}
 
-        {planoOnly && branches.map(branch => {
-          const active = filters.branches.includes(branch)
-          return (
-
-            <button
-              key={branch}
-              onClick={() => toggleBranch(branch)}
-              className="px-2 py-0.5 rounded-full text-xs font-medium border transition-all"
-              style={{
-                backgroundColor: active ? 'var(--color-primary)' : 'var(--color-card)',
-                color: active ? '#fff' : 'var(--color-text)',
-                borderColor: active ? 'var(--color-primary)' : 'var(--color-border)',
-              }}
-            >
-              {branch.replace(/ Library$/, '')}
-            </button>
-          )
-        })}
-      </div>
+      {/* Plano — age chips + branch chips */}
+      {planoOnly && (
+        <div className="flex flex-col gap-2">
+          {/* Age row */}
+          <div className="flex flex-wrap gap-2">
+            {AGE_CHIPS.map(opt => (
+              <AgeChip
+                key={opt.value}
+                label={opt.label}
+                value={opt.value}
+                active={filters.age === opt.value}
+                onClick={() => onChange({ age: filters.age === opt.value ? '' : opt.value })}
+              />
+            ))}
+          </div>
+          {/* Branch row */}
+          {branches.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {branches.map(branch => {
+                const active = filters.branches.includes(branch)
+                return (
+                  <button
+                    key={branch}
+                    onClick={() => toggleBranch(branch)}
+                    className="px-2 py-0.5 rounded-full text-xs font-medium border transition-all"
+                    style={{
+                      backgroundColor: active ? 'var(--color-primary)' : 'var(--color-card)',
+                      color: active ? '#fff' : 'var(--color-text)',
+                      borderColor: active ? 'var(--color-primary)' : 'var(--color-border)',
+                    }}
+                  >
+                    {branch.replace(/ Library$/, '')}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
