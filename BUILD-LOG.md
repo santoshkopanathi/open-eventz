@@ -544,4 +544,29 @@ The performance concern was also overstated: ingest runs as a background job, no
 
 ---
 
+### Learning 3 — Vercel Hobby plan's 10-second function timeout makes cloud ingest impractical
+
+**Date:** July 2026
+
+**What happened:** After deploying to Vercel, we attempted to trigger the ingest via the production URL (`https://open-eventz.vercel.app/api/ingest`). Vercel returned `FUNCTION_INVOCATION_TIMEOUT` immediately. The ingest never completed.
+
+**Root cause:** Vercel's Hobby (free) plan enforces a 10-second maximum execution time on serverless functions. Our ingest now fetches individual event detail pages for every event — approximately 252 Frisco Library pages plus ~150 Plano Library pages across 5 branches. At 1–2 seconds per page fetch, the full run takes 3–5 minutes, which is 18–30x over Vercel's limit.
+
+**Why this only surfaced now:** The timeout was always there, but the original ingest only fetched detail pages for events within 1 month. After removing both the Frisco 3-feed loop and the Plano 1-month window (Learnings 1 and 2), the number of page fetches increased significantly and the timeout became unavoidable.
+
+**Current workaround:** Run ingest locally. Both the local dev environment and the Vercel production deployment connect to the same Supabase database. Running ingest locally writes fresh data to Supabase, which the production site reads immediately — no deployment needed. This is a valid long-term workflow for a solo-operated product with infrequent data updates.
+
+**Options if automated cloud ingest becomes a requirement:**
+
+| Option | Cost | Notes |
+|---|---|---|
+| Vercel Pro | $20/month | Raises limit to 60s — still likely not enough for full ingest |
+| Split by source | Free | `/api/ingest/frisco` and `/api/ingest/plano` as separate endpoints, each completing under 60s |
+| GitHub Actions cron | Free | Scheduled workflow calls a cloud function or runs locally on a self-hosted runner; no Vercel timeout applies |
+| Dedicated background job service (Railway, Render, Fly.io) | ~$5/month | Runs long-lived processes without serverless timeout constraints |
+
+**The lesson:** Serverless functions are optimised for short-lived request/response cycles — typically under 1–3 seconds. Data pipeline jobs (scraping, ETL, ingest) are long-running by nature and are a poor fit for serverless unless deliberately chunked. Design ingest jobs to run outside the request path from the start.
+
+---
+
 *This log will be updated as each phase is completed.*
