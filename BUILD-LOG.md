@@ -719,4 +719,133 @@ The `/api/infer-age` endpoint still exists and is fully testable — you can hit
 
 ---
 
-*This log will be updated as each phase is completed.*
+---
+
+## Regression Test Checklist
+
+*Run these after every significant code change. Covers the full user flow across all three sources.*
+
+---
+
+### 1. Ingest sanity (run locally after any ingest change)
+
+```powershell
+Invoke-WebRequest -Uri "http://localhost:3000/api/ingest" `
+  -Method POST -TimeoutSec 600 `
+  -Headers @{ Authorization = "Bearer REDACTED" }
+```
+
+- [ ] Returns 200 with a JSON summary (events ingested per source, any errors)
+- [ ] Frisco Library: events have `age_min` / `age_max` populated (not null) for most events
+- [ ] Plano Libraries: events have `age_min` / `age_max` populated for all events
+- [ ] Play Frisco: events have `kid_relevant`, `age_buckets`, `age_confidence` populated (post-inference build)
+- [ ] No duplicate events in Supabase (check by running ingest twice, count should not increase)
+
+---
+
+### 2. Events API (run after any change to `/api/events`)
+
+```powershell
+# All events
+Invoke-WebRequest "http://localhost:3000/api/events" | ConvertFrom-Json | Select-Object -Expand events | Measure-Object
+
+# Frisco Library only
+Invoke-WebRequest "http://localhost:3000/api/events?source=frisco-library" | ConvertFrom-Json | Select-Object -Expand events | Measure-Object
+
+# Age filter — Kids 6-12
+Invoke-WebRequest "http://localhost:3000/api/events?age=6-12" | ConvertFrom-Json | Select-Object -Expand events | Select-Object title, age_min, age_max
+
+# Plano + branch filter
+Invoke-WebRequest "http://localhost:3000/api/events?source=plano-library&branch=haggard" | ConvertFrom-Json | Select-Object -Expand events | Measure-Object
+```
+
+- [ ] All events returns > 0 results
+- [ ] `age=6-12` returns no events where `age_max < 6` or `age_min > 12`
+- [ ] `age=6-12` DOES return events with `age_min=0, age_max=17` (All Ages / Family overlap)
+- [ ] No adult-only events appear (age_min >= 18)
+- [ ] Play Frisco events with `kid_relevant=false` never appear (post-inference build)
+
+---
+
+### 3. UI smoke test (run the dev server, check in browser)
+
+```powershell
+npm run dev
+```
+
+Open `http://localhost:3000` and verify:
+
+**Default state**
+- [ ] Event list loads with events from all three sources
+- [ ] Date range pre-populated to today → today+7 (post v1.1 build)
+- [ ] Event count shown above list
+
+**Frisco tab (post v1.1 build)**
+- [ ] Frisco tab active by default, gold accent visible
+- [ ] Shows only Frisco Library + Play Frisco events
+- [ ] Age chips (Toddlers / Kids / Teens) visible in sub-filter
+- [ ] Selecting "Kids (6–12)" hides toddler-only and teen-only events
+- [ ] Family/All Ages events remain visible under any age chip
+- [ ] Play Frisco events with `kid_relevant=false` never appear
+
+**Plano tab (post v1.1 build)**
+- [ ] Switching to Plano tab shows blue accent
+- [ ] Shows only Plano Libraries events
+- [ ] Branch chips visible (Harrington, Haggard, Schimelpfenig, Davis, Memorial)
+- [ ] Selecting a branch filters to that branch only
+- [ ] Age chips work correctly against Communico structured data
+
+**Event cards**
+- [ ] Age badge visible on cards where age data exists (gold for structured, blue+~ for inferred)
+- [ ] Recurring badge (`↻ Recurring`) visible on recurring events only
+- [ ] Free / Paid / Reg. badges correct
+- [ ] No age badge on events with no age data
+
+**Event detail**
+- [ ] Opens on card click (desktop: right panel; mobile: full screen)
+- [ ] Supervision badge correct for Frisco Library events
+- [ ] Inferred age badge shows disclosure text for Play Frisco events
+- [ ] Add to Google Calendar, Apple Calendar, Get Directions all present
+- [ ] Attending toggle increments/decrements count
+
+**Map**
+- [ ] Map toggle shows venue pins
+- [ ] Get Directions from detail opens map panel
+
+---
+
+### 4. Unit tests (run after any change to parsing or inference logic)
+
+```powershell
+npm test
+```
+
+- [ ] All 25 existing tests pass (`parseFriscoSuitableFor`, `parseCommunicoAgeGroup`)
+- [ ] All inference tests pass (post v1.1 build — `inferPlayFriscoAge`)
+
+---
+
+### 5. Age inference spot check (post v1.1 build only)
+
+```powershell
+Invoke-WebRequest -Uri "http://localhost:3000/api/infer-age" -Method POST `
+  -ContentType "application/json" `
+  -Body '{"title":"Toddler Storytime","description":"Songs and stories for children ages 0-3 and their caregivers."}'
+```
+
+- [ ] Returns `kid_relevant: true`
+- [ ] Returns `age_buckets: ["toddler"]`
+- [ ] Returns `confidence: "high"`
+
+```powershell
+Invoke-WebRequest -Uri "http://localhost:3000/api/infer-age" -Method POST `
+  -ContentType "application/json" `
+  -Body '{"title":"Senior Fitness Class","description":"Low-impact exercise for adults 55 and older."}'
+```
+
+- [ ] Returns `kid_relevant: false`
+- [ ] Returns `age_buckets: []`
+
+---
+
+*This checklist will be updated as new features are added.*
