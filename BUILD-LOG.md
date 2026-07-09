@@ -9,6 +9,115 @@ Use this to prep for portfolio conversations, interviews, or stakeholder demos.
 
 ---
 
+## High-Level Technical Design
+
+*How the system works end-to-end — written for a technical PM.*
+
+---
+
+### a) What happens every morning (ingest)
+
+Triggered manually via:
+```
+POST /api/ingest   (Authorization: Bearer <secret>)
+```
+
+The ingest route runs three scrapers in sequence:
+
+1. **Frisco Library (BiblioCommons)** — paginates through the event listing, then fetches each event's detail page to scrape the "Suitable for:" block for age data
+2. **Plano Libraries (Communico)** — loops through 5 branch RSS feeds, deduplicates cross-branch events, fetches each event detail page to scrape the AGE GROUP block
+3. **Play Frisco (CivicPlus)** — scrapes the city calendar listing page, then fetches each event detail page (EID-based two-pass)
+
+For each source:
+- **Upsert into Supabase** — if the event already exists (same ID), it updates it; if new, it inserts it
+- **Stale event cleanup** — Play Frisco deletes any events from Supabase that weren't in today's batch (they've been removed from the city calendar)
+
+Returns a JSON summary of events ingested and any errors. No automatic scheduling — the DB is now updated and nothing else happens until a user visits the site.
+
+---
+
+### b1) User accesses the site
+
+1. Browser requests `https://open-eventz.vercel.app/`
+2. Vercel serves the Next.js page — React renders the shell (header, filter bar, map, empty event list)
+3. React immediately calls `GET /api/events` with no filters
+4. The API queries Supabase: all events where `start_datetime >= today` and `age_min < 18 OR age_min IS NULL`, ordered by date, limit 1000
+5. Supabase returns results → API sends JSON to browser
+6. React renders the event list and map pins
+
+---
+
+### b2) User filters by city
+
+1. User clicks "Frisco" or "Plano" tab
+2. React updates local filter state (e.g. `sources: ['frisco-library', 'play-frisco']`)
+3. UI calls `GET /api/events?source=frisco-library&source=play-frisco`
+4. Supabase query adds `WHERE source IN ('frisco-library', 'play-frisco')`
+5. Results return — event list and map pins refresh to show only that city's events
+
+No page reload — client-side state change triggers a new API call.
+
+---
+
+### b3) User applies an age filter
+
+1. User clicks an age chip e.g. "Kids (6–12)"
+2. React updates filter state (`age: '6-12'`)
+3. UI calls `GET /api/events?source=frisco-library&source=play-frisco&age=6-12`
+4. API parses `age=6-12` → `ageMin=6, ageMax=12`
+5. Supabase query adds overlap check:
+   ```sql
+   WHERE age_min IS NOT NULL AND age_max IS NOT NULL
+   AND age_min <= 12 AND age_max >= 6
+   ```
+6. Only events whose age range overlaps 6–12 are returned and rendered
+
+---
+
+### b4) User clicks on an event to see details
+
+1. User taps an event card
+2. React sets `selectedEvent` in local state — **no API call**
+3. `EventDetail` component renders with data already in memory (loaded during the events list call)
+4. Separately, React calls `GET /api/likes/{event_id}` to fetch the attending count
+5. Like count renders below the event details
+
+The event data itself is never fetched twice.
+
+---
+
+### b5) User clicks "Get directions"
+
+1. User taps "Get directions" on event detail
+2. React constructs a Google Maps URL: `https://maps.google.com/?q=<location_address>`
+3. Browser opens Google Maps in a new tab — Google handles everything from there
+4. **No API call to our backend at all**
+
+---
+
+### b6) User clicks a map pin
+
+1. User taps a pin on the Google Map
+2. Google Maps React component fires an `onClick` event with that event's data
+3. React sets `selectedEvent` in local state — same as clicking an event card
+4. `EventDetail` slides in; `GET /api/likes/{event_id}` fires for the like count
+
+No second fetch for event data — already in memory from the list call.
+
+---
+
+### Key pattern
+
+**The heavy lifting happens at two points only:**
+- **Ingest** (writing to DB) — runs once daily, manually triggered
+- **Page load / filter change** (reading from DB) — one Supabase query per filter interaction
+
+Everything else (event detail, directions, map pins, like counts) works off data already in memory or calls a lightweight single-row lookup.
+
+> **Note:** This section reflects the current implementation. It will be updated when Play Frisco LLM inference is implemented — that introduces a Claude API call at ingest time and a new `age_source` / `kid_relevant` column in Supabase, which affects both the ingest flow (b1 above) and the adult exclusion logic.
+
+---
+
 ## Phase 1 — Foundation
 *Goal: Get a working skeleton deployed with a real database connection.*
 
@@ -566,6 +675,47 @@ The performance concern was also overstated: ingest runs as a background job, no
 | Dedicated background job service (Railway, Render, Fly.io) | ~$5/month | Runs long-lived processes without serverless timeout constraints |
 
 **The lesson:** Serverless functions are optimised for short-lived request/response cycles — typically under 1–3 seconds. Data pipeline jobs (scraping, ETL, ingest) are long-running by nature and are a poor fit for serverless unless deliberately chunked. Design ingest jobs to run outside the request path from the start.
+
+---
+
+---
+
+### Decision 4 — Play Frisco LLM inference: claude-sonnet-4-6 over claude-haiku-4-5
+
+**Date:** July 2026
+
+**The decision:** Use claude-sonnet-4-6 (not Haiku) for Play Frisco age classification at ingest time.
+
+**The reasoning:** The full Play Frisco backlog (~80 events) costs approximately $0.05 to classify with Haiku and $0.08 with Sonnet — a $0.03 difference on the first run. Subsequent ingest runs cost less than a cent on either model since only new or changed events are re-inferred (typically 2–5 events per day). At this cost profile the difference is operationally irrelevant, making accuracy the deciding factor.
+
+Sonnet's classification quality is meaningfully better on ambiguous event descriptions — exactly where the confidence tier distinction (high vs. medium vs. low) matters most. A borderline event miscalled as "high confidence" when it should be "medium" means surfacing an inferred age badge with false confidence, which undermines the trust framework the product is built on. The `~` prefix and disclosure tooltip only work if the confidence tiers are accurate.
+
+**Rule applied:** When cost difference is trivial, optimize for quality.
+
+**The lesson:** Model selection isn't just about task complexity — it's about where errors are most costly. The confidence tier output is load-bearing UI logic, not just metadata. That's where Sonnet earns the $0.03.
+
+---
+
+### Decision 5 — LLM inference architecture: shared function over HTTP endpoint chain
+
+**Date:** July 2026
+
+**The decision:** Extract the Claude API call for Play Frisco age inference into `src/lib/age-inference.ts` as a shared function, called directly from the ingest route. A separate `/api/infer-age` endpoint also exists but wraps the same function — it does not sit between ingest and Claude.
+
+**What the spec originally said:** Create `/api/infer-age` as a POST endpoint and call it from ingest. This would mean ingest makes an HTTP POST to its own server, which then calls Claude.
+
+**Why we changed it:** Ingest calling its own server over HTTP is an unnecessary round-trip. Both the caller (ingest) and the callee (`/api/infer-age`) live in the same process on the same machine during local runs. The HTTP hop adds latency and a failure surface with no benefit.
+
+**What we built instead:**
+```
+src/lib/age-inference.ts        ← Claude API call lives here as a pure function
+src/app/api/infer-age/route.ts  ← thin wrapper for standalone testing via curl
+src/app/api/ingest/route.ts     ← imports and calls age-inference.ts directly
+```
+
+The `/api/infer-age` endpoint still exists and is fully testable — you can hit it with curl without running a full ingest. But ingest doesn't go through it. Same pattern as `age-parsers.ts`, which is shared between ingest and the unit test suite.
+
+**The lesson:** Avoid making a service call to yourself when you can import a function. HTTP is the right boundary between independent services — not between two routes in the same Next.js app.
 
 ---
 
