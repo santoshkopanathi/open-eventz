@@ -1,0 +1,5 @@
+#!/bin/sh
+# Fast pre-commit gate: type-check + unit tests. (E2E runs on pre-push — see .githooks/pre-push.)
+cd "$(git rev-parse --show-toplevel)" || exit 1
+echo "▶ pre-commit: typecheck + unit tests"
+npm run typecheck && npm test
