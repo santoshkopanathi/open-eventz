@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import type { Event } from '@/lib/types'
+import { detailAgeBadge, INFERRED_TOOLTIP } from '@/lib/age-badge'
 
 interface SupervisionBadge {
   bg: string
@@ -70,6 +71,8 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
   const supervisionBadge = event.source === 'frisco-library'
     ? getFriscoSupervision(event.age_min ?? null, event.age_max ?? null)
     : null
+
+  const detailAge = detailAgeBadge(event)
 
   const fmtGcal = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z')
   const locationStr = [event.location_name, event.location_address].filter(Boolean).join(', ')
@@ -147,17 +150,39 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
         </div>
       )}
 
-      {/* Price */}
-      {(event.is_free || event.price_text) && (
+      {/* Chip row — price, age, recurring (Sections 2, 6, 7) */}
+      {(event.is_free || event.price_text || detailAge || event.is_recurring) && (
         <div className="mb-4">
-          {event.is_free ? (
-            <span className="inline-block text-sm px-3 py-1 rounded-full font-medium" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>
-              Free admission
-            </span>
-          ) : (
-            <span className="inline-block text-sm px-3 py-1 rounded-full font-medium" style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}>
-              Paid
-            </span>
+          <div className="flex flex-wrap items-center gap-2">
+            {event.is_free ? (
+              <span className="inline-block text-sm px-3 py-1 rounded-full font-medium" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>
+                Free admission
+              </span>
+            ) : event.price_text ? (
+              <span className="inline-block text-sm px-3 py-1 rounded-full font-medium" style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}>
+                Paid
+              </span>
+            ) : null}
+            {detailAge && (
+              <span
+                className="inline-block text-sm px-3 py-1 rounded-full font-medium"
+                style={{ backgroundColor: detailAge.bg, color: detailAge.color }}
+              >
+                {detailAge.content}
+              </span>
+            )}
+            {event.is_recurring && (
+              <span
+                className="inline-block text-xs px-3 py-1 rounded-full font-medium border"
+                style={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-periwinkle)' }}
+              >
+                ↻ Recurring
+              </span>
+            )}
+          </div>
+          {/* Inference disclosure — Play Frisco only (Section 6) */}
+          {detailAge?.disclosure && (
+            <div className="mt-1 text-xs text-gray-400">{INFERRED_TOOLTIP}</div>
           )}
         </div>
       )}
@@ -173,13 +198,6 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
       {supervisionBadge && (
         <div className="rounded-lg px-3 py-2 mb-4 text-xs font-semibold" style={{ backgroundColor: supervisionBadge.bg, color: supervisionBadge.text }}>
           {supervisionBadge.label}
-        </div>
-      )}
-
-      {/* Description */}
-      {event.age_label && (
-        <div className="text-sm mb-3" style={{ color: 'var(--color-periwinkle)' }}>
-          👶 Suitable for: {event.age_label}
         </div>
       )}
 

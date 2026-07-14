@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import type { Event } from '@/lib/types'
+import { passesAgeFilter } from '@/lib/age-filter'
 
 // Convert a YYYY-MM-DD date string to a UTC ISO string at midnight CT (CDT = UTC-5)
 function dateToCtMidnightUtc(dateStr: string): string {
@@ -18,9 +20,15 @@ export async function GET(req: NextRequest) {
   const sources = searchParams.getAll('source')
   const branches = searchParams.getAll('branch')
   const is_free = searchParams.get('is_free')
-  const age = searchParams.get('age')
+  const ageParams = searchParams.getAll('age')
   const date_from = searchParams.get('date_from')
   const date_to = searchParams.get('date_to')
+
+  // One or more age chips → OR logic across the selected ranges (multi-select, spec §5.4)
+  const ageRanges: [number, number][] = ageParams.map(a => {
+    const parts = a.split('-').map(Number)
+    return [parts[0], parts.length === 2 ? parts[1] : parts[0]]
+  })
 
   let query = supabase
     .from('events')
@@ -37,20 +45,16 @@ export async function GET(req: NextRequest) {
   if (date_from) query = query.gte('start_datetime', dateToCtMidnightUtc(date_from))
   if (date_to) query = query.lt('start_datetime', dateToCtEndOfDayUtc(date_to))
 
-  if (age) {
-    const parts = age.split('-').map(Number)
-    const ageMin = parts[0]
-    const ageMax = parts.length === 2 ? parts[1] : parts[0]
-    // Require explicit age data — events with null age fields are excluded
-    query = query.not('age_min', 'is', null)
-    query = query.not('age_max', 'is', null)
-    // Event age range must overlap with the requested group
-    query = query.lte('age_min', ageMax)
-    query = query.gte('age_max', ageMin)
-  }
+  // Hard gate: Play Frisco events flagged not kid-relevant are never shown; events with no
+  // inference (kid_relevant IS NULL — all library events) pass through.
+  query = query.or('kid_relevant.is.null,kid_relevant.eq.true')
 
   // Always exclude adults-only events (age_min >= 18 marks Frisco Library adult events)
   query = query.or('age_min.is.null,age_min.lt.18')
+
+  // Note: age filtering is applied in JS below (not in the DB query) so that Play Frisco
+  // events — which have null age_min/age_max but carry LLM-inferred age_buckets — can be
+  // matched by bucket rather than being dropped by a numeric NULL check.
 
   // Cutoff = midnight CT today
   const now = new Date()
@@ -74,28 +78,25 @@ export async function GET(req: NextRequest) {
   if (branches.length === 1) ongoingQuery = ongoingQuery.eq('location_name', branches[0])
   if (branches.length > 1) ongoingQuery = ongoingQuery.in('location_name', branches)
   if (is_free === 'true') ongoingQuery = ongoingQuery.eq('is_free', true)
-  if (age) {
-    const parts = age.split('-').map(Number)
-    const ageMin = parts[0]
-    const ageMax = parts.length === 2 ? parts[1] : parts[0]
-    ongoingQuery = ongoingQuery.not('age_min', 'is', null)
-    ongoingQuery = ongoingQuery.not('age_max', 'is', null)
-    ongoingQuery = ongoingQuery.lte('age_min', ageMax)
-    ongoingQuery = ongoingQuery.gte('age_max', ageMin)
-  }
+  ongoingQuery = ongoingQuery.or('kid_relevant.is.null,kid_relevant.eq.true')
   ongoingQuery = ongoingQuery.or('age_min.is.null,age_min.lt.18')
   const { data: ongoing } = await ongoingQuery.limit(100)
 
   // Merge, deduplicate by id, sort by start_datetime
   const seen = new Set<string>()
-  let all = [...(ongoing ?? []), ...(upcoming ?? [])].filter(e => {
+  let all = ([...(ongoing ?? []), ...(upcoming ?? [])] as Event[]).filter(e => {
     if (seen.has(e.id)) return false
     seen.add(e.id)
     return true
   }).sort((a, b) => a.start_datetime.localeCompare(b.start_datetime))
 
+  // Age filtering (applied in JS — see note above)
+  if (ageRanges.length > 0) {
+    all = all.filter(e => passesAgeFilter(e, ageRanges))
+  }
+
   // Exclude Frisco Library adult programs that BiblioCommons mislabels under children feeds
-  if (age && (sources.length === 0 || sources.includes('frisco-library'))) {
+  if (ageRanges.length > 0 && (sources.length === 0 || sources.includes('frisco-library'))) {
     const FRISCO_ADULT_KW = [
       'book club', 'write club', 'figure club', "reader's choice",
       "entrepreneur's workshop", 'esl book',

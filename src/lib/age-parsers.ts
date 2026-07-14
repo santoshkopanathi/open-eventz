@@ -78,13 +78,38 @@ export function parseCommunicoAgeGroup(html: string): AgeData {
   const audienceMatches = [...block.matchAll(/href="\/events\?a=([^"]+)"/g)]
   if (audienceMatches.length === 0) return { age_min: null, age_max: null, age_label: null }
 
-  const audiences = audienceMatches.map(m => m[1])
+  // Communico URL-encodes parentheses in the audience value (e.g. "Families+%28All+Ages%29").
+  // Decode so it matches the literal-parenthesis keys in COMMUNICO_AUDIENCE. decodeURIComponent
+  // leaves "+" as-is (it's not a space here) and is a no-op for the unparenthesized values.
+  const decode = (s: string) => { try { return decodeURIComponent(s) } catch { return s } }
+  const audiences = audienceMatches.map(m => decode(m[1]))
   const mapped = audiences.map(a => COMMUNICO_AUDIENCE[a]).filter(Boolean)
   if (mapped.length === 0) return { age_min: null, age_max: null, age_label: null }
 
-  const age_min = Math.min(...mapped.map(a => a.age_min))
-  const age_max = Math.max(...mapped.map(a => a.age_max))
+  // Compute the kid-facing range from child audiences only. Adults / Older Adults (18–99) are
+  // not filterable kid groups; folding their range into the union would spuriously stretch a
+  // "Kids + Adults" event across the 13–17 gap and make it match the Teens filter. When only
+  // adult audiences are present, fall back to their range (the API's adult gate excludes it anyway).
+  const kidAudiences = mapped.filter(a => a.age_min < 18)
+  const rangeSet = kidAudiences.length > 0 ? kidAudiences : mapped
+  const age_min = Math.min(...rangeSet.map(a => a.age_min))
+  const age_max = Math.max(...rangeSet.map(a => a.age_max))
   const age_label = mapped.length === 1 ? mapped[0].label : null
 
   return { age_min, age_max, age_label }
+}
+
+/**
+ * True when a Plano (Communico) event page explicitly carries the "Families (All Ages)"
+ * audience tag. This is a distinct signal from a 0–17 numeric range (a Babies-through-Teens
+ * event also spans 0–17 but is not family), and it's what drives the confirmed "Family" badge.
+ */
+export function communicoIsFamily(html: string): boolean {
+  const idx = html.indexOf('AGE GROUP')
+  if (idx === -1) return false
+  const block = html.slice(idx, idx + 600)
+  const audiences = [...block.matchAll(/href="\/events\?a=([^"]+)"/g)].map(m => {
+    try { return decodeURIComponent(m[1]) } catch { return m[1] }
+  })
+  return audiences.includes('Families+(All+Ages)')
 }

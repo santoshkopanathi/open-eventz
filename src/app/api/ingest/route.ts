@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { XMLParser } from 'fast-xml-parser'
 import { supabaseAdmin } from '@/lib/supabase'
 import { EventCategory } from '@/lib/types'
-import { parseFriscoSuitableFor, parseCommunicoAgeGroup } from '@/lib/age-parsers'
+import { parseFriscoSuitableFor, parseCommunicoAgeGroup, communicoIsFamily } from '@/lib/age-parsers'
+import { inferPlayFriscoAge } from '@/lib/age-inference'
+import { markRecurring } from '@/lib/recurring'
 
 // Adult programs that BiblioCommons incorrectly includes in children audience feeds
 const FRISCO_ADULT_KEYWORDS = [
@@ -37,6 +39,8 @@ function decodeHtml(str: string): string {
     .replace(/&apos;/g, "'")
     .replace(/&mdash;/g, '—')
     .replace(/&ndash;/g, '–')
+    .replace(/&hellip;/g, '…')
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
     .replace(/&#\d+;/g, c => String.fromCharCode(parseInt(c.slice(2, -1))))
     .replace(/\s+/g, ' ')
     .trim()
@@ -215,17 +219,17 @@ function planoFeedUrl(locationId: string): string {
   return `https://plano.libnet.info/feeds?data=${Buffer.from(JSON.stringify(filter)).toString('base64')}`
 }
 
-async function fetchPlanoEventAge(eventUrl: string): Promise<{ age_min: number | null; age_max: number | null; age_label: string | null }> {
+async function fetchPlanoEventAge(eventUrl: string): Promise<{ age_min: number | null; age_max: number | null; age_label: string | null; is_family: boolean }> {
   try {
     const res = await fetch(eventUrl, {
       next: { revalidate: 0 },
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
     })
-    if (!res.ok) return { age_min: null, age_max: null, age_label: null }
+    if (!res.ok) return { age_min: null, age_max: null, age_label: null, is_family: false }
     const html = await res.text()
-    return parseCommunicoAgeGroup(html)
+    return { ...parseCommunicoAgeGroup(html), is_family: communicoIsFamily(html) }
   } catch {
-    return { age_min: null, age_max: null, age_label: null }
+    return { age_min: null, age_max: null, age_label: null, is_family: false }
   }
 }
 
@@ -292,6 +296,9 @@ async function ingestPlanoLibrary() {
         age_min: ageData.age_min,
         age_max: ageData.age_max,
         age_label: ageData.age_label || null,
+        // Explicit "Families (All Ages)" tag → confirmed-family signal for the badge (spec §2/§3).
+        // Distinct from a 0–17 numeric range, which a non-family multi-audience event can also have.
+        age_buckets: ageData.is_family ? ['family'] : null,
         is_recurring: false,
         recurrence_label: null,
         thumbnail_url: item.enclosure?.['@_url'] || null,
@@ -491,6 +498,11 @@ async function ingestPlayFrisco() {
         age_min: null,
         age_max: null,
         age_label: null,
+        // Populated by the LLM inference pass in POST (new events only)
+        kid_relevant: null,
+        age_buckets: null,
+        age_confidence: null,
+        age_reasoning: null,
         is_recurring: false,
         recurrence_label: null,
         thumbnail_url: null,
@@ -525,6 +537,38 @@ export async function POST(req: NextRequest) {
 
   allErrors.push(...frisco.errors, ...plano.errors, ...playFrisco.errors)
 
+  // LLM age inference for Play Frisco — call for NEW events only. Events already in the DB
+  // with kid_relevant populated reuse their stored inference (no repeat Claude API call).
+  if (playFrisco.events.length > 0) {
+    const ids = playFrisco.events.map((e: any) => e.id)
+    const { data: priorRows } = await db
+      .from('events')
+      .select('id, kid_relevant, age_buckets, age_confidence, age_reasoning')
+      .eq('source', 'play-frisco')
+      .in('id', ids)
+    const priorMap = new Map<string, any>((priorRows ?? []).map((r: any) => [r.id, r]))
+
+    for (const e of playFrisco.events) {
+      const prior = priorMap.get(e.id)
+      if (prior && prior.kid_relevant !== null) {
+        // Cache hit — carry forward the stored inference, skip the Claude call
+        e.kid_relevant = prior.kid_relevant
+        e.age_buckets = prior.age_buckets
+        e.age_confidence = prior.age_confidence
+        e.age_reasoning = prior.age_reasoning
+        continue
+      }
+      const result = await inferPlayFriscoAge({ title: e.title, description: e.description ?? '' })
+      if (result) {
+        e.kid_relevant = result.kid_relevant
+        e.age_buckets = result.age_buckets
+        e.age_confidence = result.confidence
+        e.age_reasoning = result.reasoning
+      }
+      // On failure (null): leave fields null — event still ingested, no badge (spec Section 4)
+    }
+  }
+
   // Deduplicate by id — merge age ranges when same event appears in multiple audience segments
   const eventMap = new Map<string, any>()
   for (const e of [...frisco.events, ...plano.events, ...playFrisco.events]) {
@@ -542,6 +586,10 @@ export async function POST(req: NextRequest) {
     }
   }
   const allEvents = Array.from(eventMap.values())
+
+  // Mark recurring series by repeated title within a source (spec Section 7) — uniform rule
+  // covering Play Frisco and Plano, complementing Frisco's "View all dates" scrape signal.
+  markRecurring(allEvents)
 
   if (allEvents.length > 0) {
     const { error } = await db.from('events').upsert(allEvents, { onConflict: 'id' })

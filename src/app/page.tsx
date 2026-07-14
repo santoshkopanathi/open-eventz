@@ -5,12 +5,25 @@ import dynamic from 'next/dynamic'
 import type { Event, Venue } from '@/lib/types'
 import EventCard from '@/components/EventCard'
 import EventDetail from '@/components/EventDetail'
-import FilterBar from '@/components/FilterBar'
-import SourceSubFilter from '@/components/SourceSubFilter'
+import FilterBar, { type City } from '@/components/FilterBar'
+import SourceSubFilter, { type SubFilterPatch } from '@/components/SourceSubFilter'
 
 const MapView = dynamic(() => import('@/components/MapView'), { ssr: false })
 
 const PAGE_SIZE = 20
+
+type FriscoState = { sources: string[]; ages: string[]; date_from: string; date_to: string }
+type PlanoState = { branches: string[]; ages: string[]; date_from: string; date_to: string }
+
+const pad = (n: number) => String(n).padStart(2, '0')
+const ymd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+// Default date window: today through today + 7 days (spec Section 1 / test 2.1.9)
+function defaultDates() {
+  const from = new Date()
+  const to = new Date()
+  to.setDate(to.getDate() + 7)
+  return { date_from: ymd(from), date_to: ymd(to) }
+}
 
 export default function Home() {
   const [events, setEvents] = useState<Event[]>([])
@@ -26,14 +39,12 @@ export default function Home() {
   useEffect(() => {
     fetch('/api/venues').then(r => r.json()).then(d => setVenues(d.venues ?? []))
   }, [])
-  const [filters, setFilters] = useState({
-    sources: [] as string[],
-    branches: [] as string[],
-    is_free: false,
-    age: '',
-    date_from: '',
-    date_to: '',
-  })
+
+  // Per-city filter state — each city retains its own selections across tab switches
+  const [city, setCity] = useState<City>('frisco')
+  const [frisco, setFrisco] = useState<FriscoState>(() => ({ sources: [], ages: [], ...defaultDates() }))
+  const [plano, setPlano] = useState<PlanoState>(() => ({ branches: [], ages: [], ...defaultDates() }))
+
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   const fetchEvents = useCallback(async () => {
@@ -41,12 +52,20 @@ export default function Home() {
     setPage(1)
     setSelected(null)
     const params = new URLSearchParams()
-    filters.sources.forEach(s => params.append('source', s))
-    filters.branches.forEach(b => params.append('branch', b))
-    if (filters.is_free) params.set('is_free', 'true')
-    if (filters.age) params.set('age', filters.age)
-    if (filters.date_from) params.set('date_from', filters.date_from)
-    if (filters.date_to) params.set('date_to', filters.date_to)
+
+    if (city === 'frisco') {
+      const srcs = frisco.sources.length ? frisco.sources : ['frisco-library', 'play-frisco']
+      srcs.forEach(s => params.append('source', s))
+      frisco.ages.forEach(a => params.append('age', a))
+      if (frisco.date_from) params.set('date_from', frisco.date_from)
+      if (frisco.date_to) params.set('date_to', frisco.date_to)
+    } else {
+      params.append('source', 'plano-library')
+      plano.branches.forEach(b => params.append('branch', b))
+      plano.ages.forEach(a => params.append('age', a))
+      if (plano.date_from) params.set('date_from', plano.date_from)
+      if (plano.date_to) params.set('date_to', plano.date_to)
+    }
 
     const res = await fetch(`/api/events?${params.toString()}`)
     const data = await res.json()
@@ -54,9 +73,19 @@ export default function Home() {
     setEvents(all)
     setDisplayed(all.slice(0, PAGE_SIZE))
     setLoading(false)
-  }, [filters])
+  }, [city, frisco, plano])
 
   useEffect(() => { fetchEvents() }, [fetchEvents])
+
+  const patchActive = (patch: SubFilterPatch) => {
+    if (city === 'frisco') setFrisco(f => ({ ...f, ...patch }))
+    else setPlano(p => ({ ...p, ...patch }))
+  }
+  const clearActive = () => {
+    if (city === 'frisco') setFrisco({ sources: [], ages: [], ...defaultDates() })
+    else setPlano({ branches: [], ages: [], ...defaultDates() })
+  }
+  const active = city === 'frisco' ? frisco : plano
 
   // Infinite scroll: load next page when sentinel comes into view
   useEffect(() => {
@@ -100,7 +129,7 @@ export default function Home() {
         </button>
       </header>
 
-      <FilterBar filters={filters} onChange={setFilters} />
+      <FilterBar city={city} onCityChange={setCity} />
 
       {/* Main content — fixed height, scrolls internally */}
       <div className="flex flex-1 min-h-0">
@@ -114,8 +143,14 @@ export default function Home() {
           }}
         >
           <SourceSubFilter
-            filters={filters}
-            onChange={patch => setFilters(f => ({ ...f, ...patch }))}
+            city={city}
+            sources={city === 'frisco' ? frisco.sources : []}
+            branches={city === 'plano' ? plano.branches : []}
+            ages={active.ages}
+            date_from={active.date_from}
+            date_to={active.date_to}
+            onPatch={patchActive}
+            onClear={clearActive}
           />
 
           {loading ? (
@@ -131,7 +166,7 @@ export default function Home() {
                 <div className="text-4xl mb-3">📭</div>
                 <p>No events match your filters.</p>
                 <button
-                  onClick={() => setFilters({ sources: [], branches: [], is_free: false, age: '', date_from: '', date_to: '' })}
+                  onClick={clearActive}
                   className="mt-3 text-sm underline"
                   style={{ color: 'var(--color-periwinkle)' }}
                 >

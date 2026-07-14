@@ -23,8 +23,23 @@ export interface Event {
   event_url: string
   category: EventCategory | null
   registration_required: boolean
+  // Play Frisco LLM age inference (null for structured library sources)
+  kid_relevant: boolean | null
+  age_buckets: AgeBucket[] | null
+  age_confidence: AgeConfidence | null
+  age_reasoning: string | null
   ingested_at: string
   created_at: string
+}
+
+export type AgeBucket = 'toddler' | 'kids' | 'teen' | 'family'
+export type AgeConfidence = 'high' | 'medium' | 'low'
+
+export interface AgeInference {
+  kid_relevant: boolean
+  age_buckets: AgeBucket[]
+  confidence: AgeConfidence
+  reasoning: string
 }
 
 export interface Venue {

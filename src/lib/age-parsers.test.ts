@@ -1,4 +1,4 @@
-import { parseFriscoSuitableFor, parseCommunicoAgeGroup } from './age-parsers'
+import { parseFriscoSuitableFor, parseCommunicoAgeGroup, communicoIsFamily } from './age-parsers'
 
 // ---------------------------------------------------------------------------
 // parseFriscoSuitableFor
@@ -113,6 +113,16 @@ describe('parseCommunicoAgeGroup', () => {
     expect(result).toEqual({ age_min: 0, age_max: 17, age_label: 'All Ages' })
   })
 
+  test('Families+%28All+Ages%29 (real URL-encoded parens from feed) → age 0–17 with label', () => {
+    const result = parseCommunicoAgeGroup(wrap(link('Families+%28All+Ages%29')))
+    expect(result).toEqual({ age_min: 0, age_max: 17, age_label: 'All Ages' })
+  })
+
+  test('Kids + Families+%28All+Ages%29 → union 0–17 (shows under every age chip)', () => {
+    const result = parseCommunicoAgeGroup(wrap(link('Kids') + link('Families+%28All+Ages%29')))
+    expect(result).toEqual({ age_min: 0, age_max: 17, age_label: null })
+  })
+
   test('Adults → age 18–99, excluded from child filters', () => {
     const result = parseCommunicoAgeGroup(wrap(link('Adults')))
     expect(result).toEqual({ age_min: 18, age_max: 99, age_label: 'Adults' })
@@ -145,8 +155,51 @@ describe('parseCommunicoAgeGroup', () => {
     expect(result).toEqual({ age_min: 6, age_max: 17, age_label: null })
   })
 
+  test('Kids + Adults → 6–12 (adult range excluded, does not bleed into Teens)', () => {
+    const result = parseCommunicoAgeGroup(wrap(link('Kids') + link('Adults')))
+    expect(result).toEqual({ age_min: 6, age_max: 12, age_label: null })
+  })
+
+  test('Teens + Older+Adults → 13–17 (adult range excluded)', () => {
+    const result = parseCommunicoAgeGroup(wrap(link('Teens') + link('Older+Adults')))
+    expect(result).toEqual({ age_min: 13, age_max: 17, age_label: null })
+  })
+
   test('unknown audience value → null', () => {
     const result = parseCommunicoAgeGroup(wrap(link('Unknown+Group')))
     expect(result).toEqual({ age_min: null, age_max: null, age_label: null })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// communicoIsFamily
+// ---------------------------------------------------------------------------
+
+describe('communicoIsFamily', () => {
+  function wrap(links: string) {
+    return `<div>AGE GROUP: ${links}</div>`
+  }
+  function link(audience: string) {
+    return `<a href="/events?a=${audience}">${audience}</a>`
+  }
+
+  test('explicit Families+%28All+Ages%29 tag → true', () => {
+    expect(communicoIsFamily(wrap(link('Families+%28All+Ages%29')))).toBe(true)
+  })
+
+  test('Families tag combined with a specific group → true', () => {
+    expect(communicoIsFamily(wrap(link('Kids') + link('Families+%28All+Ages%29')))).toBe(true)
+  })
+
+  test('literal-parens form also matches → true', () => {
+    expect(communicoIsFamily(wrap(link('Families+(All+Ages)')))).toBe(true)
+  })
+
+  test('non-family audiences spanning 0–17 → false (not the explicit tag)', () => {
+    expect(communicoIsFamily(wrap(link('Babies') + link('Teens')))).toBe(false)
+  })
+
+  test('no AGE GROUP block → false', () => {
+    expect(communicoIsFamily('<html><body>nothing</body></html>')).toBe(false)
   })
 })

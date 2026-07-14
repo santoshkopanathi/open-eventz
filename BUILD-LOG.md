@@ -678,6 +678,24 @@ The performance concern was also overstated: ingest runs as a background job, no
 
 ---
 
+### Learning 4 — The Plano "All Ages" tag was silently dropped because the test fixture didn't match the real feed
+
+**Date:** July 2026
+
+**What was broken:** Plano "Families (All Ages)" events never received the 0–17 age range they were supposed to. As a result they never appeared under any age-filter chip — the exact opposite of the intended behavior, where an all-ages event should surface under Toddlers, Kids, *and* Teens.
+
+**How we discovered it:** The v1.1 regression pass (functional-test §5.8) found **zero** Plano events mapping to `age_min=0, age_max=17`, despite the BUILD-LOG audience taxonomy recording 11 "Families (All Ages)" events across 40 sampled. We fetched a live Plano event page and diffed the actual `AGE GROUP` markup against the parser's lookup keys.
+
+**Root cause:** Communico URL-encodes the parentheses. The real audience value in the page is `Families+%28All+Ages%29`, but `COMMUNICO_AUDIENCE` keyed it as `Families+(All+Ages)` with literal parens. The lookup missed, the tag was discarded, and the event fell back to whatever other audiences it happened to carry (or to null). Every other audience value (`Babies`, `Kids`, …) has no special characters, so only the family tag was affected — which is why it went unnoticed.
+
+**Why the test didn't catch it:** the unit test built its fixture with the literal-parens form (`Families+(All+Ages)`), so it validated the parser against a string *we wrote to match the code's assumption* — not against the bytes the feed actually sends. Green test, real bug.
+
+**The fix:** `decodeURIComponent` the audience value before the lookup (a no-op for the unparenthesized values), and add a regression test that uses the real encoded string `Families+%28All+Ages%29`.
+
+**The lesson:** A passing unit test only proves the code matches its fixture. If the fixture is hand-authored to fit the code's assumptions rather than captured from the real source, the fixture and the code can be wrong *together*. Build parser fixtures from real captured payloads — or at minimum keep one real-sample test per source so the encoding reality is pinned.
+
+---
+
 ---
 
 ### Decision 4 — Play Frisco LLM inference: claude-sonnet-4-6 over claude-haiku-4-5
@@ -716,6 +734,31 @@ src/app/api/ingest/route.ts     ← imports and calls age-inference.ts directly
 The `/api/infer-age` endpoint still exists and is fully testable — you can hit it with curl without running a full ingest. But ingest doesn't go through it. Same pattern as `age-parsers.ts`, which is shared between ingest and the unit test suite.
 
 **The lesson:** Avoid making a service call to yourself when you can import a function. HTTP is the right boundary between independent services — not between two routes in the same Next.js app.
+
+---
+
+---
+
+### Decision 6 — Inference prompt refinement: "family" is mutually exclusive with specific age buckets
+
+**Date:** July 2026
+
+**The decision:** Rewrote the Play Frisco classification prompt so the model tags EITHER a specific age group (when an age is explicitly stated) OR "family" (when it's all-ages) — never both. Also recalibrated the confidence tiers so "high" includes events that clearly use family/child/youth language, not only events with an explicit age.
+
+**Why it was needed:** The first prompt let the model return redundant combinations like `["family", "toddler", "kids"]`. Because "family" already surfaces an event under every age chip (its range is 0–17), the extra specific buckets were dead weight for filtering — and worse, adding "family" to a narrow young-kids event (e.g. Walnut Wednesdays) silently widened it to also appear under the Teens filter, overriding the intended scope. The model was also defaulting soft-signal-but-clearly-child-friendly events to "medium" when "high" was the right call.
+
+**The rule now enforced (prompt-level):**
+- Explicit age stated → tag only that specific group; do not add "family".
+- No explicit age but clearly family/child-oriented → "family" only; don't infer specific groups from activity type.
+- Confidence "high" = explicit age range OR clear family/child/youth language.
+
+Enforcement is prompt-only — no deterministic post-processing was added, to keep the model as the single source of classification truth. The validated test table (spec Section 4) was updated to match: 7 of 8 events are now `family` / `high`, with the one explicit-age event (Painting Dreamscapes, 16+) as `teen` / `high`.
+
+**Cache caveat:** Ingest infers new events only, so existing Play Frisco rows keep their prior inference until re-inferred. To apply the new prompt to the current backlog, clear the inference columns for `play-frisco` rows (or delete the rows) and re-run ingest.
+
+**Provenance note:** The original Section-4 test values were drafted in a chat session and contained inaccuracies (redundant multi-bucket tags, inconsistent confidence tiers). This decision supersedes them with a rule-consistent baseline.
+
+**The lesson:** When an LLM's structured output feeds deterministic downstream logic, the output schema needs rules that make redundant or contradictory combinations impossible — otherwise the model's "helpful extra detail" quietly changes product behavior.
 
 ---
 

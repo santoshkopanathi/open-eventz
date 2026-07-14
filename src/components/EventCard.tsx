@@ -1,6 +1,7 @@
 'use client'
 
 import type { Event } from '@/lib/types'
+import { cardAgeBadge } from '@/lib/age-badge'
 
 const SOURCE_LABELS: Record<string, string> = {
   'frisco-library': 'Frisco Library',
@@ -50,6 +51,7 @@ interface Props {
 
 export default function EventCard({ event, selected, onClick }: Props) {
   const emoji = CATEGORY_EMOJI[event.category ?? ''] ?? '🎉'
+  const cardAge = cardAgeBadge(event)
 
   return (
     <button
@@ -87,7 +89,7 @@ export default function EventCard({ event, selected, onClick }: Props) {
                 ? <span className="whitespace-nowrap">📅 {formatShortDate(event.start_datetime)} – {formatShortDate(event.end_datetime!)} · All day</span>
                 : <span className="whitespace-nowrap">🕐 {formatTime(event.start_datetime)}{event.end_datetime ? ` – ${formatTime(event.end_datetime)}` : ''}</span>
               }
-              <div className="flex-shrink-0 flex items-center gap-1">
+              <div className="flex-shrink-0 flex flex-wrap items-center justify-end gap-1">
                 {event.registration_required && (
                   <span className="px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}>
                     📋 Reg.
@@ -102,6 +104,23 @@ export default function EventCard({ event, selected, onClick }: Props) {
                     Paid
                   </span>
                 ) : null}
+                {cardAge && (
+                  <span
+                    className="px-2 py-0.5 rounded-full font-medium whitespace-nowrap"
+                    style={{ backgroundColor: cardAge.bg, color: cardAge.color }}
+                    title={cardAge.tooltip}
+                  >
+                    {cardAge.content}
+                  </span>
+                )}
+                {event.is_recurring && (
+                  <span
+                    className="px-2 py-0.5 rounded-full font-medium border whitespace-nowrap"
+                    style={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-periwinkle)' }}
+                  >
+                    ↻ Recurring
+                  </span>
+                )}
               </div>
             </div>
             {event.location_name && <div className="mt-0.5">📍 {formatLocation(event.location_name, event.source)}</div>}
