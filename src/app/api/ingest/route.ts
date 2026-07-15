@@ -365,9 +365,10 @@ function requiresRegistration(text: string): boolean {
 
 function parsePriceFromText(text: string): { is_free: boolean; price_text: string | null } {
   const lower = text.toLowerCase()
-  const costMatch = text.match(/cost[:\s]+([^\n<]+)/i) || text.match(/\$[\d,.]+/)
+  // Require a numeric amount after "cost" so "at no cost", "costume", etc. don't false-positive.
+  const costMatch = text.match(/cost[:\s]+\$?\d[\d,.]*[^\n<]*/i) || text.match(/\$[\d,.]+/)
   const isPaid = lower.includes('buy tickets') || lower.includes('buy ticket') || lower.includes('purchased ticket')
-    || lower.includes('cost:') || lower.includes('no refund') || lower.includes('fee') || !!costMatch
+    || lower.includes('no refund') || /\bfees?\b/.test(lower) || !!costMatch
   if (isPaid) {
     const price = costMatch ? costMatch[0].trim() : 'Paid'
     return { is_free: false, price_text: price }
