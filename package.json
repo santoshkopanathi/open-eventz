@@ -10,7 +10,7 @@
     "test": "jest",
     "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit",
-    "prepare": "git config core.hooksPath .githooks"
+    "prepare": "git config core.hooksPath .githooks || exit 0"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.110.0",
