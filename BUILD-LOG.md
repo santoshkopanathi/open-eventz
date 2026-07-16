@@ -892,3 +892,78 @@ Invoke-WebRequest -Uri "http://localhost:3000/api/infer-age" -Method POST `
 ---
 
 *This checklist will be updated as new features are added.*
+
+---
+
+## v1.1 — City Nav, LLM Age Inference, Badges, Multi-Select Filters, Testing & CI/CD
+
+*Date: July 2026. Consolidated record for the v1.1 release.*
+
+### a) Challenges
+
+**Functional challenges**
+- **"Family" label ambiguity.** Deciding when an event is labeled "Family" — only from an explicit source signal (Plano's "Families (All Ages)" tag) or LLM-inferred family (Play Frisco), *never* derived from a numeric age span. Confirmed vs. inferred needed distinct visual treatment (gold vs. indigo `~ Family ✦`).
+- **What belongs at scan level vs. detail.** Structured age ranges added clutter on cards without aiding the open/skip decision, so they were removed from cards (detail-only); only Family + the inference marker + Free/Paid/Reg/Recurring remain.
+- **Price without a source of truth.** Play Frisco has no structured price. Detecting free/paid from prose is genuinely ambiguous; decided never to show an extracted amount (send users to the event page) and never to default to "free" (a wrong "Free" is the worst outcome).
+- **Inference accuracy variance.** LLM confidence tiers aren't perfectly reproducible (2/8 validated events came back medium vs. an expected high) — acceptable because the tier only gates badge visibility, not correctness.
+
+**Technical challenges**
+- **Communico URL-encoded parentheses.** The real feed sends `Families+%28All+Ages%29`; the parser keyed on literal parens and silently dropped every family tag.
+- **Adult-range bleed.** "Kids + Adults" resolved to a numeric `6–99`, which spuriously overlapped the Teens (13–17) band. Fixed by excluding adult audiences from the kid-facing range.
+- **Substring keyword false-positives.** `parsePriceFromText` matched `"fee"` inside `"feeling"` → false "Paid" (e.g. History of Play 2026).
+- **Vercel 10s function timeout.** Full ingest (~1,800 detail-page fetches + LLM calls) can't run on Vercel — ingest is run locally against the shared Supabase.
+- **Non-interactive git auth.** `git push` from the tool shell fails (HTTPS password auth deprecated, no interactive credential flow).
+- **Playwright browser dependency in the pre-push hook.** E2E needs the browser binary installed; a missing/mismatched `chrome-headless-shell` blocks the push.
+- **Jest discovering Playwright specs.** Fixed by scoping Jest to `roots: ['<rootDir>/src']`.
+- **Supabase outage mid-work** — external dependency; blocked DB writes until it recovered.
+
+### b) Lessons learned
+
+**Functional**
+- **Don't guess where a wrong answer is costly.** For price, "unknown / no badge → check the event" beats a wrong "Free." Asymmetric-cost outcomes should bias toward the honest non-answer.
+- **LLM > keyword heuristics for extracting structured facts from messy free-text** (age relevance, price). Keyword lists are a losing maintenance game (every new keyword risks a new false positive).
+- **Honest beats precise.** Disclose inference (`~ … ✦` + "estimated from description"); don't assert exact prices or over-confident tiers.
+- **Simplify to decision-relevant signals.** A card badge earns its place only if it changes the open/skip decision *and* has no filter equivalent.
+
+**Technical**
+- **Test fixtures must be captured from real payloads, not hand-authored to match the code's assumptions.** The encoded-parens bug hid behind a fixture written with literal parens — a green test over a real bug.
+- **Keyword matching needs word boundaries** (`\bfees?\b`, require a digit after "cost").
+- **Keep pure logic in `src/lib` and thin the UI** — `getAgeBadge`/`cardAgeBadge`/`detailAgeBadge`, `passesAgeFilter`, `markRecurring` are all pure and unit-tested; components just call them.
+- **When LLM output feeds deterministic logic, the schema needs rules that make redundant/contradictory combos impossible** (mutual-exclusivity of `family` vs. specific buckets).
+- **Local pre-push E2E is fragile** (browser dependency); CI is the reliable place for E2E.
+
+### c) CI strategy
+
+- **GitHub Actions** (`.github/workflows/ci.yml`), triggered on **push and pull_request**.
+- **Two jobs:** `unit` (`npm ci` → `typecheck` → `jest`, 68 tests) and `e2e` (`playwright install --with-deps chromium` → `test:e2e`, browsers installed in CI).
+- **Local git hooks** (`core.hooksPath=.githooks`, auto-wired by the `prepare` npm script): `pre-commit` = typecheck + unit (fast); `pre-push` = E2E. *Known issue:* pre-push E2E depends on a locally-installed Playwright browser and can block a push — the intended fix is to make E2E CI-only and drop it from pre-push.
+- **Test layers:** unit (Jest, pure logic) → E2E (Playwright, all `/api` mocked, deterministic) → manual scenario docs (live ingest, LLM accuracy, map).
+
+### d) CD strategy
+
+- **Vercel is connected to GitHub and auto-deploys from `master`.** Push to `master` → Vercel runs `next build` → production swap. Branch/PR pushes → preview deploys.
+- **Instant Rollback** in the Vercel dashboard is the safety net.
+- **Data vs. code are decoupled:** the app reads Supabase live; local and production share the same DB. Running ingest locally updates production data immediately without a deploy. Code changes go live only via a push to `master`.
+- **Env vars on Vercel:** Supabase URL/anon/service, Google Maps key, `CRON_SECRET`; `ANTHROPIC_API_KEY` only needed if `/api/infer-age` is called in prod (ingest is local, so not required for the user-facing path).
+- **Production build verified clean** (`npm run build`) before deploy.
+
+### e) Pending test cases
+
+- **Price parser:** extract `parsePriceFromText` to `src/lib` and add `price-parser.test.ts` with the false-positive fixtures (`"feeling"`, `"coffee"`, `"at no cost"`, plus true-paid cases `"$95"`, `"buy tickets"`).
+- **Price-via-LLM (when built):** 3-way `free / paid / unknown`; fallback never defaults to "free"; `unknown → no badge`.
+- **Pre-push hook:** cover/redesign so a missing Playwright browser doesn't block a push (move E2E to CI-only).
+- **Manual scenario doc** for the price feature once shipped (new versioned `functional-test-scenarios-vX.md`).
+
+### f) Technical design details
+
+- **LLM age inference** — `src/lib/age-inference.ts`, model `claude-sonnet-4-6`, called at ingest for **new Play Frisco events only** (cached in DB; re-ingest reuses stored inference). Returns `kid_relevant`, `age_buckets`, `confidence`, `reasoning`. Mutual-exclusivity prompt rule: explicit age → specific bucket only; no explicit age but clearly child/family → `family` only.
+- **Badge system** — `getAgeBadge(event)` returns one of 5 kinds (`structured-specific`, `structured-multi`, `confirmed-family`, `inferred-family`, `inferred-specific`); `cardAgeBadge`/`detailAgeBadge` are pure render helpers so the card and detail render different subsets from one source of truth.
+- **Family signal** — carried uniformly as `age_buckets = ['family']` for both Plano (explicit Communico tag, detected by `communicoIsFamily`) and Play Frisco (LLM); never derived from a numeric span.
+- **Age filtering** — `src/lib/age-filter.ts` `passesAgeFilter(event, ranges[])`, multi-select OR across selected chips; library events overlap-match, Play Frisco events match by inferred bucket + confidence gate.
+- **Recurring** — `src/lib/recurring.ts` `markRecurring(events)`, source-scoped title repetition.
+- **Data model** — added columns `kid_relevant boolean`, `age_buckets text[]`, `age_confidence text`, `age_reasoning text` (migration `002`).
+- **Planned (price):** fold 3-way `price` into the same inference call; make `is_free` nullable (`null = unknown → no badge`); keep the fixed keyword parser only as a paid-or-unknown fallback.
+
+### g) Build-log status
+
+This section *is* the v1.1 build-log update. Prior related entries: Decision 4 (Sonnet over Haiku), Decision 5 (shared inference function over HTTP chain), Decision 6 (mutual-exclusivity prompt rule), Learning 4 (fixture-didn't-match-reality parser bug).
