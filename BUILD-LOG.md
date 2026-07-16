@@ -913,7 +913,7 @@ Invoke-WebRequest -Uri "http://localhost:3000/api/infer-age" -Method POST `
 - **Substring keyword false-positives.** `parsePriceFromText` matched `"fee"` inside `"feeling"` → false "Paid" (e.g. History of Play 2026).
 - **Vercel 10s function timeout.** Full ingest (~1,800 detail-page fetches + LLM calls) can't run on Vercel — ingest is run locally against the shared Supabase.
 - **Non-interactive git auth.** `git push` from the tool shell fails (HTTPS password auth deprecated, no interactive credential flow).
-- **Playwright browser dependency in the pre-push hook.** E2E needs the browser binary installed; a missing/mismatched `chrome-headless-shell` blocks the push.
+- **Playwright browser dependency in the pre-push hook.** E2E needs the browser binary installed; a missing/mismatched `chrome-headless-shell` blocked the push. *Resolved:* E2E is now CI-only; `pre-push` runs typecheck + unit instead.
 - **Jest discovering Playwright specs.** Fixed by scoping Jest to `roots: ['<rootDir>/src']`.
 - **Supabase outage mid-work** — external dependency; blocked DB writes until it recovered.
 
@@ -930,13 +930,13 @@ Invoke-WebRequest -Uri "http://localhost:3000/api/infer-age" -Method POST `
 - **Keyword matching needs word boundaries** (`\bfees?\b`, require a digit after "cost").
 - **Keep pure logic in `src/lib` and thin the UI** — `getAgeBadge`/`cardAgeBadge`/`detailAgeBadge`, `passesAgeFilter`, `markRecurring` are all pure and unit-tested; components just call them.
 - **When LLM output feeds deterministic logic, the schema needs rules that make redundant/contradictory combos impossible** (mutual-exclusivity of `family` vs. specific buckets).
-- **Local pre-push E2E is fragile** (browser dependency); CI is the reliable place for E2E.
+- **Local pre-push E2E is fragile** (browser dependency); CI is the reliable place for E2E. *(Applied: E2E moved to CI-only; pre-push now runs typecheck + unit.)*
 
 ### c) CI strategy
 
 - **GitHub Actions** (`.github/workflows/ci.yml`), triggered on **push and pull_request**.
 - **Two jobs:** `unit` (`npm ci` → `typecheck` → `jest`, 68 tests) and `e2e` (`playwright install --with-deps chromium` → `test:e2e`, browsers installed in CI).
-- **Local git hooks** (`core.hooksPath=.githooks`, auto-wired by the `prepare` npm script): `pre-commit` = typecheck + unit (fast); `pre-push` = E2E. *Known issue:* pre-push E2E depends on a locally-installed Playwright browser and can block a push — the intended fix is to make E2E CI-only and drop it from pre-push.
+- **Local git hooks** (`core.hooksPath=.githooks`, auto-wired by the `prepare` npm script): `pre-commit` = typecheck + unit (fast); `pre-push` = typecheck + unit (browser-free safety net). E2E is **CI-only** — it depended on a locally-installed Playwright browser and would block a push when `chrome-headless-shell` was missing/mismatched, so it was dropped from `pre-push`.
 - **Test layers:** unit (Jest, pure logic) → E2E (Playwright, all `/api` mocked, deterministic) → manual scenario docs (live ingest, LLM accuracy, map).
 
 ### d) CD strategy
@@ -951,7 +951,7 @@ Invoke-WebRequest -Uri "http://localhost:3000/api/infer-age" -Method POST `
 
 - **Price parser:** extract `parsePriceFromText` to `src/lib` and add `price-parser.test.ts` with the false-positive fixtures (`"feeling"`, `"coffee"`, `"at no cost"`, plus true-paid cases `"$95"`, `"buy tickets"`).
 - **Price-via-LLM (when built):** 3-way `free / paid / unknown`; fallback never defaults to "free"; `unknown → no badge`.
-- **Pre-push hook:** cover/redesign so a missing Playwright browser doesn't block a push (move E2E to CI-only).
+- ~~**Pre-push hook:** cover/redesign so a missing Playwright browser doesn't block a push (move E2E to CI-only).~~ **Done** — E2E is CI-only; `pre-push` now runs typecheck + unit.
 - **Manual scenario doc** for the price feature once shipped (new versioned `functional-test-scenarios-vX.md`).
 
 ### f) Technical design details

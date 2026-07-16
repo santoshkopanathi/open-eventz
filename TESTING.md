@@ -13,6 +13,8 @@ npm run test:e2e     # Playwright smoke (UI flows, /api mocked)
 
 CI runs all three automatically on push / PR — see `.github/workflows/ci.yml`.
 
+**Git hooks** (`core.hooksPath=.githooks`): `pre-commit` and `pre-push` both run `typecheck + unit` (fast, browser-free). **E2E is CI-only** — no hook runs it, so run `npm run test:e2e` manually before pushing UI changes, or rely on the CI `e2e` job.
+
 ## Test layers
 
 | Layer | Tool | Location | Covers |
