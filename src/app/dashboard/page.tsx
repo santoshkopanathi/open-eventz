@@ -1,6 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import {
-  perSourceCounts,
   inferredAgeVisibility,
   lastIngest,
   ingestHistory,
@@ -41,15 +40,33 @@ function Stat({ label, value, sub }: { label: string; value: React.ReactNode; su
 
 export default async function DashboardPage() {
   const db = supabaseAdmin()
-  const [{ data: eventsData }, { data: runsData }] = await Promise.all([
-    db.from('events').select('source, is_free, kid_relevant, age_buckets, age_confidence'),
+  // Use exact COUNT queries for totals (a plain .select() caps at 1000 rows). Fetch only the
+  // Play Frisco rows in full for the age-visibility buckets (a small set).
+  const [total, frisco, plano, pf, free, paid, unknown, pfEventsRes, runsRes] = await Promise.all([
+    db.from('events').select('*', { count: 'exact', head: true }),
+    db.from('events').select('*', { count: 'exact', head: true }).eq('source', 'frisco-library'),
+    db.from('events').select('*', { count: 'exact', head: true }).eq('source', 'plano-library'),
+    db.from('events').select('*', { count: 'exact', head: true }).eq('source', 'play-frisco'),
+    db.from('events').select('*', { count: 'exact', head: true }).eq('is_free', true),
+    db.from('events').select('*', { count: 'exact', head: true }).eq('is_free', false),
+    db.from('events').select('*', { count: 'exact', head: true }).is('is_free', null),
+    db.from('events').select('source, is_free, kid_relevant, age_buckets, age_confidence').eq('source', 'play-frisco'),
     db.from('ingest_runs').select('*').order('ran_at', { ascending: false }).limit(30),
   ])
-  const events = (eventsData ?? []) as unknown as Event[]
-  const runs = (runsData ?? []) as unknown as IngestRun[]
 
-  const counts = perSourceCounts(events)
-  const vis = inferredAgeVisibility(events)
+  const totalEvents = total.count ?? 0
+  const counts = {
+    bySource: [
+      { source: 'frisco-library', total: frisco.count ?? 0 },
+      { source: 'plano-library', total: plano.count ?? 0 },
+      { source: 'play-frisco', total: pf.count ?? 0 },
+    ],
+    free: free.count ?? 0,
+    paid: paid.count ?? 0,
+    unknown: unknown.count ?? 0,
+  }
+  const vis = inferredAgeVisibility((pfEventsRes.data ?? []) as unknown as Event[])
+  const runs = (runsRes.data ?? []) as unknown as IngestRun[]
   const last = lastIngest(runs)
   const today = new Date().toISOString().slice(0, 10)
   const history = ingestHistory(runs, today, 14)
@@ -70,7 +87,7 @@ export default async function DashboardPage() {
               <Stat label="Last ingest" value={fmtTime(last.ran_at)} />
               <Stat label="Status" value={<span style={{ color: STATUS_COLOR[last.status] }}>{last.status.toUpperCase()}</span>} />
               <Stat label="Duration" value={`${(last.duration_ms / 1000).toFixed(1)}s`} />
-              <Stat label="Total events in DB" value={events.length} />
+              <Stat label="Total events in DB" value={totalEvents} />
             </div>
           ) : (
             <p className="text-sm text-gray-500">No ingest runs recorded yet. Run the ingest to populate this.</p>
