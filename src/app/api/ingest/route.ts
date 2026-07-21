@@ -5,6 +5,7 @@ import { EventCategory } from '@/lib/types'
 import { parseFriscoSuitableFor, parseCommunicoAgeGroup, communicoIsFamily } from '@/lib/age-parsers'
 import { inferPlayFriscoEvent } from '@/lib/age-inference'
 import { fallbackPriceClass, resolvePriceClass, priceClassToFields, interpretCostField } from '@/lib/price'
+import { PER_INFERENCE_COST_USD } from '@/lib/technical-metrics'
 import { markRecurring } from '@/lib/recurring'
 
 // Adult programs that BiblioCommons incorrectly includes in children audience feeds
@@ -537,6 +538,8 @@ export async function POST(req: NextRequest) {
   const db = supabaseAdmin()
   const allErrors: string[] = []
   let totalUpserted = 0
+  let llmCalls = 0 // new Play Frisco inferences this run (for the Technical dashboard)
+  const t0 = Date.now()
 
   // Sequential to avoid rate-limiting BiblioCommons
   const frisco = await ingestFriscoLibrary()
@@ -578,6 +581,7 @@ export async function POST(req: NextRequest) {
         e.price_text = prior.price_text
         continue
       }
+      llmCalls++
       const result = await inferPlayFriscoEvent({ title: e.title, description: e.description ?? '' })
       if (result) {
         e.kid_relevant = result.kid_relevant
@@ -666,6 +670,22 @@ export async function POST(req: NextRequest) {
       .not('id', 'in', `(${currentIds.join(',')})`)
     if (error) allErrors.push(`purge-stale-play-frisco: ${error.message}`)
   }
+
+  // Record the run for the Technical dashboard (best-effort — never fail the ingest over it).
+  const status = totalUpserted === 0 ? 'err' : allErrors.length > 0 ? 'warn' : 'ok'
+  const { error: runErr } = await db.from('ingest_runs').insert({
+    ran_at: new Date().toISOString(),
+    duration_ms: Date.now() - t0,
+    status,
+    frisco_fetched: frisco.events.length,
+    plano_fetched: plano.events.length,
+    play_frisco_fetched: playFrisco.events.length,
+    total_upserted: totalUpserted,
+    llm_calls: llmCalls,
+    llm_cost_usd: Number((llmCalls * PER_INFERENCE_COST_USD).toFixed(4)),
+    errors: allErrors,
+  })
+  if (runErr) allErrors.push(`ingest_runs insert: ${runErr.message}`)
 
   return NextResponse.json({
     ok: true,

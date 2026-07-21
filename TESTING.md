@@ -21,9 +21,9 @@ CI runs all three automatically on push / PR — see `.github/workflows/ci.yml`.
 
 | Layer | Tool | Location | Covers |
 |---|---|---|---|
-| **Unit** | Jest | `src/lib/*.test.ts` | parsers, badge logic (`getAgeBadge`/card/detail), age filter (overlap + multi-select OR + gating), recurring detection |
-| **E2E smoke** | Playwright | `e2e/*.spec.ts` | city tabs, dropdowns + count badges, multi-select, badge rendering, detail view, per-city persistence — **all `/api/*` mocked** (deterministic, no Supabase) |
-| **Manual** | human | `../02-product/functional-test-scenarios*.md` | live ingest pipeline, LLM inference accuracy, map/directions, calendar/attend actions |
+| **Unit** | Jest | `src/lib/*.test.ts` | parsers, badge logic (`getAgeBadge`/card/detail), age filter, recurring detection; **v1.2:** price (`price.test` — `getPriceBadge` confirmed-vs-inferred `✦`, `interpretCostField`, calibration set + known-gaps), combined disclosure (`inference-disclosure.test`), measurement framework (`measurement.test` — WAD/funnel/KPIs), technical-dashboard metrics (`technical-metrics.test`) |
+| **E2E smoke** | Playwright | `e2e/*.spec.ts` | city tabs, dropdowns, multi-select, badge rendering (incl. `Free ✦`/`Paid ✦` and Cost-field-confirmed plain `Free`), combined disclosure, detail view, per-city persistence — **all `/api/*` mocked** |
+| **Manual** | human | `../02-product/functional-test-scenarios-v1.2-price-analytics.md` (latest) | live ingest + Cost-field scrape, LLM price accuracy (`npm run calibrate:price`), GA4 event firing (Realtime/DebugView), `/dashboard` with real data |
 
 ## Manual scenario docs (history + reference)
 
