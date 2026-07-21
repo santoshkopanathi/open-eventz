@@ -12,6 +12,7 @@ function ev(over: Record<string, unknown>) {
     is_recurring: false, recurrence_label: null, thumbnail_url: null, event_url: 'https://example.com',
     category: 'library', registration_required: false,
     kid_relevant: null, age_buckets: null, age_confidence: null, age_reasoning: null,
+    price_class: null, price_confidence: null, price_reasoning: null,
     ingested_at: '', created_at: '',
     ...over,
   }
@@ -23,6 +24,12 @@ const FRISCO = [
   ev({ id: 'f1', source: 'frisco-library', title: 'Frisco Kids Program', age_min: 6, age_max: 12 }),         // structured → NO card badge
   ev({ id: 'p1', source: 'play-frisco', title: 'Play Family Day', kid_relevant: true, age_confidence: 'high', age_buckets: ['family'] }), // ~ Family ✦
   ev({ id: 'p2', source: 'play-frisco', title: 'Teen Art Workshop', kid_relevant: true, age_confidence: 'high', age_buckets: ['teen'] }), // ✦
+  // Inferred free (family + free) → "~ Family ✦" + "Free ✦"; ONE combined disclosure in detail
+  ev({ id: 'p3', source: 'play-frisco', title: 'Inferred Free Playtime', kid_relevant: true, age_confidence: 'high', age_buckets: ['family'], price_class: 'free', price_confidence: 'inferred', is_free: true, price_text: 'Free' }),
+  // Inferred paid (family + paid, no Cost field) → "Paid ✦" + combined paid disclosure
+  ev({ id: 'p4', source: 'play-frisco', title: 'Ticketed Family Outing', kid_relevant: true, age_confidence: 'high', age_buckets: ['family'], price_class: 'paid', price_confidence: 'inferred', is_free: false, price_text: 'Paid' }),
+  // Cost-field CONFIRMED free (Option A) → plain "Free" on card, NO ✦, no price disclosure
+  ev({ id: 'p5', source: 'play-frisco', title: 'Cost Field Free Program', kid_relevant: true, age_confidence: 'high', age_buckets: ['family'], price_class: 'free', price_confidence: 'confirmed', is_free: true, price_text: 'Free' }),
   ev({ id: 'f2', source: 'frisco-library', title: 'Weekly Storytime', age_min: 0, age_max: 5, is_recurring: true, recurrence_label: 'Recurring', registration_required: true }),
 ]
 
@@ -65,11 +72,43 @@ test('cards omit structured age ranges but keep Family / inferred markers (§1.1
   await expect(main.getByText('↻ Recurring').first()).toBeVisible()
 })
 
+test('inferred free Play Frisco event → "Free ✦" on card + ONE combined disclosure in detail (Def A)', async ({ page }) => {
+  const main = page.locator('main')
+  // Card shows the inferred-free marker
+  await expect(main.getByText('Free ✦').first()).toBeVisible()
+  // Detail shows the single combined age+price disclosure (never two lines)
+  await main.getByText('Inferred Free Playtime').click()
+  const detail = page.locator('aside')
+  await expect(detail.getByText('Free ✦')).toBeVisible()
+  await expect(detail.getByText("Family suitability and 'Free' admission status estimated from event description")).toBeVisible()
+})
+
+test('inferred PAID Play Frisco event → "Paid ✦" on card + combined paid disclosure (Def A)', async ({ page }) => {
+  const main = page.locator('main')
+  await expect(main.getByText('Paid ✦').first()).toBeVisible()
+  await main.getByText('Ticketed Family Outing').click()
+  const detail = page.locator('aside')
+  await expect(detail.getByText('Paid ✦')).toBeVisible()
+  await expect(detail.getByText("Family suitability and 'Paid' admission status estimated from event description")).toBeVisible()
+})
+
+test('Cost-field CONFIRMED free → plain "Free" (no ✦), price omitted from disclosure (Option A)', async ({ page }) => {
+  const main = page.locator('main')
+  await main.getByText('Cost Field Free Program').click()
+  const detail = page.locator('aside')
+  // Confirmed free reads "Free admission" with NO ✦ marker
+  await expect(detail.getByText('Free admission')).toBeVisible()
+  await expect(detail.getByText('Free ✦')).toHaveCount(0)
+  // Age is still inferred → disclosure mentions age only, NOT price
+  await expect(detail.getByText('Family suitability estimated from event description')).toBeVisible()
+  await expect(detail.getByText(/admission status/)).toHaveCount(0)
+})
+
 test('detail shows ~ Family ✦ + disclosure, no "Family event"/"Suitable for" (§2.4)', async ({ page }) => {
   await page.locator('main').getByText('Play Family Day').click()
   const detail = page.locator('aside')
   await expect(detail.getByText('~ Family ✦')).toBeVisible()
-  await expect(detail.getByText(/estimated from event description/i)).toBeVisible()
+  await expect(detail.getByText('Family suitability estimated from event description')).toBeVisible()
   await expect(detail.getByText('Family event')).toHaveCount(0)
   await expect(detail.getByText(/Suitable for/)).toHaveCount(0)
 })

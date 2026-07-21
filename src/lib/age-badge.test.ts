@@ -1,5 +1,5 @@
 import type { Event } from './types'
-import { getAgeBadge, cardAgeBadge, detailAgeBadge, CARD_INFERRED_TOOLTIP } from './age-badge'
+import { getAgeBadge, cardAgeBadge, detailAgeBadge, ESTIMATED_TOOLTIP } from './age-badge'
 
 const GOLD_BG = '#F5F0DE'
 const INDIGO_BG = '#EEEDF5'
@@ -14,6 +14,7 @@ function ev(p: Partial<Event>): Event {
     is_recurring: false, recurrence_label: null, thumbnail_url: null, event_url: '',
     category: null, registration_required: false,
     kid_relevant: null, age_buckets: null, age_confidence: null, age_reasoning: null,
+    price_class: null, price_confidence: null, price_reasoning: null,
     ingested_at: '', created_at: '',
     ...p,
   }
@@ -76,14 +77,14 @@ describe('cardAgeBadge — what the LIST CARD renders (spec §2)', () => {
       .toMatchObject({ content: 'Family', bg: GOLD_BG })
   })
 
-  test('inferred-family → "~ Family ✦" with tooltip', () => {
+  test('inferred-family → "~ Family ✦" with the simplified card tooltip', () => {
     expect(cardAgeBadge(ev({ source: 'play-frisco', kid_relevant: true, age_confidence: 'medium', age_buckets: ['family'] })))
-      .toMatchObject({ content: '~ Family ✦', tooltip: CARD_INFERRED_TOOLTIP, bg: INDIGO_BG })
+      .toMatchObject({ content: '~ Family ✦', tooltip: ESTIMATED_TOOLTIP, bg: INDIGO_BG })
   })
 
-  test('inferred-specific → bare "✦" (no age text, no tilde) with tooltip', () => {
+  test('inferred-specific → bare "✦" (no age text, no tilde) with the simplified card tooltip', () => {
     expect(cardAgeBadge(ev({ source: 'play-frisco', kid_relevant: true, age_confidence: 'high', age_buckets: ['teen'] })))
-      .toMatchObject({ content: '✦', tooltip: CARD_INFERRED_TOOLTIP })
+      .toMatchObject({ content: '✦', tooltip: ESTIMATED_TOOLTIP })
   })
 
   test('structured specific and multi-group → NOT shown on cards', () => {
@@ -93,29 +94,31 @@ describe('cardAgeBadge — what the LIST CARD renders (spec §2)', () => {
 })
 
 describe('detailAgeBadge — what the DETAIL view renders (spec §6)', () => {
-  test('structured specific → "Ages 0–5", no disclosure', () => {
+  // The estimate disclosure line is no longer per-badge (see inference-disclosure.test.ts);
+  // detailAgeBadge only returns the badge chip content now.
+  test('structured specific → "Ages 0–5"', () => {
     expect(detailAgeBadge(ev({ source: 'frisco-library', age_min: 0, age_max: 5 })))
-      .toMatchObject({ content: 'Ages 0–5', disclosure: false })
+      .toMatchObject({ content: 'Ages 0–5' })
   })
 
-  test('multi-group → collapsed range "Ages 6–17", no disclosure', () => {
+  test('multi-group → collapsed range "Ages 6–17"', () => {
     expect(detailAgeBadge(ev({ source: 'plano-library', age_min: 6, age_max: 17 })))
-      .toMatchObject({ content: 'Ages 6–17', disclosure: false })
+      .toMatchObject({ content: 'Ages 6–17' })
   })
 
-  test('Plano confirmed family → "Family", no disclosure', () => {
+  test('Plano confirmed family → "Family"', () => {
     expect(detailAgeBadge(ev({ source: 'plano-library', age_min: 0, age_max: 17, age_buckets: ['family'] })))
-      .toMatchObject({ content: 'Family', disclosure: false })
+      .toMatchObject({ content: 'Family' })
   })
 
-  test('inferred family → "~ Family ✦" + disclosure', () => {
+  test('inferred family → "~ Family ✦"', () => {
     expect(detailAgeBadge(ev({ source: 'play-frisco', kid_relevant: true, age_confidence: 'high', age_buckets: ['family'] })))
-      .toMatchObject({ content: '~ Family ✦', disclosure: true })
+      .toMatchObject({ content: '~ Family ✦' })
   })
 
-  test('inferred specific → "~ Ages 13–17 ✦" + disclosure', () => {
+  test('inferred specific → "~ Ages 13–17 ✦"', () => {
     expect(detailAgeBadge(ev({ source: 'play-frisco', kid_relevant: true, age_confidence: 'high', age_buckets: ['teen'] })))
-      .toMatchObject({ content: '~ Ages 13–17 ✦', disclosure: true })
+      .toMatchObject({ content: '~ Ages 13–17 ✦' })
   })
 
   test('low confidence → nothing in detail', () => {

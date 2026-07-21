@@ -10,6 +10,7 @@ function ev(p: Partial<Event>): Event {
     is_recurring: false, recurrence_label: null, thumbnail_url: null, event_url: '',
     category: null, registration_required: false,
     kid_relevant: null, age_buckets: null, age_confidence: null, age_reasoning: null,
+    price_class: null, price_confidence: null, price_reasoning: null,
     ingested_at: '', created_at: '',
     ...p,
   }

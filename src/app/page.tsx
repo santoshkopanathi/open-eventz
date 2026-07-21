@@ -7,6 +7,7 @@ import EventCard from '@/components/EventCard'
 import EventDetail from '@/components/EventDetail'
 import FilterBar, { type City } from '@/components/FilterBar'
 import SourceSubFilter, { type SubFilterPatch } from '@/components/SourceSubFilter'
+import { trackEvent } from '@/lib/analytics'
 
 const MapView = dynamic(() => import('@/components/MapView'), { ssr: false })
 
@@ -77,7 +78,16 @@ export default function Home() {
 
   useEffect(() => { fetchEvents() }, [fetchEvents])
 
+  // detail_view — fires once each time the detail panel opens (Intent step). Kept here
+  // (single page instance) rather than in EventDetail, which renders twice (desktop + mobile).
+  useEffect(() => {
+    if (selected) trackEvent('detail_view', { source: selected.source, event_id: selected.id })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected?.id])
+
   const patchActive = (patch: SubFilterPatch) => {
+    // filter_applied — any filter dropdown selection changes (Engaged step)
+    trackEvent('filter_applied', { city, fields: Object.keys(patch).join(',') })
     if (city === 'frisco') setFrisco(f => ({ ...f, ...patch }))
     else setPlano(p => ({ ...p, ...patch }))
   }
@@ -183,7 +193,11 @@ export default function Home() {
                     key={event.id}
                     event={event}
                     selected={selected?.id === event.id}
-                    onClick={() => setSelected(event)}
+                    onClick={() => {
+                      // event_card_click (Engaged step); detail_view fires from the effect above
+                      trackEvent('event_card_click', { source: event.source, event_id: event.id })
+                      setSelected(event)
+                    }}
                   />
                 ))}
               </div>

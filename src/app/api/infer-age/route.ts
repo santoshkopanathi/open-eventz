@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { inferPlayFriscoAge } from '@/lib/age-inference'
+import { inferPlayFriscoEvent } from '@/lib/age-inference'
 
 // Thin HTTP wrapper over the shared inference function (BUILD-LOG Decision 5).
 // Ingest imports the function directly; this route exists for standalone testing
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'title or description required' }, { status: 400 })
   }
 
-  const result = await inferPlayFriscoAge({ title, description })
+  const result = await inferPlayFriscoEvent({ title, description })
   if (!result) {
     return NextResponse.json({ error: 'Inference failed or returned no result' }, { status: 502 })
   }

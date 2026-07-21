@@ -3,7 +3,8 @@ import { XMLParser } from 'fast-xml-parser'
 import { supabaseAdmin } from '@/lib/supabase'
 import { EventCategory } from '@/lib/types'
 import { parseFriscoSuitableFor, parseCommunicoAgeGroup, communicoIsFamily } from '@/lib/age-parsers'
-import { inferPlayFriscoAge } from '@/lib/age-inference'
+import { inferPlayFriscoEvent } from '@/lib/age-inference'
+import { fallbackPriceClass, resolvePriceClass, priceClassToFields, interpretCostField } from '@/lib/price'
 import { markRecurring } from '@/lib/recurring'
 
 // Adult programs that BiblioCommons incorrectly includes in children audience feeds
@@ -363,19 +364,6 @@ function requiresRegistration(text: string): boolean {
   return REGISTRATION_KEYWORDS.some(kw => lower.includes(kw))
 }
 
-function parsePriceFromText(text: string): { is_free: boolean; price_text: string | null } {
-  const lower = text.toLowerCase()
-  // Require a numeric amount after "cost" so "at no cost", "costume", etc. don't false-positive.
-  const costMatch = text.match(/cost[:\s]+\$?\d[\d,.]*[^\n<]*/i) || text.match(/\$[\d,.]+/)
-  const isPaid = lower.includes('buy tickets') || lower.includes('buy ticket') || lower.includes('purchased ticket')
-    || lower.includes('no refund') || /\bfees?\b/.test(lower) || !!costMatch
-  if (isPaid) {
-    const price = costMatch ? costMatch[0].trim() : 'Paid'
-    return { is_free: false, price_text: price }
-  }
-  return { is_free: true, price_text: 'Free' }
-}
-
 async function ingestPlayFrisco() {
   const errors: string[] = []
   const events: any[] = []
@@ -481,7 +469,22 @@ async function ingestPlayFrisco() {
         description = paragraphs.join('\n\n')
       }
 
-      const { is_free, price_text } = parsePriceFromText(description || title)
+      const registration_required = requiresRegistration(`${title} ${description}`)
+
+      // Structured Cost: field (CivicPlus itemprop="price"). When present it is AUTHORITATIVE
+      // — a source-confirmed price the LLM never sees — so it wins over the description pipeline
+      // and locks the price (the LLM pass will not override it).
+      const priceFieldMatch = html.match(/itemprop="price"[^>]*>([\s\S]*?)<\/div>/i)
+      const rawCost = priceFieldMatch ? decodeHtml(priceFieldMatch[1].replace(/<[^>]+>/g, '').trim()) : null
+      const costFieldClass = interpretCostField(rawCost)
+
+      // Price: Cost field (confirmed) if present, else the keyword FALLBACK (used only if the
+      // LLM call later fails; the LLM pass in POST overwrites the fallback for new events).
+      const priceLocked = costFieldClass !== null
+      const resolved = priceLocked
+        ? { price_class: costFieldClass!, price_confidence: 'confirmed' as const }
+        : fallbackPriceClass({ title, description, registration_required })
+      const priceFields = priceClassToFields(resolved.price_class)
 
       events.push({
         id: `play-frisco-${eid}`,
@@ -494,8 +497,12 @@ async function ingestPlayFrisco() {
         location_address: null,
         location_lat: getFriscoVenueCoords(location).lat,
         location_lng: getFriscoVenueCoords(location).lng,
-        is_free,
-        price_text,
+        is_free: priceFields.is_free,
+        price_text: priceFields.price_text,
+        price_class: resolved.price_class,
+        price_confidence: resolved.price_confidence,
+        price_reasoning: priceLocked ? `Cost field: "${rawCost}"` : null, // LLM sets this otherwise
+        _priceLocked: priceLocked, // transient (not a DB column): tells the LLM pass to keep this price
         age_min: null,
         age_max: null,
         age_label: null,
@@ -509,7 +516,7 @@ async function ingestPlayFrisco() {
         thumbnail_url: null,
         event_url: url,
         category: guessCategory(title, description),
-        registration_required: requiresRegistration(`${title} ${description}`),
+        registration_required,
         raw_json: { eid, title, start: startMatch[1], location },
         ingested_at: new Date().toISOString(),
       })
@@ -538,35 +545,66 @@ export async function POST(req: NextRequest) {
 
   allErrors.push(...frisco.errors, ...plano.errors, ...playFrisco.errors)
 
-  // LLM age inference for Play Frisco — call for NEW events only. Events already in the DB
-  // with kid_relevant populated reuse their stored inference (no repeat Claude API call).
+  // LLM inference for Play Frisco (age + price, one call) — for NEW events only. Events
+  // already in the DB with kid_relevant populated reuse their stored inference AND stored
+  // price (no repeat Claude API call). To re-price existing events, clear their inference
+  // (set kid_relevant = null) and re-ingest — that forces a cache miss (spec rollout note).
   if (playFrisco.events.length > 0) {
     const ids = playFrisco.events.map((e: any) => e.id)
     const { data: priorRows } = await db
       .from('events')
-      .select('id, kid_relevant, age_buckets, age_confidence, age_reasoning')
+      .select('id, kid_relevant, age_buckets, age_confidence, age_reasoning, is_free, price_text, price_class, price_confidence, price_reasoning')
       .eq('source', 'play-frisco')
       .in('id', ids)
     const priorMap = new Map<string, any>((priorRows ?? []).map((r: any) => [r.id, r]))
 
     for (const e of playFrisco.events) {
+      // Capture + strip the transient lock (Cost-field price wins; not a DB column).
+      const priceLocked = e._priceLocked === true
+      delete e._priceLocked
       const prior = priorMap.get(e.id)
       if (prior && prior.kid_relevant !== null) {
-        // Cache hit — carry forward the stored inference, skip the Claude call
+        // Cache hit — carry forward the stored inference, skip the Claude call.
         e.kid_relevant = prior.kid_relevant
         e.age_buckets = prior.age_buckets
         e.age_confidence = prior.age_confidence
         e.age_reasoning = prior.age_reasoning
+        // Preserve the prior price decision too (raw + derived), so a re-ingest never
+        // overwrites a stored LLM price with the fresh keyword-fallback computed at scrape time.
+        e.price_class = prior.price_class
+        e.price_confidence = prior.price_confidence
+        e.price_reasoning = prior.price_reasoning
+        e.is_free = prior.is_free
+        e.price_text = prior.price_text
         continue
       }
-      const result = await inferPlayFriscoAge({ title: e.title, description: e.description ?? '' })
+      const result = await inferPlayFriscoEvent({ title: e.title, description: e.description ?? '' })
       if (result) {
         e.kid_relevant = result.kid_relevant
         e.age_buckets = result.age_buckets
         e.age_confidence = result.confidence
         e.age_reasoning = result.reasoning
+        // Price: when NOT locked by a structured Cost field, the LLM price wins over the
+        // keyword fallback — routed through resolvePriceClass so Layers 2/3 apply. When locked,
+        // keep the authoritative Cost-field price set at scrape time (the LLM never saw it).
+        if (!priceLocked) {
+          const resolved = resolvePriceClass({
+            price: result.price,
+            price_confidence: result.price_confidence,
+            title: e.title,
+            description: e.description ?? '',
+            registration_required: e.registration_required,
+          })
+          const priceFields = priceClassToFields(resolved.price_class)
+          e.price_class = resolved.price_class
+          e.price_confidence = resolved.price_confidence
+          e.price_reasoning = result.price_reasoning
+          e.is_free = priceFields.is_free
+          e.price_text = priceFields.price_text
+        }
       }
-      // On failure (null): leave fields null — event still ingested, no badge (spec Section 4)
+      // On failure (null): leave age fields null and keep the scrape-time price (Cost field if
+      // locked, else the keyword fallback already resolved through Layers 2/3).
     }
   }
 

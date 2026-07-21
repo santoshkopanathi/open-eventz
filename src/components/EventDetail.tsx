@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import type { Event } from '@/lib/types'
-import { detailAgeBadge, INFERRED_TOOLTIP } from '@/lib/age-badge'
+import { detailAgeBadge } from '@/lib/age-badge'
+import { detailPriceBadge } from '@/lib/price'
+import { inferenceDisclosure } from '@/lib/inference-disclosure'
+import { trackEvent } from '@/lib/analytics'
 
 interface SupervisionBadge {
   bg: string
@@ -60,6 +63,8 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
     setLiked(nowLiked)
     if (nowLiked) {
       localStorage.setItem(`attending_${event.id}`, '1')
+      // attending_tap — toggle-ON only (Converted step); never on un-attend
+      trackEvent('attending_tap', { source: event.source, event_id: event.id })
     } else {
       localStorage.removeItem(`attending_${event.id}`)
     }
@@ -73,11 +78,15 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
     : null
 
   const detailAge = detailAgeBadge(event)
+  const detailPrice = detailPriceBadge(event)
+  const disclosure = inferenceDisclosure(event)
 
   const fmtGcal = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z')
   const locationStr = [event.location_name, event.location_address].filter(Boolean).join(', ')
 
   const downloadIcs = () => {
+    // calendar_add — "Add to Apple Calendar" is the ICS download (Converted step)
+    trackEvent('calendar_add', { method: 'ics', source: event.source, event_id: event.id })
     const fmt = (iso: string) => fmtGcal(iso)
     const start = fmt(event.start_datetime)
     const end = event.end_datetime ? fmt(event.end_datetime) : start
@@ -151,18 +160,17 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
       )}
 
       {/* Chip row — price, age, recurring (Sections 2, 6, 7) */}
-      {(event.is_free || event.price_text || detailAge || event.is_recurring) && (
+      {(detailPrice || detailAge || event.is_recurring) && (
         <div className="mb-4">
           <div className="flex flex-wrap items-center gap-2">
-            {event.is_free ? (
-              <span className="inline-block text-sm px-3 py-1 rounded-full font-medium" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>
-                Free admission
+            {detailPrice && (
+              <span
+                className="inline-block text-sm px-3 py-1 rounded-full font-medium"
+                style={{ backgroundColor: detailPrice.bg, color: detailPrice.color }}
+              >
+                {detailPrice.content}
               </span>
-            ) : event.price_text ? (
-              <span className="inline-block text-sm px-3 py-1 rounded-full font-medium" style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}>
-                Paid
-              </span>
-            ) : null}
+            )}
             {detailAge && (
               <span
                 className="inline-block text-sm px-3 py-1 rounded-full font-medium"
@@ -180,9 +188,9 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
               </span>
             )}
           </div>
-          {/* Inference disclosure — Play Frisco only (Section 6) */}
-          {detailAge?.disclosure && (
-            <div className="mt-1 text-xs text-gray-400">{INFERRED_TOOLTIP}</div>
+          {/* Single combined inference disclosure — age + price merged into one line (Definition A) */}
+          {disclosure && (
+            <div className="mt-1 text-xs text-gray-400">{disclosure}</div>
           )}
         </div>
       )}
@@ -248,6 +256,7 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
           })()}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => trackEvent('calendar_add', { method: 'google', source: event.source, event_id: event.id })}
           className="w-full text-center py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50 flex items-center justify-center gap-2"
           style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
         >
@@ -266,7 +275,7 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
         {(event.location_address || event.location_name) && (
           onGetDirections ? (
             <button
-              onClick={onGetDirections}
+              onClick={() => { trackEvent('directions_tap', { source: event.source, event_id: event.id }); onGetDirections() }}
               className="w-full text-center py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50"
               style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
             >
@@ -277,6 +286,7 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
               href={`https://maps.google.com/?q=${encodeURIComponent(event.location_address ?? event.location_name ?? '')}`}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackEvent('directions_tap', { source: event.source, event_id: event.id })}
               className="w-full text-center py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50"
               style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
             >
@@ -303,6 +313,8 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
 
         <button
           onClick={async () => {
+            // share_tap — tracked outside the funnel (Referral)
+            trackEvent('share_tap', { source: event.source, event_id: event.id })
             const shareData = {
               title: event.title,
               text: `${event.title} — ${new Date(event.start_datetime).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/Chicago' })}`,

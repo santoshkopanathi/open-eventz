@@ -12,7 +12,10 @@ export interface Event {
   location_address: string | null
   location_lat: number | null
   location_lng: number | null
-  is_free: boolean
+  // Derived display price (v1.2): true = free, false = paid, null = unknown/no badge.
+  // These are DERIVED from price_class via priceClassToFields() and stored so the events
+  // API can still filter on is_free. The source of truth is price_class below.
+  is_free: boolean | null
   price_text: string | null
   age_min: number | null
   age_max: number | null
@@ -28,18 +31,38 @@ export interface Event {
   age_buckets: AgeBucket[] | null
   age_confidence: AgeConfidence | null
   age_reasoning: string | null
+  // Play Frisco price inference (v1.2). Raw source of truth for the free-by-default policy;
+  // null for structured library sources (which are hardcoded is_free = true).
+  // price_confidence: 'confirmed' = explicit signal in text; 'inferred' = free-by-default.
+  price_class: PriceClass | null
+  price_confidence: PriceConfidence | null
+  price_reasoning: string | null
   ingested_at: string
   created_at: string
 }
 
 export type AgeBucket = 'toddler' | 'kids' | 'teen' | 'family'
 export type AgeConfidence = 'high' | 'medium' | 'low'
+export type PriceClass = 'free' | 'paid' | 'unknown'
+// 'confirmed' = an explicit price signal was found in the text (paid, or an explicit
+// free statement). 'inferred' = free-by-default (no signal) — rendered as "Free ✦".
+export type PriceConfidence = 'confirmed' | 'inferred'
 
 export interface AgeInference {
   kid_relevant: boolean
   age_buckets: AgeBucket[]
   confidence: AgeConfidence
   reasoning: string
+}
+
+// Combined Play Frisco inference — age relevance + price classification from a
+// single Claude call (v1.2). Price rides the existing age-inference request.
+// `price`/`price_confidence` here are the LLM's raw judgment BEFORE the deterministic
+// Layer 2/3 overrides in resolvePriceClass().
+export interface PlayFriscoInference extends AgeInference {
+  price: PriceClass
+  price_confidence: PriceConfidence
+  price_reasoning: string
 }
 
 export interface Venue {

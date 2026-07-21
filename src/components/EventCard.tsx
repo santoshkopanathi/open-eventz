@@ -2,6 +2,7 @@
 
 import type { Event } from '@/lib/types'
 import { cardAgeBadge } from '@/lib/age-badge'
+import { cardPriceBadge } from '@/lib/price'
 
 const SOURCE_LABELS: Record<string, string> = {
   'frisco-library': 'Frisco Library',
@@ -52,6 +53,7 @@ interface Props {
 export default function EventCard({ event, selected, onClick }: Props) {
   const emoji = CATEGORY_EMOJI[event.category ?? ''] ?? '🎉'
   const cardAge = cardAgeBadge(event)
+  const cardPrice = cardPriceBadge(event)
 
   return (
     <button
@@ -95,15 +97,15 @@ export default function EventCard({ event, selected, onClick }: Props) {
                     📋 Reg.
                   </span>
                 )}
-                {event.is_free ? (
-                  <span className="px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>
-                    Free
+                {cardPrice && (
+                  <span
+                    className="px-2 py-0.5 rounded-full font-medium whitespace-nowrap"
+                    style={{ backgroundColor: cardPrice.bg, color: cardPrice.color }}
+                    title={cardPrice.tooltip}
+                  >
+                    {cardPrice.content}
                   </span>
-                ) : event.price_text ? (
-                  <span className="px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}>
-                    Paid
-                  </span>
-                ) : null}
+                )}
                 {cardAge && (
                   <span
                     className="px-2 py-0.5 rounded-full font-medium whitespace-nowrap"

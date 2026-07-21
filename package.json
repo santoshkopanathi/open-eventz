@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "jest",
     "test:e2e": "playwright test",
+    "calibrate:price": "jest --config jest.calibration.config.ts",
     "typecheck": "tsc --noEmit",
     "prepare": "git config core.hooksPath .githooks || exit 0"
   },

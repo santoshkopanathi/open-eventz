@@ -16,10 +16,12 @@ export interface AgeBadge {
   text: string
 }
 
-// Full disclosure shown as a sub-label under an inferred badge in the DETAIL view (spec §6)
-export const INFERRED_TOOLTIP = 'Age range estimated from event description · not confirmed by source'
-// Shorter hover tooltip on the bare ✦ / ~ Family ✦ on CARDS (spec §2)
-export const CARD_INFERRED_TOOLTIP = 'Estimated from event description'
+// Single simplified hover tooltip shown on the ✦ marker on CARDS (list view, desktop). The
+// full, scenario-specific disclosure lives only in the DETAIL view and is composed by
+// inference-disclosure.ts (it combines age + price into one line). On mobile the ✦ has no
+// tooltip — the HTML `title` attribute is hover-only, so this shows on desktop and nothing on
+// mobile, where tapping the card opens the detail view instead.
+export const ESTIMATED_TOOLTIP = 'Estimated from description'
 
 // Structured / confirmed palette: muted gold
 const STRUCTURED_BG = '#F5F0DE'
@@ -113,18 +115,21 @@ export function cardAgeBadge(event: Event): RenderedBadge | null {
   const b = getAgeBadge(event)
   if (!b) return null
   if (b.kind === 'confirmed-family') return { content: 'Family', bg: b.bg, color: b.text }
-  if (b.kind === 'inferred-family') return { content: '~ Family ✦', tooltip: CARD_INFERRED_TOOLTIP, bg: b.bg, color: b.text }
-  if (b.kind === 'inferred-specific') return { content: '✦', tooltip: CARD_INFERRED_TOOLTIP, bg: b.bg, color: b.text }
+  // Inferred badges get the single simplified card tooltip; the full scenario-specific
+  // disclosure is detail-only (composed in inference-disclosure.ts).
+  if (b.kind === 'inferred-family') return { content: '~ Family ✦', tooltip: ESTIMATED_TOOLTIP, bg: b.bg, color: b.text }
+  if (b.kind === 'inferred-specific') return { content: '✦', tooltip: ESTIMATED_TOOLTIP, bg: b.bg, color: b.text }
   return null // structured-specific / structured-multi
 }
 
 /**
- * What the DETAIL view renders (spec §6): every kind. Inferred badges get the "~ … ✦" wrapper
- * and a disclosure sub-label. Pure so it's unit-testable.
+ * What the DETAIL view renders (spec §6): every kind, with the "~ … ✦" wrapper for inferred
+ * badges. The estimate DISCLOSURE line is no longer per-badge — it is composed once for the
+ * whole event (age + price) by inference-disclosure.ts. Pure so it's unit-testable.
  */
-export function detailAgeBadge(event: Event): (RenderedBadge & { disclosure: boolean }) | null {
+export function detailAgeBadge(event: Event): RenderedBadge | null {
   const b = getAgeBadge(event)
   if (!b) return null
   const content = b.inferred ? `~ ${b.label} ✦` : b.label
-  return { content, bg: b.bg, color: b.text, disclosure: b.inferred }
+  return { content, bg: b.bg, color: b.text }
 }

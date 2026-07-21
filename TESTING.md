@@ -15,6 +15,8 @@ CI runs all three automatically on push / PR — see `.github/workflows/ci.yml`.
 
 **Git hooks** (`core.hooksPath=.githooks`): `pre-commit` and `pre-push` both run `typecheck + unit` (fast, browser-free). **E2E is CI-only** — no hook runs it, so run `npm run test:e2e` manually before pushing UI changes, or rely on the CI `e2e` job.
 
+**LLM price calibration** (manual, costs money): `npm run calibrate:price` runs the real Claude model against the ground-truth set in `src/lib/__fixtures__/price-calibration.ts` and prints a pass/fail table. Run it when the price/age prompt or model changes, or when drift is suspected — NOT in CI. Needs `ANTHROPIC_API_KEY`. The deterministic half of the calibration set runs for free in the normal Jest suite.
+
 ## Test layers
 
 | Layer | Tool | Location | Covers |
