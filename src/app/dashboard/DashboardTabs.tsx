@@ -134,8 +134,8 @@ export default function DashboardTabs({ technical: t, functional: f }: { technic
                         <div className="text-[10px]" style={{ color: 'var(--color-text-3,#9A9898)' }}>{rate !== null ? <><span style={{ color: PERI, fontWeight: 600 }}>{pct(rate)}</span> {sub}</> : sub}</div>
                       </div>
                       <div className="flex-1">
-                        <div className="h-7 flex items-center justify-center text-[11px] font-bold text-white rounded" style={{ width: `${Math.max(20, Math.round((n / Math.max(1, fn.sessions)) * 100))}%`, background: color }}>{n}</div>
-                        {subs.length > 0 && <div className="flex gap-3 mt-1 flex-wrap text-[10px]" style={{ color: 'var(--color-text-3,#9A9898)' }}>{subs.map(([sl, sv]) => <span key={sl}>{sl}: <strong style={{ color: 'var(--color-text-2,#5A5868)' }}>{sv}</strong></span>)}</div>}
+                        <div className="h-9 flex items-center justify-center text-[11px] font-bold text-white mx-auto" style={{ width: `${Math.max(24, Math.round((n / Math.max(1, fn.sessions)) * 100))}%`, background: color, clipPath: 'polygon(0 0, 100% 0, 88% 100%, 12% 100%)' }}>{n}</div>
+                        {subs.length > 0 && <div className="flex gap-3 mt-1 flex-wrap justify-center text-[10px]" style={{ color: 'var(--color-text-3,#9A9898)' }}>{subs.map(([sl, sv]) => <span key={sl}>{sl}: <strong style={{ color: 'var(--color-text-2,#5A5868)' }}>{sv}</strong></span>)}</div>}
                       </div>
                     </div>
                     {idx < all.length - 1 && <div className="text-center text-xs text-gray-300 py-0.5 ml-36">↓</div>}
