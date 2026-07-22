@@ -16,9 +16,10 @@ function r(
   event_name: string,
   timestamp: number,
   channel: string,
-  event_id?: string
+  event_id?: string,
+  extra?: Partial<AnalyticsRow>
 ): AnalyticsRow {
-  return { visitor_id, session_id, event_name, timestamp, channel, event_id }
+  return { visitor_id, session_id, event_name, timestamp, channel, event_id, ...extra }
 }
 
 export const MEASUREMENT_FIXTURE: AnalyticsRow[] = [
@@ -26,10 +27,10 @@ export const MEASUREMENT_FIXTURE: AnalyticsRow[] = [
   r('v1', 's1', 'session_start', W1, 'organic'),
   r('v1', 's1', 'event_card_click', W1, 'organic', 'e1'),
   r('v1', 's1', 'detail_view', W1, 'organic', 'e1'),
-  r('v1', 's1', 'calendar_add', W1, 'organic', 'e1'),
+  r('v1', 's1', 'calendar_add', W1, 'organic', 'e1', { method: 'google' }),
   // s2 (v2, direct, W1) — engaged only (filter)
   r('v2', 's2', 'session_start', W1, 'direct'),
-  r('v2', 's2', 'filter_applied', W1, 'direct'),
+  r('v2', 's2', 'filter_applied', W1, 'direct', undefined, { city: 'frisco', filter_fields: 'ages' }),
   // s3 (v3, organic, W1) — intent (directions), not converted
   r('v3', 's3', 'session_start', W1, 'organic'),
   r('v3', 's3', 'event_card_click', W1, 'organic', 'e1'),
@@ -48,5 +49,5 @@ export const MEASUREMENT_FIXTURE: AnalyticsRow[] = [
   r('v6', 's7', 'session_start', W2, 'direct'),
   r('v6', 's7', 'event_card_click', W2, 'direct', 'e2'),
   r('v6', 's7', 'detail_view', W2, 'direct', 'e2'),
-  r('v6', 's7', 'calendar_add', W2, 'direct', 'e2'),
+  r('v6', 's7', 'calendar_add', W2, 'direct', 'e2', { method: 'ics' }),
 ]

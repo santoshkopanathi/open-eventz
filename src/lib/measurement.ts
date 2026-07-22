@@ -10,6 +10,9 @@ export interface AnalyticsRow {
   timestamp: number    // epoch ms — used for weekly bucketing
   channel?: string     // acquisition channel (organic/direct/referral/social), from session_start
   event_id?: string    // the Open Eventz event the action targeted — for the Top Events table
+  method?: string      // calendar_add: 'google' | 'ics' (Apple Calendar is the ICS download)
+  filter_fields?: string // filter_applied: comma-separated filter keys that changed (e.g. "ages,sources")
+  city?: string        // filter_applied: 'frisco' | 'plano'
 }
 
 // Funnel step level for each event. share_tap is intentionally ABSENT — Referral is tracked
@@ -90,6 +93,8 @@ export interface FunnelResult {
   intentRate: number       // intent / engaged
   conversionRate: number   // converted / intent
   subMetrics: {
+    cardClick: { count: number; pctOfEngaged: number }
+    filterApplied: { count: number; pctOfEngaged: number }
     detailView: { count: number; pctOfIntent: number }
     directions: { count: number; pctOfIntent: number }
     calendarAdd: { count: number; pctOfConverted: number }
@@ -102,7 +107,7 @@ export function computeFunnel(rows: AnalyticsRow[], channel?: string): FunnelRes
   const bySession = groupBy(scoped, r => r.session_id)
 
   let sessions = 0, engaged = 0, intent = 0, converted = 0
-  let dvSessions = 0, dirSessions = 0, calSessions = 0, attSessions = 0
+  let ccSessions = 0, faSessions = 0, dvSessions = 0, dirSessions = 0, calSessions = 0, attSessions = 0
 
   for (const [, srows] of bySession) {
     sessions++
@@ -112,6 +117,10 @@ export function computeFunnel(rows: AnalyticsRow[], channel?: string): FunnelRes
     if (maxStep >= 3) converted++
 
     const names = new Set(srows.map(r => r.event_name))
+    if (maxStep >= 1) {
+      if (names.has('event_card_click')) ccSessions++
+      if (names.has('filter_applied')) faSessions++
+    }
     if (maxStep >= 2) {
       if (names.has('detail_view')) dvSessions++
       if (names.has('directions_tap')) dirSessions++
@@ -128,12 +137,58 @@ export function computeFunnel(rows: AnalyticsRow[], channel?: string): FunnelRes
     intentRate: pct(intent, engaged),
     conversionRate: pct(converted, intent),
     subMetrics: {
+      cardClick: { count: ccSessions, pctOfEngaged: pct(ccSessions, engaged) },
+      filterApplied: { count: faSessions, pctOfEngaged: pct(faSessions, engaged) },
       detailView: { count: dvSessions, pctOfIntent: pct(dvSessions, intent) },
       directions: { count: dirSessions, pctOfIntent: pct(dirSessions, intent) },
       calendarAdd: { count: calSessions, pctOfConverted: pct(calSessions, converted) },
       attending: { count: attSessions, pctOfConverted: pct(attSessions, converted) },
     },
   }
+}
+
+// ---------------------------------------------------------------------------
+// Conversion actions breakdown (raw event counts) — reconciled to the app's ACTUAL
+// buttons: Google Calendar link, Apple Calendar (= ICS download), Attending tap.
+// ---------------------------------------------------------------------------
+export function conversionActionBreakdown(rows: AnalyticsRow[]): {
+  googleCalendar: number
+  appleCalendar: number // the ICS download
+  attending: number
+} {
+  let googleCalendar = 0, appleCalendar = 0, attending = 0
+  for (const r of rows) {
+    if (r.event_name === 'attending_tap') attending++
+    else if (r.event_name === 'calendar_add') {
+      if (r.method === 'google') googleCalendar++
+      else if (r.method === 'ics') appleCalendar++
+    }
+  }
+  return { googleCalendar, appleCalendar, attending }
+}
+
+// ---------------------------------------------------------------------------
+// Filter usage — how often each filter type and city is used, from filter_applied.
+// byField keys are the raw patch tokens (e.g. 'ages', 'sources', 'branches',
+// 'date_from'); the UI maps them to friendly labels.
+// ---------------------------------------------------------------------------
+export function filterUsage(rows: AnalyticsRow[]): {
+  byField: Record<string, number>
+  byCity: Record<string, number>
+  total: number
+} {
+  const byField: Record<string, number> = {}
+  const byCity: Record<string, number> = {}
+  let total = 0
+  for (const r of rows) {
+    if (r.event_name !== 'filter_applied') continue
+    total++
+    for (const f of (r.filter_fields ?? '').split(',').map(s => s.trim()).filter(Boolean)) {
+      byField[f] = (byField[f] ?? 0) + 1
+    }
+    if (r.city) byCity[r.city] = (byCity[r.city] ?? 0) + 1
+  }
+  return { byField, byCity, total }
 }
 
 // ---------------------------------------------------------------------------

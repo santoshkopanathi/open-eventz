@@ -34,6 +34,9 @@ export interface BqRow {
   timestamp_ms: number | string | null
   channel: string | null
   event_id: string | null
+  method: string | null
+  filter_fields: string | null
+  city: string | null
 }
 
 /** Pure: coerce a BigQuery row to an AnalyticsRow, or null if it's missing identity fields. */
@@ -46,6 +49,9 @@ export function mapBqRow(r: BqRow): AnalyticsRow | null {
     timestamp: Number(r.timestamp_ms ?? 0),
     channel: r.channel ?? undefined,
     event_id: r.event_id ?? undefined,
+    method: r.method ?? undefined,
+    filter_fields: r.filter_fields ?? undefined,
+    city: r.city ?? undefined,
   }
 }
 
@@ -73,7 +79,10 @@ export async function fetchAnalyticsRows(): Promise<AnalyticsFetch> {
       event_name,
       CAST(event_timestamp / 1000 AS INT64) AS timestamp_ms,
       IFNULL(traffic_source.medium, '(none)') AS channel,
-      (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'event_id') AS event_id
+      (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'event_id') AS event_id,
+      (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'method') AS method,
+      (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'fields') AS filter_fields,
+      (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'city') AS city
     FROM \`${projectId}.${DATASET}.events_*\`
     WHERE _TABLE_SUFFIX >= FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY))
   `

@@ -1,5 +1,7 @@
 import {
   computeFunnel,
+  conversionActionBreakdown,
+  filterUsage,
   weeklyActiveDiscoverers,
   returnVisitRate,
   referral,
@@ -46,6 +48,9 @@ describe('computeFunnel', () => {
   })
 
   test('sub-metrics (session-level, % of the step)', () => {
+    // Engaged breakdown: 4 of the 5 engaged sessions clicked a card; 1 applied a filter
+    expect(f.subMetrics.cardClick).toEqual({ count: 4, pctOfEngaged: 4 / 5 })
+    expect(f.subMetrics.filterApplied).toEqual({ count: 1, pctOfEngaged: 1 / 5 })
     expect(f.subMetrics.detailView).toEqual({ count: 3, pctOfIntent: 3 / 4 })
     expect(f.subMetrics.directions).toEqual({ count: 1, pctOfIntent: 1 / 4 })
     expect(f.subMetrics.calendarAdd).toEqual({ count: 2, pctOfConverted: 2 / 3 })
@@ -55,6 +60,20 @@ describe('computeFunnel', () => {
   test('empty input → all zeros, no divide-by-zero', () => {
     const z = computeFunnel([])
     expect(z).toMatchObject({ sessions: 0, engaged: 0, intent: 0, converted: 0, engagedRate: 0, intentRate: 0, conversionRate: 0 })
+  })
+})
+
+describe('conversionActionBreakdown', () => {
+  test('counts Google / Apple(ICS) calendar adds + attending taps by method', () => {
+    // s1 calendar_add method=google, s7 calendar_add method=ics, s4 attending_tap
+    expect(conversionActionBreakdown(MEASUREMENT_FIXTURE)).toEqual({ googleCalendar: 1, appleCalendar: 1, attending: 1 })
+  })
+})
+
+describe('filterUsage', () => {
+  test('counts filter_applied events by field token and city', () => {
+    // only s2 applied a filter: city=frisco, fields="ages"
+    expect(filterUsage(MEASUREMENT_FIXTURE)).toEqual({ byField: { ages: 1 }, byCity: { frisco: 1 }, total: 1 })
   })
 })
 
