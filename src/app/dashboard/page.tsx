@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase'
 import {
   inferredAgeVisibility,
@@ -79,7 +80,7 @@ export default async function DashboardPage() {
     <main className="min-h-full p-6 max-w-5xl mx-auto" style={{ color: 'var(--color-text)' }}>
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Open Eventz — Technical Dashboard</h1>
-        <p className="text-sm text-gray-500">Operational health of the ingest pipeline, data, and LLM inference. Reads live Supabase data.</p>
+        <p className="text-sm text-gray-500">Operational health of the ingest pipeline, data, and LLM inference. Reads live Supabase data. <Link href="/dashboard/functional" className="underline">Functional dashboard →</Link></p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
