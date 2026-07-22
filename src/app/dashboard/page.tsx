@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import {
   inferredAgeVisibility,
+  inferredPriceVisibility,
   lastIngest,
   ingestHistory,
   llmCost,
@@ -50,7 +51,7 @@ export default async function DashboardPage() {
     db.from('events').select('*', { count: 'exact', head: true }).eq('is_free', true),
     db.from('events').select('*', { count: 'exact', head: true }).eq('is_free', false),
     db.from('events').select('*', { count: 'exact', head: true }).is('is_free', null),
-    db.from('events').select('source, is_free, kid_relevant, age_buckets, age_confidence').eq('source', 'play-frisco'),
+    db.from('events').select('source, is_free, kid_relevant, age_buckets, age_confidence, price_class, price_confidence').eq('source', 'play-frisco'),
     db.from('ingest_runs').select('*').order('ran_at', { ascending: false }).limit(30),
   ])
 
@@ -65,7 +66,9 @@ export default async function DashboardPage() {
     paid: paid.count ?? 0,
     unknown: unknown.count ?? 0,
   }
-  const vis = inferredAgeVisibility((pfEventsRes.data ?? []) as unknown as Event[])
+  const pfEvents = (pfEventsRes.data ?? []) as unknown as Event[]
+  const vis = inferredAgeVisibility(pfEvents)
+  const priceVis = inferredPriceVisibility(pfEvents)
   const runs = (runsRes.data ?? []) as unknown as IngestRun[]
   const last = lastIngest(runs)
   const today = new Date().toISOString().slice(0, 10)
@@ -150,6 +153,29 @@ export default async function DashboardPage() {
             ))}
           </div>
           <p className="text-xs text-gray-400 mt-2">{vis.total} Play Frisco events · buckets sum to 100%.</p>
+        </Tile>
+      </div>
+
+      {/* Inferred price visibility */}
+      <div className="mt-4">
+        <Tile title="Play Frisco — inferred free vs paid">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {([
+              ['Free ✦ (inferred)', priceVis.freeInferred],
+              ['Free (Cost field)', priceVis.freeConfirmed],
+              ['Paid ✦ (inferred)', priceVis.paidInferred],
+              ['Paid (Cost field)', priceVis.paidConfirmed],
+              ['Unknown (no badge)', priceVis.unknown],
+            ] as [string, number][]).map(([label, n]) => (
+              <div key={label}>
+                <div className="text-2xl font-bold">{n} <span className="text-sm font-normal text-gray-500">{pct(n, priceVis.total)}</span></div>
+                <div className="text-xs text-gray-500">{label}</div>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-gray-400 mt-2">
+            {priceVis.total} Play Frisco events. The <strong>Free ✦ (inferred)</strong> bucket ({priceVis.freeInferred}) is the &ldquo;free by assumption&rdquo; exposure — free-by-default, not stated on the source.
+          </p>
         </Tile>
       </div>
 

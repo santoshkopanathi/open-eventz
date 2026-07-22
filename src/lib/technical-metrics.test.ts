@@ -2,6 +2,7 @@ import type { Event } from './types'
 import {
   perSourceCounts,
   inferredAgeVisibility,
+  inferredPriceVisibility,
   lastIngest,
   ingestHistory,
   llmCost,
@@ -51,6 +52,22 @@ describe('inferredAgeVisibility', () => {
     const v = inferredAgeVisibility(EVENTS)
     expect(v).toEqual({ family: 1, specific: 1, nothing: 1, hidden: 1, total: 4 })
     expect(v.family + v.specific + v.nothing + v.hidden).toBe(v.total)
+  })
+})
+
+describe('inferredPriceVisibility', () => {
+  test('splits Play Frisco price by confirmed (Cost field) vs inferred (✦), + unknown', () => {
+    const pf: Event[] = [
+      ev({ source: 'play-frisco', price_class: 'free', price_confidence: 'inferred' }),
+      ev({ source: 'play-frisco', price_class: 'free', price_confidence: 'confirmed' }),
+      ev({ source: 'play-frisco', price_class: 'paid', price_confidence: 'inferred' }),
+      ev({ source: 'play-frisco', price_class: 'paid', price_confidence: 'confirmed' }),
+      ev({ source: 'play-frisco', price_class: 'unknown', price_confidence: 'inferred' }),
+      ev({ source: 'frisco-library', is_free: true }), // not Play Frisco → ignored
+    ]
+    expect(inferredPriceVisibility(pf)).toEqual({
+      freeConfirmed: 1, freeInferred: 1, paidConfirmed: 1, paidInferred: 1, unknown: 1, total: 5,
+    })
   })
 })
 

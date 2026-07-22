@@ -23,7 +23,7 @@ export interface IngestRun {
 }
 
 // The event fields these metrics need (a subset of Event).
-type EventRow = Pick<Event, 'source' | 'is_free' | 'kid_relevant' | 'age_buckets' | 'age_confidence'>
+type EventRow = Pick<Event, 'source' | 'is_free' | 'kid_relevant' | 'age_buckets' | 'age_confidence' | 'price_class' | 'price_confidence'>
 
 // ---------------------------------------------------------------------------
 // Per-source event counts + free / paid / unknown totals (across all sources).
@@ -69,6 +69,32 @@ export function inferredAgeVisibility(events: EventRow[]): AgeVisibility {
     else nothing++
   }
   return { family, specific, nothing, hidden, total: pf.length }
+}
+
+// ---------------------------------------------------------------------------
+// Play Frisco — inferred free vs paid. Splits price by confirmed (structured Cost:
+// field, no ✦) vs inferred (LLM read, wears the ✦), plus unknown (no badge). The
+// `freeInferred` count is the "free by assumption" exposure (free-by-default, not stated).
+// ---------------------------------------------------------------------------
+export interface PriceVisibility {
+  freeConfirmed: number
+  freeInferred: number
+  paidConfirmed: number
+  paidInferred: number
+  unknown: number
+  total: number
+}
+
+export function inferredPriceVisibility(events: EventRow[]): PriceVisibility {
+  const pf = events.filter(e => e.source === 'play-frisco')
+  const v: PriceVisibility = { freeConfirmed: 0, freeInferred: 0, paidConfirmed: 0, paidInferred: 0, unknown: 0, total: pf.length }
+  for (const e of pf) {
+    const confirmed = e.price_confidence === 'confirmed'
+    if (e.price_class === 'free') confirmed ? v.freeConfirmed++ : v.freeInferred++
+    else if (e.price_class === 'paid') confirmed ? v.paidConfirmed++ : v.paidInferred++
+    else v.unknown++ // unknown / null -> no badge
+  }
+  return v
 }
 
 // ---------------------------------------------------------------------------
