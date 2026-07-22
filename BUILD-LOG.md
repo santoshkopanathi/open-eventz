@@ -962,8 +962,16 @@ Invoke-WebRequest -Uri "http://localhost:3000/api/infer-age" -Method POST `
 - **Family signal** — carried uniformly as `age_buckets = ['family']` for both Plano (explicit Communico tag, detected by `communicoIsFamily`) and Play Frisco (LLM); never derived from a numeric span.
 - **Age filtering** — `src/lib/age-filter.ts` `passesAgeFilter(event, ranges[])`, multi-select OR across selected chips; library events overlap-match, Play Frisco events match by inferred bucket + confidence gate.
 - **Recurring** — `src/lib/recurring.ts` `markRecurring(events)`, source-scoped title repetition.
-- **Data model** — added columns `kid_relevant boolean`, `age_buckets text[]`, `age_confidence text`, `age_reasoning text` (migration `002`).
-- **Planned (price):** fold 3-way `price` into the same inference call; make `is_free` nullable (`null = unknown → no badge`); keep the fixed keyword parser only as a paid-or-unknown fallback.
+- **Data model** — added columns `kid_relevant boolean`, `age_buckets text[]`, `age_confidence text`, `age_reasoning text` (migration `002`); v1.2 added `is_free` nullable + `price_class`/`price_confidence`/`price_reasoning` (migration `003`); `ingest_runs` table (migration `004`).
+
+**v1.2 — Technical dashboard** (`/dashboard`, server-rendered):
+- **Architecture** — server component reads live Supabase via the service-role client (server-side only; `ingest_runs` has RLS on so it's never exposed to the browser). All metric logic is pure functions in `src/lib/technical-metrics.ts` (fixture-tested).
+- **Ingest instrumentation** — `POST /api/ingest` writes one `ingest_runs` row per run (timing, per-source fetched, upserted, `llm_calls`, `llm_cost_usd`, status, errors). Best-effort — logging failure never fails the ingest. Status: `err` if `total_upserted = 0`, else `warn` if any errors, else `ok`.
+- **Counts via exact `COUNT` queries** — a plain PostgREST `.select()` caps at **1000 rows** (this caused an early "Play Frisco 0 / Total 1000" bug); fixed by using `{ count: 'exact', head: true }` per predicate. Only the small Play Frisco set is fetched in full for the visibility buckets.
+- **Metrics** — `perSourceCounts` (+ free/paid/unknown), `inferredAgeVisibility` (4 buckets), `inferredPriceVisibility` (5 buckets: free/paid × confirmed-Cost-field/inferred-`✦`, + unknown; the `Free ✦` inferred count = "free by assumption" exposure), `lastIngest`, `ingestHistory` (14-day worst-status-per-day), `llmCost` (last/cumulative/calls). Cost = `llm_calls × PER_INFERENCE_COST_USD` ($0.006/call estimate).
+- **Data caveat** — DB counts ≠ ingest-log counts: log = scraped-this-run (pre-dedup), counts = total DB rows; libraries accumulate (not purged), Play Frisco is purged to the current batch (so its two numbers match). LLM caching: a re-ingest of already-cached events makes 0 calls → $0.00 last run.
+
+**v1.2 — Analytics instrumentation + measurement framework** — see the v1.2 spec (Part 1) and the "Pending test cases" entry above. GA4 base tag (`next/script`), `trackEvent()`, 7 events; `src/lib/measurement.ts` metric functions (WAD, funnel, KPIs, return rate, referral, top events). **Functional dashboard** pending real BigQuery data (`open-eventz.analytics_546304403`) + a read key.
 
 ### g) Build-log status
 
