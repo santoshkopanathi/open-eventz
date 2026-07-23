@@ -95,6 +95,15 @@ export default function Home() {
     if (city === 'frisco') setFrisco({ sources: [], ages: [], ...defaultDates() })
     else setPlano({ branches: [], ages: [], ...defaultDates() })
   }
+  // Full reset to the initial home state — wired to the header logo/title (a "start over").
+  // Distinct from the mobile "‹ Back" button, which returns to the current filtered list.
+  const resetToHome = () => {
+    setCity('frisco')
+    setFrisco({ sources: [], ages: [], ...defaultDates() })
+    setPlano({ branches: [], ages: [], ...defaultDates() })
+    setSelected(null)
+    setMapOn(false)
+  }
   const active = city === 'frisco' ? frisco : plano
 
   // Infinite scroll: load next page when sentinel comes into view
@@ -118,13 +127,18 @@ export default function Home() {
     <div className="flex flex-col h-screen" style={{ backgroundColor: 'var(--color-bg)', color: 'var(--color-text)' }}>
       {/* Top bar */}
       <header style={{ backgroundColor: 'var(--color-primary)' }} className="flex-shrink-0 px-4 py-3 flex items-center gap-3">
-        <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={resetToHome}
+          className="flex items-center gap-2 text-left cursor-pointer"
+          aria-label="Open Eventz home — reset filters and show all events"
+        >
           <span className="text-2xl">🎈</span>
           <div>
             <div className="text-white font-bold text-xl tracking-tight leading-tight">Open Eventz</div>
             <div className="text-white/60 text-xs leading-tight">Free kids events in Frisco &amp; Plano, TX</div>
           </div>
-        </div>
+        </button>
         {/* Map toggle */}
         <button
           onClick={() => setMapOn(m => !m)}
@@ -315,13 +329,18 @@ export default function Home() {
             className="flex-shrink-0 flex items-center gap-3 px-4 py-3"
             style={{ backgroundColor: 'var(--color-primary)' }}
           >
-            <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={resetToHome}
+              className="flex items-center gap-2 text-left cursor-pointer"
+              aria-label="Open Eventz home — reset filters and show all events"
+            >
               <span className="text-2xl">🎈</span>
               <div>
                 <div className="text-white font-bold text-xl tracking-tight leading-tight">Open Eventz</div>
                 <div className="text-white/60 text-xs leading-tight">Free kids events in Frisco &amp; Plano, TX</div>
               </div>
-            </div>
+            </button>
           </div>
           {/* Back row — beneath the branding bar, directly above the event title */}
           <div
