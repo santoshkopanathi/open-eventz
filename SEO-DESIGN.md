@@ -1,6 +1,6 @@
 # Open Eventz — SEO Design (Concept, Functional & Technical)
 
-*Date: July 2026. Status: **built, verified locally, ready to deploy**. Written for a technical PM — concept first, then functional design, then technical design, then the decisions and how to talk about them.*
+*Date: July 2026. Status: **shipped — deployed to production and submitted to Google Search Console**. Written for a technical PM — concept first, then functional design, then technical design, then the decisions and how to talk about them.*
 
 ---
 
@@ -141,15 +141,32 @@ GA4 loads with `analytics_storage` **defaulted to `denied`** via an inline `gtag
 
 ---
 
-## 6. Deployment & what's pending
+## 6. Deployment & operations
 
+### Shipped
 - **Data vs. code decoupling holds:** the SEO surfaces read live Supabase; local and production share the same DB. Pages reflect real data immediately.
-- **Deploy:** push to `master` → Vercel `next build` → live (same CD path as the rest of the app).
-- **Pending from the PM:**
-  1. **Push** to deploy (this commit is code-only; Vercel auto-deploys on push).
-  2. Set `NEXT_PUBLIC_SITE_URL` on Vercel *only if* the production domain ever differs from `https://open-eventz.vercel.app` (the default).
-  3. **Google Search Console** — verify the domain, submit `sitemap.xml`, monitor indexing and Event rich-result eligibility. This is the step that actually turns the channel on.
-  4. **Later:** a GSC acquisition/search-funnel panel on the dashboard, once there is search data to show.
+- **Deployed to production (2026-07-23):** commit `da37b54` (SEO foundation) + `de46100` (Search Console HTML verification file), pushed to `master` → Vercel auto-built → live. Verified on the real domain: `/sitemap.xml` → 200, `application/xml`, **721 URLs**; `/robots.txt` → 200; `/frisco` → 200; event pages render valid Event JSON-LD.
+
+### Google Search Console (done)
+- **Property type: URL-prefix** `https://open-eventz.vercel.app` — *not* a Domain property (a Domain property needs DNS on the apex, and we don't control `vercel.app`'s DNS).
+- **Ownership verified via the HTML-file method** — `public/google8c83c891625775ad.html` (served at the site root by Next's `public/`, committed in `de46100`). **This file must stay in the repo** — deleting it un-verifies the property.
+- **Sitemap submitted:** `sitemap.xml`.
+
+### Operational notes (expected Search-Console behaviour)
+- **"Couldn't fetch" right after submitting a sitemap is normal, not a failure.** Google processes sitemaps **asynchronously** — a same-day submission shows a placeholder status with a blank "Last read" until Google's first pass (hours to ~a day), then flips to "Success." Our sitemap is also **dynamically generated** (queries the DB for all 721 events), so Google's very first fetch can hit a cold serverless function and time out once, then succeed on retry against the ISR-cached copy. Don't delete-and-resubmit; just wait.
+- **URL Inspection → "Request Indexing" / "Test Live URL" share a small per-property daily quota** ("Quota Exceeded" is Google-side, resets ~daily). These are optional *nudges* for individual URLs — **not required for indexing**; the submitted sitemap is the real discovery mechanism.
+
+### What to monitor (Google's clock from here)
+| Report | Signal | Timeline |
+|---|---|---|
+| **Pages** (Indexing) | how many URLs indexed vs. excluded, and why | days |
+| **Enhancements → Events** | is the Event JSON-LD valid + rich-result eligible | after first crawl |
+| **Performance** | queries / impressions / clicks (the search funnel) | ~1–3 weeks |
+
+### Still open / optional
+- Set `NEXT_PUBLIC_SITE_URL` on Vercel *only if* the production domain ever changes from `https://open-eventz.vercel.app` (the default).
+- **Later:** a GSC search-funnel panel on the dashboard, once Performance data exists.
+- **Optional follow-up:** rewire the in-app event cards to link to `/events/[id]` (today they open the in-app detail panel; the SEO pages are reached via direct URL / city pages / Google).
 
 ---
 
