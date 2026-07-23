@@ -94,14 +94,13 @@ export default function EventCard({ event, selected, onClick }: Props) {
               {/* Badge group — can shrink and wrap so it never overflows the card (min-w-0).
                   Registration + Recurring collapse to icon-only on mobile (text returns at sm+). */}
               <div className="min-w-0 flex flex-wrap items-center justify-end gap-1">
-                {event.registration_required && (
+                {cardAge && (
                   <span
                     className="px-2 py-0.5 rounded-full font-medium whitespace-nowrap"
-                    style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}
-                    title="Registration required"
-                    aria-label="Registration required"
+                    style={{ backgroundColor: cardAge.bg, color: cardAge.color }}
+                    title={cardAge.tooltip}
                   >
-                    📋<span className="hidden sm:inline"> Reg.</span>
+                    {cardAge.content}
                   </span>
                 )}
                 {cardPrice && (
@@ -113,13 +112,14 @@ export default function EventCard({ event, selected, onClick }: Props) {
                     {cardPrice.content}
                   </span>
                 )}
-                {cardAge && (
+                {event.registration_required && (
                   <span
                     className="px-2 py-0.5 rounded-full font-medium whitespace-nowrap"
-                    style={{ backgroundColor: cardAge.bg, color: cardAge.color }}
-                    title={cardAge.tooltip}
+                    style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}
+                    title="Registration required"
+                    aria-label="Registration required"
                   >
-                    {cardAge.content}
+                    📋<span className="hidden sm:inline"> Reg.</span>
                   </span>
                 )}
                 {event.is_recurring && (

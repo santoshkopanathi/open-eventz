@@ -163,20 +163,20 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
       {(detailPrice || detailAge || event.is_recurring) && (
         <div className="mb-4">
           <div className="flex flex-wrap items-center gap-2">
-            {detailPrice && (
-              <span
-                className="inline-block text-sm px-3 py-1 rounded-full font-medium"
-                style={{ backgroundColor: detailPrice.bg, color: detailPrice.color }}
-              >
-                {detailPrice.content}
-              </span>
-            )}
             {detailAge && (
               <span
                 className="inline-block text-sm px-3 py-1 rounded-full font-medium"
                 style={{ backgroundColor: detailAge.bg, color: detailAge.color }}
               >
                 {detailAge.content}
+              </span>
+            )}
+            {detailPrice && (
+              <span
+                className="inline-block text-sm px-3 py-1 rounded-full font-medium"
+                style={{ backgroundColor: detailPrice.bg, color: detailPrice.color }}
+              >
+                {detailPrice.content}
               </span>
             )}
             {event.is_recurring && (
