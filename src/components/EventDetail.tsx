@@ -181,7 +181,7 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
             )}
             {event.is_recurring && (
               <span
-                className="inline-block text-xs px-3 py-1 rounded-full font-medium border"
+                className="inline-block text-sm px-3 py-1 rounded-full font-medium border"
                 style={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-periwinkle)' }}
               >
                 ↻ Recurring
