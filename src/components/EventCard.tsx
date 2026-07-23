@@ -86,15 +86,22 @@ export default function EventCard({ event, selected, onClick }: Props) {
           </h3>
 
           <div className="mt-1 text-xs text-gray-500">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-start justify-between gap-2">
               {isMultiDay(event.start_datetime, event.end_datetime ?? null)
-                ? <span className="whitespace-nowrap">📅 {formatShortDate(event.start_datetime)} – {formatShortDate(event.end_datetime!)} · All day</span>
-                : <span className="whitespace-nowrap">🕐 {formatTime(event.start_datetime)}{event.end_datetime ? ` – ${formatTime(event.end_datetime)}` : ''}</span>
+                ? <span className="flex-shrink-0 whitespace-nowrap">📅 {formatShortDate(event.start_datetime)} – {formatShortDate(event.end_datetime!)} · All day</span>
+                : <span className="flex-shrink-0 whitespace-nowrap">🕐 {formatTime(event.start_datetime)}</span>
               }
-              <div className="flex-shrink-0 flex flex-wrap items-center justify-end gap-1">
+              {/* Badge group — can shrink and wrap so it never overflows the card (min-w-0).
+                  Registration + Recurring collapse to icon-only on mobile (text returns at sm+). */}
+              <div className="min-w-0 flex flex-wrap items-center justify-end gap-1">
                 {event.registration_required && (
-                  <span className="px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}>
-                    📋 Reg.
+                  <span
+                    className="px-2 py-0.5 rounded-full font-medium whitespace-nowrap"
+                    style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}
+                    title="Registration required"
+                    aria-label="Registration required"
+                  >
+                    📋<span className="hidden sm:inline"> Reg.</span>
                   </span>
                 )}
                 {cardPrice && (
@@ -119,8 +126,10 @@ export default function EventCard({ event, selected, onClick }: Props) {
                   <span
                     className="px-2 py-0.5 rounded-full font-medium border whitespace-nowrap"
                     style={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-periwinkle)' }}
+                    title="Recurring event"
+                    aria-label="Recurring event"
                   >
-                    ↻ Recurring
+                    ↻<span className="hidden sm:inline"> Recurring</span>
                   </span>
                 )}
               </div>

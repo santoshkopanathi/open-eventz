@@ -322,10 +322,16 @@ export default function Home() {
                 <div className="text-white/60 text-xs leading-tight">Free kids events in Frisco &amp; Plano, TX</div>
               </div>
             </div>
+          </div>
+          {/* Back row — beneath the branding bar, directly above the event title */}
+          <div
+            className="flex-shrink-0 px-4 py-2 border-b"
+            style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}
+          >
             <button
               onClick={() => setSelected(null)}
-              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-white/20"
-              style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.9)' }}
+              className="flex items-center gap-1.5 text-sm font-semibold"
+              style={{ color: 'var(--color-primary)' }}
             >
               ‹ Back
             </button>
