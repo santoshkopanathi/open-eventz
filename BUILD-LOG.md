@@ -980,3 +980,31 @@ Invoke-WebRequest -Uri "http://localhost:3000/api/infer-age" -Method POST `
 ### g) Build-log status
 
 This section *is* the v1.1 build-log update. Prior related entries: Decision 4 (Sonnet over Haiku), Decision 5 (shared inference function over HTTP chain), Decision 6 (mutual-exclusivity prompt rule), Learning 4 (fixture-didn't-match-reality parser bug).
+
+---
+
+## SEO Foundation — Per-Event Pages, Event JSON-LD, City Pages, Sitemap/Robots, Consent
+
+*Date: July 2026. Full concept + functional + technical design lives in **[`SEO-DESIGN.md`](./SEO-DESIGN.md)** — this is the concise log entry.*
+
+### What we built & why
+The app was a single client-rendered page — invisible to crawlers at the event level (one URL, one static `<title>`, events only in a JS-driven detail panel). The gating decision was **per-event indexable URLs**; everything else depends on it. Shipped the full foundation **plus** city landing pages and a consent banner (both PM-confirmed in scope):
+
+- **Per-event pages** `src/app/events/[id]/page.tsx` — React Server Component, `generateMetadata` (title/description/canonical/OG/Twitter), `notFound()` on a missing id, `robots: noindex` for non-indexable rows, `revalidate = 3600`. Content is fully server-rendered (the opposite of the `'use client'` home page — that's the point: crawlable HTML).
+- **Event JSON-LD** `src/lib/event-jsonld.ts` (pure) — schema.org/Event: name, start/end, Offline attendance, canonical `url`, `organizer`, HTML-stripped description, `image`, `location` (Place + `geo`), `typicalAgeRange`, price fields (see decision below). Highest-leverage surface — makes each event eligible for Google's Event rich card.
+- **City landing pages** `/frisco`, `/plano` — shared `src/components/CityLanding.tsx` (server): keyword-relevant intro + server-rendered event list + **ItemList** JSON-LD. Catch the broad local queries; event pages catch the long-tail.
+- **Sitemap + robots** `src/app/sitemap.ts` (home + 2 city + all upcoming indexable events, hourly ISR) and `src/app/robots.ts` (allow `/`, disallow `/api/` + `/dashboard`, link sitemap).
+- **Consistency gate** `src/lib/seo-indexable.ts` (pure, **no Supabase import** so it's unit-testable): `isIndexableEvent` mirrors the app's list gates (not-kid-relevant Play Frisco, `age_min ≥ 18`, Frisco adult-keyword list, past one-offs). Sitemap, city pages, and per-event `noindex` all call the one gate — they can never disagree. Supabase access split into `src/lib/seo-data.ts` (`getEventById`, `getIndexableEvents`).
+- **Consent Mode v2** — `layout.tsx` now sets `metadataBase`, a `title.template` (`%s | Open Eventz`), and an inline `gtag('consent','default',{analytics_storage:'denied'})` **before** the GA `config`; `src/components/ConsentBanner.tsx` (client) + `updateConsent`/`CONSENT_KEY` in `analytics.ts` flip consent on accept and remember it in `localStorage`. GA still runs cookieless when denied — the standard compliant pattern.
+
+### Decision — price in structured data (supersedes the scoping-doc rule)
+Emit the **free** signal whenever the app treats an event as free — **both confirmed AND inferred "Free ✦"** (`is_free === true` → `isAccessibleForFree: true` + `$0` Offer). Paid → `isAccessibleForFree: false`, no Offer (no numeric price stored). Unknown → price omitted. **Policy-safe** because the event page **visibly** shows the same "Free ✦" badge, so the markup matches the visible page (Google's requirement). The residual guessed-free risk is the accepted trade-off; reversible via one condition (`price_confidence === 'confirmed'`) — no re-ingest. This overrides the earlier "only emit price when confirmed" line in `02-product/open-eventz-seo-scoping.md`.
+
+### Verification
+Typecheck + `next build` clean (14 routes). **+28 unit tests → 216 total, green** (`event-jsonld.test.ts`, `seo-indexable.test.ts`, `site.test.ts`). Live (local dev, DOM-level): `/frisco` = 275 events + ItemList JSON-LD w/ canonical URLs; inferred-free event page = valid Event JSON-LD `isAccessibleForFree: true` + `$0` offer + visible "Free ✦"; paid event = `false`/no-offer; `robots.txt` correct; `sitemap.xml` = 721 URLs; consent banner shows, default `denied`.
+
+### Pending (PM)
+Push to deploy (Vercel auto-deploys from `master`) → **Google Search Console**: verify domain, submit `sitemap.xml`, monitor indexing + Event rich results (this turns the channel on). Optionally set `NEXT_PUBLIC_SITE_URL` on Vercel if the prod domain ever differs from the default. Later: GSC search-funnel panel on the dashboard. Note: in-app event cards still open the in-app panel (not rewired to `/events/[id]`) — optional follow-up.
+
+### How to talk about it
+*"The app was invisible to search at the event level. I gave every event its own server-rendered indexable URL, layered schema.org Event structured data on top — the highest-leverage move, because it makes each event eligible for Google's rich card — added city landing pages for broad local queries, and a dynamic sitemap. One pure, unit-tested gate decides what's indexable, so the sitemap and pages can't disagree. The one judgement call was price: we assert 'free' for confirmed and inferred-free alike, which is safe because the page visibly shows the same badge — and it's a one-line reversal."*

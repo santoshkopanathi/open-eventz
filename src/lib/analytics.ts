@@ -16,7 +16,7 @@ export type AnalyticsEvent =
   | 'attending_tap'    // Converted — Attending tapped (toggle-ON only)
   | 'share_tap'        // Referral  — Share tapped (outside the funnel)
 
-type GtagFn = (command: 'event' | 'config' | 'js', ...args: unknown[]) => void
+type GtagFn = (command: 'event' | 'config' | 'js' | 'consent', ...args: unknown[]) => void
 
 function getGtag(): GtagFn | null {
   if (typeof window === 'undefined') return null
@@ -35,4 +35,20 @@ export function trackEvent(
   const gtag = getGtag()
   if (!gtag) return
   gtag('event', event, params ?? {})
+}
+
+// localStorage key holding the user's consent choice ('granted' | 'denied').
+export const CONSENT_KEY = 'oe_consent'
+
+/**
+ * Update Google Consent Mode v2 for analytics storage. Called when the user accepts
+ * or declines the consent banner. Denied is the default (set in layout.tsx before the
+ * GA config runs), so GA4 only writes cookies / full identifiers after an explicit grant.
+ */
+export function updateConsent(granted: boolean): void {
+  const gtag = getGtag()
+  if (!gtag) return
+  gtag('consent', 'update', {
+    analytics_storage: granted ? 'granted' : 'denied',
+  })
 }
