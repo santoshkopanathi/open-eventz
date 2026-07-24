@@ -84,38 +84,6 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
   const fmtGcal = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z')
   const locationStr = [event.location_name, event.location_address].filter(Boolean).join(', ')
 
-  const downloadIcs = () => {
-    // calendar_add — "Add to Apple Calendar" is the ICS download (Converted step)
-    trackEvent('calendar_add', { method: 'ics', source: event.source, event_id: event.id })
-    const fmt = (iso: string) => fmtGcal(iso)
-    const start = fmt(event.start_datetime)
-    const end = event.end_datetime ? fmt(event.end_datetime) : start
-    const description = [event.description, event.event_url].filter(Boolean).join('\n\nMore info: ')
-    const ics = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//Open Eventz//EN',
-      'BEGIN:VEVENT',
-      `UID:${event.id}@openeventz`,
-      `DTSTART:${start}`,
-      `DTEND:${end}`,
-      `SUMMARY:${event.title}`,
-      `DESCRIPTION:${description.replace(/\n/g, '\\n')}`,
-      `LOCATION:${locationStr}`,
-      `URL:${event.event_url}`,
-      'END:VEVENT',
-      'END:VCALENDAR',
-    ].join('\r\n')
-
-    const blob = new Blob([ics], { type: 'text/calendar' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${event.title.slice(0, 40).replace(/[^a-z0-9]/gi, '-')}.ics`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
   return (
     <div className="p-5">
       {/* Title row */}
@@ -262,8 +230,11 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
         >
           📅 Add to Google Calendar
         </a>
-        <button
-          onClick={downloadIcs}
+        <a
+          href={`/api/ics/${event.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackEvent('calendar_add', { method: 'ics', source: event.source, event_id: event.id })}
           className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50"
           style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
         >
@@ -271,7 +242,7 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
             <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-37.5-155.5-127.4C46 790.7 0 663 0 541.8c0-207.8 135.4-317.8 268.5-317.8 69.2 0 126.9 45.7 170.1 45.7 41.8 0 108.8-48.4 188.4-48.4 30.5 0 138.5 2.6 207.8 99.2zm-156-181.5c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 135.5-71.3z"/>
           </svg>
           Add to Apple Calendar
-        </button>
+        </a>
         {(event.location_address || event.location_name) && (
           onGetDirections ? (
             <button
