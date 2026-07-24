@@ -232,8 +232,9 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
         </a>
         <a
           href={`/api/ics/${event.id}`}
-          target="_blank"
-          rel="noopener noreferrer"
+          // Same-tab on purpose: iOS shows the Add-to-Calendar overlay without navigating
+          // away (no leftover blank tab), and desktop downloads the .ics without navigating.
+          // Opening in a new tab (target="_blank") left a stray about:blank tab on iOS.
           onClick={() => trackEvent('calendar_add', { method: 'ics', source: event.source, event_id: event.id })}
           className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50"
           style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
