@@ -1013,3 +1013,23 @@ Set `NEXT_PUBLIC_SITE_URL` on Vercel only if the prod domain ever changes from t
 
 ### How to talk about it
 *"The app was invisible to search at the event level. I gave every event its own server-rendered indexable URL, layered schema.org Event structured data on top — the highest-leverage move, because it makes each event eligible for Google's rich card — added city landing pages for broad local queries, and a dynamic sitemap. One pure, unit-tested gate decides what's indexable, so the sitemap and pages can't disagree. The one judgement call was price: we assert 'free' for confirmed and inferred-free alike, which is safe because the page visibly shows the same badge — and it's a one-line reversal."*
+
+---
+
+## Add to Apple Calendar — text/calendar route (iOS fix)
+
+*Date: July 2026. Deployed (`ef6837d`, `859ea80`).*
+
+### The problem
+On iPhone, "Add to Apple Calendar" was a dead end. The button built the `.ics` as a client-side **Blob** and triggered it with an `<a download>`; iOS treats a blob download as a *file*, so it routed to the Files/Share sheet — where **Calendar isn't a share target**, so the user could never actually add the event.
+
+### The fix — serve it from a real URL as `text/calendar`
+- **New route `GET /api/ics/[eventId]`** (`src/app/api/ics/[eventId]/route.ts`): fetches the event (`getEventById`) and returns the ICS with `Content-Type: text/calendar; charset=utf-8` and `Content-Disposition: inline`. Because it's a real URL of a recognized calendar type (not a blob download), **iOS opens it straight into the Add-to-Calendar screen**. A 404 is returned for unknown ids.
+- **`src/lib/ics.ts`** (pure, extracted from the old inline builder): `buildIcs(event)` + `icsFilename(event)`. Hardened with **RFC 5545 TEXT escaping** (backslash, semicolon, comma, newlines — the old builder only escaped newlines, so any comma in a title/location like "…Library, Frisco" would have corrupted the field) and a `DTSTAMP`. Unit-tested (`ics.test.ts`, 8 cases; `dtstamp` injectable for determinism).
+- **EventDetail**: the button became an `<a href="/api/ics/[id]">` (analytics `calendar_add` / method `ics` preserved).
+
+### Follow-up — same-tab open
+First cut used `target="_blank"`, which on iOS opened the `.ics` in a **new tab** and left a stray `about:blank` tab after the Add sheet closed. Removed it → **same-tab**: iOS shows the Add overlay without navigating the app away (no leftover tab), and desktop just downloads the `.ics` (a non-displayable type, so the page doesn't navigate either). Verified end-to-end on a real iPhone.
+
+### The lesson
+An `<a download>` on a `blob:` URL and a link to a real `text/calendar` URL are handled very differently by iOS — the former is a file (→ Files/Share, no Calendar), the latter is a calendar document (→ Add-to-Calendar). For "add to calendar" links, serve a real URL with the right content type; don't generate the file client-side. And avoid `target="_blank"` for it, or iOS leaves an orphan tab.
