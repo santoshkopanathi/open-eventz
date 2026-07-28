@@ -1033,3 +1033,35 @@ First cut used `target="_blank"`, which on iOS opened the `.ics` in a **new tab*
 
 ### The lesson
 An `<a download>` on a `blob:` URL and a link to a real `text/calendar` URL are handled very differently by iOS — the former is a file (→ Files/Share, no Calendar), the latter is a calendar document (→ Add-to-Calendar). For "add to calendar" links, serve a real URL with the right content type; don't generate the file client-side. And avoid `target="_blank"` for it, or iOS leaves an orphan tab.
+
+---
+
+## Row Level Security (RLS) hardening — migration `005`
+
+*Date: 2026-07-23. Migration `supabase/migrations/005_enable_rls.sql`.*
+
+**The problem.** Supabase's linter flagged three **Critical** "RLS Disabled in Public" advisories on `events`, `like_counts`, and `supervision_policies`. These tables are reachable through PostgREST with the **anon key**, which is public by design (it ships in the site's client bundle). With RLS off, anyone holding it could read *and write* those tables directly, bypassing the app.
+
+**The fix (least privilege).** Traced how the app touches each table, then enabled RLS with the minimum policy each needs:
+- **events** — read by the anon key (events/venues/branches APIs + the SEO data layer). Enable RLS + a `SELECT`-only policy for `anon`. Writes (ingest) use the service-role key, which **bypasses RLS**, so they still work; anon cannot write.
+- **like_counts** — read/written **only** via the service role (`/api/likes`). Enable RLS with **no** anon policy → fully locked to the public; the server is unaffected.
+- **supervision_policies** — not queried by the app today. Enable RLS, no policy (locked). Add a `SELECT` policy later only if it's ever read client-side.
+
+**Verified after applying (production):** `/api/events` (1000), `/api/venues` (7), `/sitemap.xml` (721), `/api/likes/*` (200), `/dashboard` (200) all still work. The RLS change is user-applied in the Supabase SQL Editor (DB security is not changed from code); `005` is the record.
+
+**The lesson.** RLS state is independent of GitHub repo visibility — the anon key is already public via the deployed site, so "wide-open tables" is a live risk regardless of whether the source is public. Enable RLS on every PostgREST-exposed table and grant the anon role only what the client genuinely needs (usually read-only, often nothing).
+
+---
+
+## Test-scenario consolidation + doc↔test parity CI check
+
+*Date: 2026-07-23.*
+
+**Why.** Functional test scenarios had fragmented into three versioned docs (`02-product/functional-test-scenarios{,-v1.1-badges-filters,-v1.2-price-analytics}.md`), and the "covered by" links between a scenario and its test were prose maintained by hand — nothing stopped them drifting as code changed.
+
+**What we did.**
+- **Consolidated** all three into a single `06-app/TEST-SCENARIOS.md` (newest-wins, no duplication; tags `[A]`/`[R]`/`[M]` preserved). It lives in the **app repo** (next to the tests) so a CI job can verify it. Each `[A]` row names its covering test file inline. Added a **Zone 3** section backfilling scenarios that were automated but previously undocumented (SEO/JSON-LD, calendar/ICS, BigQuery). The three originals are archived under `02-product/*_archived.md`, with a pointer left at `02-product/functional-test-scenarios.md`.
+- **`doc-parity` CI job** (`scripts/check-doc-parity.mjs`, wired into `ci.yml` as a third job + `npm run test:docs`). It parses every `[A]` row, extracts the named test file, and fails CI if any no longer exists (or if an `[A]` row names none). First run: **66 `[A]` references, all present.**
+- Also corrected a stale scenario during the merge: base §6.4.2 ("Apple Calendar downloads a file") → now "opens the `/api/ics` `text/calendar` route" (`ics.test.ts`).
+
+**The lesson.** A test plan that claims coverage is only trustworthy if something enforces the claim. Co-locating the doc with the tests and adding a tiny parity check turns "we think this is covered" into "CI proves the named test still exists."

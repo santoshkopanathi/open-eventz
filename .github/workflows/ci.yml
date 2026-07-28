@@ -30,3 +30,15 @@ jobs:
       # /api/* is mocked in the tests, so no Supabase secrets are needed. The dev server boots
       # with the dummy env from playwright.config.ts.
       - run: npm run test:e2e
+
+  doc-parity:
+    name: Doc↔test parity
+    runs-on: ubuntu-latest
+    # Independent of unit/e2e — fails only if TEST-SCENARIOS.md names a test file that
+    # no longer exists, so the PM test plan can't silently drift from the real suite.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/check-doc-parity.mjs
