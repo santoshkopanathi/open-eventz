@@ -965,7 +965,7 @@ Invoke-WebRequest -Uri "http://localhost:3000/api/infer-age" -Method POST `
 - **Data model** — added columns `kid_relevant boolean`, `age_buckets text[]`, `age_confidence text`, `age_reasoning text` (migration `002`); v1.2 added `is_free` nullable + `price_class`/`price_confidence`/`price_reasoning` (migration `003`); `ingest_runs` table (migration `004`).
 
 **v1.2 — Technical dashboard** (`/dashboard`, server-rendered):
-- **Architecture** — server component reads live Supabase via the service-role client (server-side only; `ingest_runs` has RLS on so it's never exposed to the browser). All metric logic is pure functions in `src/lib/technical-metrics.ts` (fixture-tested).
+- **Architecture** — server component reads live Supabase via the service-role client (server-side only; `ingest_runs` is only ever touched by the service role — the ingest write and this dashboard read — never the anon key). *(Correction: this originally claimed `ingest_runs` "has RLS on"; it did not — migration 004 created it without RLS. RLS was actually enabled later in migration 006 — see the RLS entries below.)* All metric logic is pure functions in `src/lib/technical-metrics.ts` (fixture-tested).
 - **Ingest instrumentation** — `POST /api/ingest` writes one `ingest_runs` row per run (timing, per-source fetched, upserted, `llm_calls`, `llm_cost_usd`, status, errors). Best-effort — logging failure never fails the ingest. Status: `err` if `total_upserted = 0`, else `warn` if any errors, else `ok`.
 - **Counts via exact `COUNT` queries** — a plain PostgREST `.select()` caps at **1000 rows** (this caused an early "Play Frisco 0 / Total 1000" bug); fixed by using `{ count: 'exact', head: true }` per predicate. Only the small Play Frisco set is fetched in full for the visibility buckets.
 - **Metrics** — `perSourceCounts` (+ free/paid/unknown), `inferredAgeVisibility` (4 buckets), `inferredPriceVisibility` (5 buckets: free/paid × confirmed-Cost-field/inferred-`✦`, + unknown; the `Free ✦` inferred count = "free by assumption" exposure), `lastIngest`, `ingestHistory` (14-day worst-status-per-day), `llmCost` (last/cumulative/calls). Cost = `llm_calls × PER_INFERENCE_COST_USD` ($0.006/call estimate).
@@ -1050,6 +1050,12 @@ An `<a download>` on a `blob:` URL and a link to a real `text/calendar` URL are 
 **Verified after applying (production):** `/api/events` (1000), `/api/venues` (7), `/sitemap.xml` (721), `/api/likes/*` (200), `/dashboard` (200) all still work. The RLS change is user-applied in the Supabase SQL Editor (DB security is not changed from code); `005` is the record.
 
 **The lesson.** RLS state is independent of GitHub repo visibility — the anon key is already public via the deployed site, so "wide-open tables" is a live risk regardless of whether the source is public. Enable RLS on every PostgREST-exposed table and grant the anon role only what the client genuinely needs (usually read-only, often nothing).
+
+### Migration `006` — the table `005` missed (`ingest_runs`)
+
+*Date: 2026-07-26. Migration `supabase/migrations/006_enable_rls_ingest_runs.sql`.*
+
+Supabase re-flagged a Critical `rls_disabled_in_public` advisory *after* `005`. Root cause: `005` only covered the three tables the linter had flagged at that time (events, like_counts, supervision_policies); **`ingest_runs` (created in `004`) was never RLS-enabled** — and an earlier note in this log wrongly implied it was (now corrected above). `ingest_runs` is written by the ingest route and read by `/dashboard`, both via the service role, so the fix mirrors `like_counts`: **enable RLS, no policy** → locked to the public, service role bypasses, app unaffected. **The lesson (again): the RLS sweep must cover *every* PostgREST-exposed table, not just the ones a single linter run happened to list — re-run the advisor after any migration that adds a table.**
 
 ---
 
