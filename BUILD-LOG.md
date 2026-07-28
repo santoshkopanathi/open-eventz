@@ -1065,3 +1065,19 @@ An `<a download>` on a `blob:` URL and a link to a real `text/calendar` URL are 
 - Also corrected a stale scenario during the merge: base §6.4.2 ("Apple Calendar downloads a file") → now "opens the `/api/ics` `text/calendar` route" (`ics.test.ts`).
 
 **The lesson.** A test plan that claims coverage is only trustworthy if something enforces the claim. Co-locating the doc with the tests and adding a tiny parity check turns "we think this is covered" into "CI proves the named test still exists."
+
+---
+
+## CI result capture + observability posture
+
+*Date: 2026-07-23.*
+
+**Test results are now captured per run** (previously ephemeral — console + Actions logs only). `ci.yml` now:
+- runs unit tests with **coverage** (`--coverage`, currently **~96% lines / 94% statements**) and uploads the HTML + lcov report as a `coverage` artifact (30-day retention);
+- uploads the **Playwright HTML report** (+ `test-results/`) as an artifact;
+- writes a **per-job summary** (`$GITHUB_STEP_SUMMARY`) so each run shows type-check / unit / e2e / doc-parity outcomes at a glance;
+- a **CI status badge** is surfaced in the PM-repo README once the repo is public.
+
+**Observability — what's captured vs. the gap.** Persistent traces already exist for the two things that matter most operationally: the **ingest pipeline** (`ingest_runs` table, migration `004` — per-run timing, per-source counts, LLM calls + cost, status, errors → Technical dashboard) and **product usage** (GA4 → BigQuery → Functional dashboard). The gap is **production application-error tracking**: API-route exceptions currently live only in Vercel's ephemeral function logs. **Next step: Sentry** (`@sentry/nextjs`) — deferred because it needs a user-created Sentry project + DSN (a secret, stored in Vercel env, never in the repo). Scaffolding will land once the DSN exists.
+
+**The lesson.** "Tests pass" is only credible if the evidence is retrievable after the run. Uploading coverage + reports as artifacts and surfacing a per-run summary turns a green checkmark into an auditable record — and the honest observability story separates *what we already trace* (pipeline, usage) from *what's still a gap* (app errors).
