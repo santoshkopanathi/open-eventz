@@ -1059,6 +1059,18 @@ Supabase re-flagged a Critical `rls_disabled_in_public` advisory *after* `005`. 
 
 ---
 
+## CI fix — Jest config to plain JS (undeclared `ts-node`)
+
+*Date: 2026-07-26.*
+
+**The failure.** The CI "Type-check & unit tests" job was **red on every push** (E2E + doc-parity were green). `jest.config.ts` is a TypeScript config, which Jest parses via `ts-node` — but `ts-node` was never a declared dependency, so CI's clean `npm ci` didn't install it and Jest died before running a single test (`Cannot find package 'ts-node'`). It passed **locally** (and in the pre-commit/pre-push hooks) only because the local `node_modules` happened to have `ts-node` — a classic works-on-my-machine gap, and proof that **a green local hook is not a green CI**.
+
+**The fix.** Converted both Jest configs to plain JS (`jest.config.js`, `jest.calibration.config.js`) so nothing needs to compile the config file; updated the `calibrate:price` script to the `.js` path. `ts-jest` (the preset) still compiles the TypeScript *test* files — only the config format changed. 224 unit tests still pass; the calibration config validated via `--listTests` (no LLM call). No new dependency added.
+
+**The lesson.** Design away (or declare) every dependency the CI environment needs, and verify against a *clean* environment — not a local `node_modules` that has accumulated transitive packages. A `.ts` config quietly requires `ts-node`; a `.js` config requires nothing.
+
+---
+
 ## Test-scenario consolidation + doc↔test parity CI check
 
 *Date: 2026-07-23.*

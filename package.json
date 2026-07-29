@@ -9,7 +9,7 @@
     "lint": "eslint",
     "test": "jest",
     "test:e2e": "playwright test",
-    "calibrate:price": "jest --config jest.calibration.config.ts",
+    "calibrate:price": "jest --config jest.calibration.config.js",
     "test:docs": "node scripts/check-doc-parity.mjs",
     "typecheck": "tsc --noEmit",
     "prepare": "git config core.hooksPath .githooks || exit 0"
