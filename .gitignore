@@ -39,6 +39,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# Claude Code machine-local settings (holds local permission entries; not for the repo)
+.claude/settings.local.json
+
 # vercel
 .vercel
 

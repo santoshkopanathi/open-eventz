@@ -775,7 +775,7 @@ Enforcement is prompt-only — no deterministic post-processing was added, to ke
 ```powershell
 Invoke-WebRequest -Uri "http://localhost:3000/api/ingest" `
   -Method POST -TimeoutSec 600 `
-  -Headers @{ Authorization = "Bearer REDACTED" }
+  -Headers @{ Authorization = "Bearer YOUR_CRON_SECRET" }
 ```
 
 - [ ] Returns 200 with a JSON summary (events ingested per source, any errors)
