@@ -1071,6 +1071,16 @@ Supabase re-flagged a Critical `rls_disabled_in_public` advisory *after* `005`. 
 
 ---
 
+## Security — gated `/api/infer-age` before going public
+
+*Date: 2026-07-26.*
+
+`/api/infer-age` (a thin wrapper over the Play Frisco inference function, kept for curl/regression testing — *not* in the ingest→Claude path) was **unauthenticated** and calls the **paid Claude API** — an open **cost-DoS vector** on the live deployment: anyone could script POSTs to run up the Anthropic bill. Gated it behind the same `CRON_SECRET` bearer token as `/api/ingest` (401 without it). This vector existed **regardless of GitHub visibility** — it's a property of the live app, not the source — but it was fixed before making the code public, which lowers the bar to discover it. **Companion recommendation: rotate `CRON_SECRET` to a strong random value**, since the public source now shows the bearer-token scheme and the old value follows a guessable pattern.
+
+**The lesson.** Before making source public, audit every endpoint that costs money or writes data for auth — public code doesn't create the vulnerability, but it removes the obscurity that was accidentally hiding it. Security-through-obscurity is not security; the endpoint has to actually be gated.
+
+---
+
 ## Test-scenario consolidation + doc↔test parity CI check
 
 *Date: 2026-07-23.*
