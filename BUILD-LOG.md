@@ -1036,6 +1036,14 @@ An `<a download>` on a `blob:` URL and a link to a real `text/calendar` URL are 
 
 ---
 
+## Nav — logo/title resets to home
+
+*Date: 2026-07-23.*
+
+The header logo/title (desktop top bar **and** the mobile detail-view header) now performs a **full reset to the home state** — city → Frisco, all filters cleared, any open event closed, map off — the universal "click the logo to start over" affordance. Kept **distinct** from the mobile "‹ Back" button, which returns to the *current filtered* list: two different intents (Back = "return to my list"; logo = "start over"). The logos became real `<button>`s with aria-labels. Verified end-to-end in production (dirtied state → one logo click → home).
+
+---
+
 ## Row Level Security (RLS) hardening — migration `005`
 
 *Date: 2026-07-23. Migration `supabase/migrations/005_enable_rls.sql`.*
