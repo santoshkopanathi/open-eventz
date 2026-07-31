@@ -214,7 +214,7 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
               href={event.event_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full text-center py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50"
+              className="w-full text-center py-2.5 rounded-xl text-sm font-semibold border-2 transition-colors hover:bg-gray-50"
               style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
             >
               View on {sourceShortLabel(event.source)} ↗
@@ -223,7 +223,7 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
               href={gcalUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full text-center py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50"
+              className="w-full text-center py-2.5 rounded-xl text-sm font-semibold border-2 transition-colors hover:bg-gray-50"
               style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
             >
               📅 Add to Google Calendar
@@ -233,7 +233,7 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
                 href={`https://maps.google.com/?q=${encodeURIComponent(event.location_address ?? event.location_name ?? '')}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full text-center py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50"
+                className="w-full text-center py-2.5 rounded-xl text-sm font-semibold border-2 transition-colors hover:bg-gray-50"
                 style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
               >
                 🗺️ Get directions
@@ -241,12 +241,6 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
             )}
           </div>
         </article>
-
-        <footer className="mt-8 pt-6 border-t text-sm" style={{ borderColor: 'var(--color-border)' }}>
-          <Link href={`/${city}`} className="font-semibold hover:underline" style={{ color: 'var(--color-primary)' }}>
-            Browse more free kids events in {city === 'plano' ? 'Plano' : 'Frisco'} →
-          </Link>
-        </footer>
       </main>
     </div>
   )

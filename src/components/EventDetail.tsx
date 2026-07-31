@@ -204,7 +204,7 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
           href={event.event_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full text-center py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50 flex items-center justify-center gap-2"
+          className="w-full text-center py-2.5 rounded-xl text-sm font-semibold border-2 transition-colors hover:bg-gray-50 flex items-center justify-center gap-2"
           style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
         >
           View on {sourceShortLabel(event.source)} ↗
@@ -226,7 +226,7 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => trackEvent('calendar_add', { method: 'google', source: event.source, event_id: event.id })}
-          className="w-full text-center py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50 flex items-center justify-center gap-2"
+          className="w-full text-center py-2.5 rounded-xl text-sm font-semibold border-2 transition-colors hover:bg-gray-50 flex items-center justify-center gap-2"
           style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
         >
           📅 Add to Google Calendar
@@ -237,7 +237,7 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
           // away (no leftover blank tab), and desktop downloads the .ics without navigating.
           // Opening in a new tab (target="_blank") left a stray about:blank tab on iOS.
           onClick={() => trackEvent('calendar_add', { method: 'ics', source: event.source, event_id: event.id })}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50"
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border-2 transition-colors hover:bg-gray-50"
           style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
         >
           <svg viewBox="0 0 814 1000" width="14" height="14" fill="currentColor" aria-hidden="true" style={{ flexShrink: 0 }}>
@@ -249,7 +249,7 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
           onGetDirections ? (
             <button
               onClick={() => { trackEvent('directions_tap', { source: event.source, event_id: event.id }); onGetDirections() }}
-              className="w-full text-center py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50"
+              className="w-full text-center py-2.5 rounded-xl text-sm font-semibold border-2 transition-colors hover:bg-gray-50"
               style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
             >
               🗺️ Get directions
@@ -260,7 +260,7 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => trackEvent('directions_tap', { source: event.source, event_id: event.id })}
-              className="w-full text-center py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50"
+              className="w-full text-center py-2.5 rounded-xl text-sm font-semibold border-2 transition-colors hover:bg-gray-50"
               style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
             >
               🗺️ Get directions
