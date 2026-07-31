@@ -1117,3 +1117,17 @@ Supabase re-flagged a Critical `rls_disabled_in_public` advisory *after* `005`. 
 **Observability — what's captured vs. the gap.** Persistent traces already exist for the two things that matter most operationally: the **ingest pipeline** (`ingest_runs` table, migration `004` — per-run timing, per-source counts, LLM calls + cost, status, errors → Technical dashboard) and **product usage** (GA4 → BigQuery → Functional dashboard). The gap is **production application-error tracking**: API-route exceptions currently live only in Vercel's ephemeral function logs. **Next step: Sentry** (`@sentry/nextjs`) — deferred because it needs a user-created Sentry project + DSN (a secret, stored in Vercel env, never in the repo). Scaffolding will land once the DSN exists.
 
 **The lesson.** "Tests pass" is only credible if the evidence is retrievable after the run. Uploading coverage + reports as artifacts and surfacing a per-run summary turns a green checkmark into an auditable record — and the honest observability story separates *what we already trace* (pipeline, usage) from *what's still a gap* (app errors).
+
+---
+
+## Nav — event cards are shareable links; Share uses the event's own page
+
+*Date: 2026-07-31.*
+
+Connected the in-app browsing UX to the SEO per-event pages so a shareable link is reachable from anywhere, **without** sacrificing the list/panel/map flow:
+- **`EventCard` is now an `<a href="/events/[id]">`** (was a `<button>`). A plain left-click still `preventDefault()`s and opens the in-app detail panel (unchanged UX); **modifier / middle / right-click fall through** to native link behavior, so a user can open the event's own page in a new tab or copy its link. This also adds real internal links from the list into the indexable event pages.
+- **The detail Share button now shares `/events/[id]`** (via `eventUrl(event.id)`) instead of `event.event_url` (the original source page) — so sharing from the app produces *our* shareable, indexable event page.
+
+Verified on production: cards render as anchors, plain left-click opens the panel with no navigation, and Share copies the `open-eventz.vercel.app/events/…` URL.
+
+**The lesson.** To make a client-app view shareable without turning every click into a full navigation, make the element a real link and enhance the left-click (`preventDefault` → in-app view) while letting modifier-clicks pass through — you get SEO internal-linking, right-click "copy link", and open-in-new-tab for free, and the app UX is untouched.
