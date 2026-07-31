@@ -204,8 +204,8 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
           href={event.event_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full text-center py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
-          style={{ backgroundColor: 'var(--color-primary)' }}
+          className="w-full text-center py-2.5 rounded-xl text-sm font-semibold border transition-colors hover:bg-gray-50 flex items-center justify-center gap-2"
+          style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
         >
           View on {sourceShortLabel(event.source)} ↗
         </a>
