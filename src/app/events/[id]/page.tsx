@@ -129,10 +129,13 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6">
-        {/* Breadcrumb back to the city page */}
-        <nav className="text-sm mb-4" style={{ color: 'var(--color-periwinkle)' }}>
+        {/* Two clear exits — matters for someone who arrives on a shared link:
+            back into the main app, and to this city's full event list. */}
+        <nav className="text-sm mb-4 flex flex-wrap items-center gap-x-3 gap-y-1" style={{ color: 'var(--color-periwinkle)' }}>
+          <Link href="/" className="hover:underline font-medium">🏠 Open Eventz home</Link>
+          <span className="text-gray-300" aria-hidden="true">·</span>
           <Link href={`/${city}`} className="hover:underline">
-            ← All {city === 'plano' ? 'Plano' : 'Frisco'} kids events
+            View all {city === 'plano' ? 'Plano' : 'Frisco'} events →
           </Link>
         </nav>
 
