@@ -5,7 +5,7 @@ import type { Event } from '@/lib/types'
 import { getEventById } from '@/lib/seo-data'
 import { isIndexableEvent, startOfTodayCtIso } from '@/lib/seo-indexable'
 import { buildEventJsonLd } from '@/lib/event-jsonld'
-import { eventUrl, sourceCity, sourceOrg } from '@/lib/site'
+import { eventUrl, sourceCity, sourceOrg, sourceShortLabel } from '@/lib/site'
 import { detailPriceBadge } from '@/lib/price'
 import { detailAgeBadge } from '@/lib/age-badge'
 import { inferenceDisclosure } from '@/lib/inference-disclosure'
@@ -129,13 +129,22 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6">
-        {/* Two clear exits — matters for someone who arrives on a shared link:
-            back into the main app, and to this city's full event list. */}
-        <nav className="text-sm mb-4 flex flex-wrap items-center gap-x-3 gap-y-1" style={{ color: 'var(--color-periwinkle)' }}>
-          <Link href="/" className="hover:underline font-medium">🏠 Open Eventz home</Link>
-          <span className="text-gray-300" aria-hidden="true">·</span>
-          <Link href={`/${city}`} className="hover:underline">
-            View all {city === 'plano' ? 'Plano' : 'Frisco'} events →
+        {/* Two clear exits — matters for someone arriving on a shared link: back into the
+            main app (on this event's city), and to this city's full event list. */}
+        <nav className="mb-4 flex flex-wrap gap-2">
+          <Link
+            href={`/?city=${city}`}
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            style={{ backgroundColor: 'var(--color-primary)' }}
+          >
+            Open Eventz home
+          </Link>
+          <Link
+            href={`/${city}`}
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            style={{ backgroundColor: 'var(--color-primary)' }}
+          >
+            View all {city === 'plano' ? 'Plano' : 'Frisco'} events
           </Link>
         </nav>
 
@@ -208,7 +217,7 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
               className="w-full text-center py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
               style={{ backgroundColor: 'var(--color-primary)' }}
             >
-              View original event details →
+              View on {sourceShortLabel(event.source)} ↗
             </a>
             <a
               href={gcalUrl}

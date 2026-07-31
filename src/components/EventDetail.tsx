@@ -6,7 +6,7 @@ import { detailAgeBadge } from '@/lib/age-badge'
 import { detailPriceBadge } from '@/lib/price'
 import { inferenceDisclosure } from '@/lib/inference-disclosure'
 import { trackEvent } from '@/lib/analytics'
-import { eventUrl } from '@/lib/site'
+import { eventUrl, sourceShortLabel } from '@/lib/site'
 
 interface SupervisionBadge {
   bg: string
@@ -207,7 +207,7 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
           className="w-full text-center py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
           style={{ backgroundColor: 'var(--color-primary)' }}
         >
-          View event details →
+          View on {sourceShortLabel(event.source)} ↗
         </a>
         <a
           href={(() => {

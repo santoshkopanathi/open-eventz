@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { Event } from '@/lib/types'
 import { getIndexableEvents } from '@/lib/seo-data'
 import { cardPriceBadge } from '@/lib/price'
+import { cardAgeBadge } from '@/lib/age-badge'
 import { cityUrl, eventUrl, type CitySlug } from '@/lib/site'
 
 const TZ = 'America/Chicago'
@@ -77,6 +78,7 @@ export default async function CityLanding({ city }: { city: CitySlug }) {
           <ul className="flex flex-col gap-3">
             {events.map(event => {
               const price = cardPriceBadge(event)
+              const age = cardAgeBadge(event)
               return (
                 <li key={event.id}>
                   <Link
@@ -84,22 +86,37 @@ export default async function CityLanding({ city }: { city: CitySlug }) {
                     className="block rounded-xl border p-4 transition-colors hover:bg-gray-50"
                     style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-card)' }}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <h2 className="font-semibold text-base leading-snug" style={{ color: 'var(--color-text)' }}>
-                        {event.title}
-                      </h2>
-                      {price && (
-                        <span
-                          className="flex-shrink-0 inline-block text-xs px-2.5 py-1 rounded-full font-medium"
-                          style={{ backgroundColor: price.bg, color: price.color }}
-                        >
-                          {price.content}
-                        </span>
-                      )}
-                    </div>
+                    <h2 className="font-semibold text-base leading-snug" style={{ color: 'var(--color-text)' }}>
+                      {event.title}
+                    </h2>
                     <div className="text-sm text-gray-600 mt-1">📅 {shortWhen(event)}</div>
                     {event.location_name && (
                       <div className="text-sm text-gray-500 mt-0.5">📍 {event.location_name}</div>
+                    )}
+                    {/* Full badge set — same signals the app cards show */}
+                    {(price || age || event.registration_required || event.is_recurring) && (
+                      <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                        {price && (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: price.bg, color: price.color }}>
+                            {price.content}
+                          </span>
+                        )}
+                        {age && (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: age.bg, color: age.color }}>
+                            {age.content}
+                          </span>
+                        )}
+                        {event.registration_required && (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}>
+                            📋 Reg.
+                          </span>
+                        )}
+                        {event.is_recurring && (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-medium border" style={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-periwinkle)' }}>
+                            ↻ Recurring
+                          </span>
+                        )}
+                      </div>
                     )}
                   </Link>
                 </li>

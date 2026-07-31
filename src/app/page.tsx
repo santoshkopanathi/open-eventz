@@ -46,6 +46,13 @@ export default function Home() {
   const [frisco, setFrisco] = useState<FriscoState>(() => ({ sources: [], ages: [], ...defaultDates() }))
   const [plano, setPlano] = useState<PlanoState>(() => ({ branches: [], ages: [], ...defaultDates() }))
 
+  // Deep-link: /?city=plano (or frisco) preselects the city — used by the "Open Eventz home"
+  // link on shared event pages so a Plano event's link lands the app on Plano, not the default.
+  useEffect(() => {
+    const c = new URLSearchParams(window.location.search).get('city')
+    if (c === 'plano' || c === 'frisco') setCity(c)
+  }, [])
+
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   const fetchEvents = useCallback(async () => {
@@ -349,10 +356,10 @@ export default function Home() {
           >
             <button
               onClick={() => setSelected(null)}
-              className="flex items-center gap-1.5 text-sm font-semibold"
-              style={{ color: 'var(--color-primary)' }}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white transition-opacity hover:opacity-90"
+              style={{ backgroundColor: 'var(--color-primary)' }}
             >
-              ‹ Back
+              ‹ Back to list
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">

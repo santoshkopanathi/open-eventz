@@ -36,6 +36,17 @@ export function sourceOrg(source: EventSource): SourceOrg {
   return SOURCE_ORG[source]
 }
 
+// Short, human-facing source name for buttons/links (e.g. "View on Frisco Library ↗").
+const SOURCE_SHORT_LABEL: Record<EventSource, string> = {
+  'frisco-library': 'Frisco Library',
+  'plano-library': 'Plano Libraries',
+  'play-frisco': 'Play Frisco',
+}
+
+export function sourceShortLabel(source: EventSource): string {
+  return SOURCE_SHORT_LABEL[source]
+}
+
 /** The city a source belongs to — drives which landing page an event links back to. */
 export function sourceCity(source: EventSource): CitySlug {
   return source === 'plano-library' ? 'plano' : 'frisco'
