@@ -6,6 +6,7 @@ import { detailAgeBadge } from '@/lib/age-badge'
 import { detailPriceBadge } from '@/lib/price'
 import { inferenceDisclosure } from '@/lib/inference-disclosure'
 import { trackEvent } from '@/lib/analytics'
+import { eventUrl } from '@/lib/site'
 
 interface SupervisionBadge {
   bg: string
@@ -287,15 +288,16 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
           onClick={async () => {
             // share_tap — tracked outside the funnel (Referral)
             trackEvent('share_tap', { source: event.source, event_id: event.id })
+            const shareUrl = eventUrl(event.id)
             const shareData = {
               title: event.title,
               text: `${event.title} — ${new Date(event.start_datetime).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/Chicago' })}`,
-              url: event.event_url,
+              url: shareUrl,
             }
             if (navigator.share) {
               await navigator.share(shareData)
             } else {
-              await navigator.clipboard.writeText(event.event_url)
+              await navigator.clipboard.writeText(shareUrl)
               alert('Link copied to clipboard!')
             }
           }}

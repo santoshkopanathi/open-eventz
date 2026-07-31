@@ -56,9 +56,16 @@ export default function EventCard({ event, selected, onClick }: Props) {
   const cardPrice = cardPriceBadge(event)
 
   return (
-    <button
-      onClick={onClick}
-      className="w-full text-left rounded-xl p-4 border transition-all hover:shadow-md"
+    <a
+      href={`/events/${event.id}`}
+      onClick={(e) => {
+        // Plain left-click opens the in-app detail panel; modifier / middle clicks fall
+        // through so the browser can open the event's own page in a new tab or copy its link.
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return
+        e.preventDefault()
+        onClick()
+      }}
+      className="block w-full text-left rounded-xl p-4 border transition-all hover:shadow-md cursor-pointer"
       style={{
         backgroundColor: selected ? 'var(--color-primary-light)' : 'var(--color-card)',
         borderColor: selected ? 'var(--color-primary)' : 'var(--color-border)',
@@ -138,6 +145,6 @@ export default function EventCard({ event, selected, onClick }: Props) {
           </div>
         </div>
       </div>
-    </button>
+    </a>
   )
 }
