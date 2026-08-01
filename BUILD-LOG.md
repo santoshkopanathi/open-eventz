@@ -1131,3 +1131,23 @@ Connected the in-app browsing UX to the SEO per-event pages so a shareable link 
 Verified on production: cards render as anchors, plain left-click opens the panel with no navigation, and Share copies the `open-eventz.vercel.app/events/…` URL.
 
 **The lesson.** To make a client-app view shareable without turning every click into a full navigation, make the element a real link and enhance the left-click (`preventDefault` → in-app view) while letting modifier-clicks pass through — you get SEO internal-linking, right-click "copy link", and open-in-new-tab for free, and the app UX is untouched.
+
+---
+
+## Shared-link ergonomics — clear return paths + consistent event-page buttons
+
+*Date: 2026-08-01.*
+
+**Why.** Now that a per-event page (`/events/[id]`) is a shareable destination, a recipient who lands on it cold — often on a phone — had no obvious way back into the parent app, and the page's action controls had drifted into three different visual styles. This batch makes "where am I / how do I get back" obvious and normalizes the buttons.
+
+**What we did.**
+- **Two clear top links on the event page**, rendered as matching **filled primary buttons** (same size/font, no icons): **"Open Eventz home"** → `/?city={city}` and **"View all {city} events"** → `/{city}`. A shared-link visitor now has one obvious tap back to the whole app and one to the relevant city list.
+- **`?city=` deep-link on the home page.** The app reads `?city=frisco|plano` on load and pre-selects that city (filters remain fully usable), so "Open Eventz home" lands on the right city instead of a filterless default. Client-side only — the canonical URL and SEO are unaffected.
+- **City landing pages (`/frisco`, `/plano`) now show the full badge row** on every card (price, age, `📋 Reg.`, `↻ Recurring`), matching the main list; removed the redundant top-right price span.
+- **Prominent mobile Back.** The mobile detail "‹ Back" became a solid, bold **"‹ Back to list"** button (white on primary) — a phone visitor arriving via a shared link needs an unmissable return to the list.
+- **Renamed the source button** "View event details →" → **"View on {source} ↗"** (e.g. "View on Frisco Library ↗") so it's clear the link leaves the app for the original source.
+- **Normalized the four action buttons** (View on source / Add to Google Calendar / Add to Apple Calendar / Get directions): the source button was changed from a filled primary to an **outlined** style to match the other three, then all four were given a **thicker border** (`border-2`), and the "Browse more free kids events in {city} →" footer was removed.
+
+Applied in both `src/app/events/[id]/page.tsx` (server page) and `src/components/EventDetail.tsx` (in-app panel) so the shared page and the in-app view stay consistent; `sourceShortLabel()` in `src/lib/site.ts` maps each source to a friendly name.
+
+**The lesson.** A view that becomes shareable inherits a new requirement its in-app ancestor never had: the visitor may have **no navigational context**. Explicit "back to app / back to city" affordances and an unmissable mobile Back matter more on a cold-landed page than they ever did inside the browsing flow — and once controls are seen out of context, visual consistency stops being polish and becomes legibility.
