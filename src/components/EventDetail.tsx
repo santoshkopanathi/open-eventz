@@ -3,33 +3,11 @@
 import { useEffect, useState } from 'react'
 import type { Event } from '@/lib/types'
 import { detailAgeBadge } from '@/lib/age-badge'
+import { getSupervisionBadge } from '@/lib/supervision'
 import { detailPriceBadge } from '@/lib/price'
 import { inferenceDisclosure } from '@/lib/inference-disclosure'
 import { trackEvent } from '@/lib/analytics'
 import { eventUrl, sourceShortLabel } from '@/lib/site'
-
-interface SupervisionBadge {
-  bg: string
-  text: string
-  label: string
-}
-
-function getFriscoSupervision(ageMin: number | null, ageMax: number | null): SupervisionBadge {
-  // Teens (13+) — no adult required
-  if (ageMin !== null && ageMin >= 13) {
-    return { bg: '#D1FAE5', text: '#065F46', label: '✅ Can kids be dropped off? Yes — teens 13+ may attend alone' }
-  }
-  // Toddlers / young kids only (age_max ≤ 9) — adult must stay
-  if (ageMax !== null && ageMax <= 9) {
-    return { bg: '#FEE2E2', text: '#991B1B', label: '❌ Can kids be dropped off? No — adult must stay with child' }
-  }
-  // Mixed 6–12 group — straddles the 10-year policy threshold
-  if (ageMin !== null && ageMax !== null) {
-    return { bg: '#DBEAFE', text: '#1E40AF', label: '🔵 Can kids be dropped off? Only if child is 10 or older (Frisco Library policy)' }
-  }
-  // Unknown age data
-  return { bg: '#F3F4F6', text: '#374151', label: '⚠️ Can kids be dropped off? Check with Frisco Library' }
-}
 
 const TZ = 'America/Chicago'
 
@@ -74,9 +52,7 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
     setLikes(data.count)
   }
 
-  const supervisionBadge = event.source === 'frisco-library'
-    ? getFriscoSupervision(event.age_min ?? null, event.age_max ?? null)
-    : null
+  const supervisionBadge = getSupervisionBadge(event)
 
   const detailAge = detailAgeBadge(event)
   const detailPrice = detailPriceBadge(event)
@@ -171,10 +147,11 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
         </div>
       )}
 
-      {/* Supervision badge — Frisco Library only */}
+      {/* Supervision "can kids be dropped off?" badge — all sources (src/lib/supervision.ts) */}
       {supervisionBadge && (
-        <div className="rounded-lg px-3 py-2 mb-4 text-xs font-semibold" style={{ backgroundColor: supervisionBadge.bg, color: supervisionBadge.text }}>
-          {supervisionBadge.label}
+        <div className="rounded-lg px-3 py-2 mb-4" style={{ backgroundColor: supervisionBadge.bg, color: supervisionBadge.text }}>
+          <div className="text-xs font-semibold">{supervisionBadge.label}</div>
+          {supervisionBadge.sub && <div className="text-[11px] font-normal mt-0.5 opacity-90">{supervisionBadge.sub}</div>}
         </div>
       )}
 

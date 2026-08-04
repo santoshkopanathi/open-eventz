@@ -696,6 +696,29 @@ The performance concern was also overstated: ingest runs as a background job, no
 
 ---
 
+### Learning 5 — A shipped, differentiating feature was refactored away before the code was under version control — and left no trace
+
+**Date:** August 2026
+
+**What was lost:** The supervision "Can kids be dropped off?" badge once rendered for **all three sources** — Frisco (derived from the event's age range), Plano ("No age requirement — parent's discretion (Plano Library)"), and Play Frisco ("Check with venue before dropping off") — driven by the seeded `supervision_policies` table. Today it renders for **Frisco Library only** (`EventDetail.tsx`, gated on `source === 'frisco-library'`); Plano and Play Frisco events show no supervision line at all. The drop-off flag is the product's single most differentiated feature, so this quietly amputated two-thirds of its coverage.
+
+**How we discovered it:** Not from a test or an alert — by eye, weeks later, when old screenshots showed the badge on Plano and Play Frisco events that no longer had it.
+
+**Root cause:** The table-driven, all-source display existed only in the **pre-git working directory**. It was refactored to a Frisco-only inline function (`getFriscoSupervision`) **before the repo's first commit** (`d6a6f3d`, 2026-07-06 — a 35-file / 9.6k-line "git init on an existing project" seed). Git therefore *never contained* the all-source version: there is no diff to point at and nothing to recover from history. The `supervision_policies` table and `SupervisionPolicy` type survive as orphaned scaffolding, never queried by the app.
+
+**A false trail (worth logging):** the first two root-cause theories were both wrong. We initially blamed the 2026-07-26 secret-scrub history rewrite (`git filter-branch` + force-push). But that rewrite preserved all 45 commits — it only strips a leaked secret, not code — and the loss predated the very first commit. The correct cause surfaced only on the third pass, by disproving the earlier theories against the commit record rather than trusting the most plausible story.
+
+**Why nothing caught it:** (1) the supervision logic lived **inline in a component**, not extracted to `src/lib/*`, so it had no unit test asserting per-source behavior — a violation of our own testing rule; (2) the E2E smoke test mocks `/api` and never asserted the badge per source; (3) the BUILD-LOG recorded the **end-state** ("the Frisco badge is age-derived") rather than the **transition** ("we replaced the all-source table display with a Frisco-only one, and here's why"), so the loss healed over in the docs and looked intentional.
+
+**The fix / what we'd do differently:**
+- **Commit to version control before refactoring, not after "ready."** The entire June→July-6 build had no history; a working feature died in exactly that unversioned window with no record it existed.
+- **Point the strongest guardrail at the differentiator.** Extract supervision to `src/lib/supervision.ts` (pure), add a per-source unit test (Frisco derived / Plano discretion / Play Frisco check-with-venue), and register it in TEST-SCENARIOS with a doc-parity `[A]` tag so a removal turns CI red.
+- **Log the delta, not just the current state**, so a feature that starts doing less leaves a visible trail.
+
+**The lesson:** Guardrails only guard what you point them at — and a month of un-versioned work is a month where any refactor can silently delete something you'll miss later. Regressions rarely announce themselves; they ride in on legitimate improvements (here, a real Frisco-specific upgrade that dropped the other two sources as collateral). Resilience comes from not needing every safeguard to work at once: version control from day one, a test on every load-bearing feature, and a decision log that records change — any one of them alone would have saved this.
+
+---
+
 ---
 
 ### Decision 4 — Play Frisco LLM inference: claude-sonnet-4-6 over claude-haiku-4-5

@@ -202,10 +202,12 @@ Cards show only "Family" (confirmed or inferred) and the bare inferred marker; s
 | 12.4 | Click close (desktop) | Panel closes; welcome panel shown | [R] |
 | 12.5 | Free / paid detail | "Free admission" / "Paid" pill (see §6 for `✦` rules) | [R] |
 | 12.6 | Registration required | Yellow registration banner | [R] |
-| 12.7 | Supervision badge — Frisco age 0–9 | Red "adult must stay" badge | [R] |
-| 12.8 | Supervision badge — Frisco age 10+ | Blue "drop-off OK for 10+" badge | [R] |
-| 12.9 | Supervision badge — Frisco teens 13–17 | Green "teens may attend alone" badge | [R] |
-| 12.10 | Supervision badge — Plano / Play Frisco | No supervision badge | [R] |
+| 12.7 | Supervision badge — Frisco age 0–9 | Red "adult must stay" badge | [A] [R] · supervision.test.ts |
+| 12.8 | Supervision badge — Frisco age 10+ | Blue "only if child is 10 or older" badge | [A] [R] · supervision.test.ts |
+| 12.9 | Supervision badge — Frisco teens 13–17 | Green "teens 13+ may attend alone" badge | [A] [R] · supervision.test.ts |
+| 12.10 | Supervision badge — Plano (any age) | Blue "Plan to stay" badge + "no formal Plano Library policy" sub-line (never a hard age cutoff) | [A] [R] · supervision.test.ts |
+| 12.10a | Supervision badge — Play Frisco (any) | Grey "Check with venue" badge + "before dropping off" sub-line | [A] [R] · supervision.test.ts |
+| 12.10b | Supervision badge — every source renders one | No source silently drops out (regression: Learning 5 / Challenge 16) | [A] · supervision.test.ts |
 | 12.11 | Add to Google Calendar | Opens Google Calendar link, event pre-filled | [R] |
 | 12.12 | Add to Apple Calendar | Opens the `/api/ics/[id]` `text/calendar` route → iOS opens Add-to-Calendar (no file download) | [A] [R] · ics.test.ts |
 | 12.13 | Get directions | Opens directions with venue address | [R] |
