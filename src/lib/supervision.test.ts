@@ -58,6 +58,12 @@ describe('getSupervisionBadge — Play Frisco (Tier 3, unverified)', () => {
   })
 })
 
+describe('getSupervisionBadge — no source match', () => {
+  test('unrecognised source → no supervision badge (null)', () => {
+    expect(getSupervisionBadge(ev({ source: 'unknown-source' as unknown as EventSource }))).toBeNull()
+  })
+})
+
 describe('getSupervisionBadge — coverage guard (regression for the silently-dropped-source bug)', () => {
   // Record<EventSource, true> forces a compile error if a new source is added without being
   // listed here; the runtime loop then asserts each one actually renders a badge.

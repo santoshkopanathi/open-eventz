@@ -1,13 +1,15 @@
-import type { Event, EventSource } from './types'
+import type { Event } from './types'
 
 // The supervision "Can kids be dropped off?" badge shown on the event DETAIL view.
 //
 // This logic was previously inline in EventDetail and gated to Frisco Library only; the
 // Plano and Play Frisco branches were silently lost in a pre-git refactor and shipped
 // blank for weeks (see BUILD-LOG "Learning 5" / interview Challenge 16). It now lives here
-// as pure, per-source, unit-tested logic so a source can never silently drop out again —
-// getSupervisionBadge uses an EXHAUSTIVE switch with no default, so adding a new EventSource
-// won't compile until its supervision display is deliberately decided.
+// as pure, per-source, unit-tested logic so a source can never silently drop out again.
+// getSupervisionBadge returns null for an unrecognised source (graceful — no badge on bad
+// data). The guarantee that every REAL source renders a badge is enforced by the
+// Record<EventSource, true> completeness test in supervision.test.ts, which fails CI if a
+// new source is added without a case.
 
 export interface SupervisionBadge {
   bg: string
@@ -56,16 +58,19 @@ const PLAY_FRISCO_SUPERVISION: SupervisionBadge = {
 
 /**
  * Supervision / drop-off badge for the event detail view, resolved per source.
- * Exhaustive over EventSource — a new source must be handled explicitly (compile error otherwise).
+ * Returns null for an unrecognised source (renders no badge — safe on bad data). Every KNOWN
+ * EventSource must return a badge; that is enforced by the completeness test in
+ * supervision.test.ts, not by the compiler.
  */
 export function getSupervisionBadge(event: Event): SupervisionBadge | null {
-  const source: EventSource = event.source
-  switch (source) {
+  switch (event.source) {
     case 'frisco-library':
       return friscoSupervision(event.age_min ?? null, event.age_max ?? null)
     case 'plano-library':
       return PLANO_SUPERVISION
     case 'play-frisco':
       return PLAY_FRISCO_SUPERVISION
+    default:
+      return null
   }
 }

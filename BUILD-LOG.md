@@ -7,6 +7,8 @@
 Each entry explains: **what we built**, **why we built it**, and **how to talk about it**. 
 Use this to prep for portfolio conversations, interviews, or stakeholder demos.
 
+**Documentation convention (adopted 2026-08-04):** when a feature *changes*, don't just overwrite the description with the new end state. Record the **initial situation**, the **reason for the change**, and the **change itself** — so a later reader (or the next refactor) can see how and why something evolved, not only where it landed. A silently-dropped feature (see "Learning 5") is exactly what an outcomes-only log hides.
+
 ---
 
 ## High-Level Technical Design
@@ -547,7 +549,15 @@ Because BiblioCommons sometimes mislabels adult programs in children feeds, a ke
 2. **API layer** — when `source=frisco-library` and an age filter is active, the same keywords are filtered out of results in JavaScript after the DB query. This catches any events that slipped through before the ingest fix was applied.
 
 ### Drop-off policy badge
-The supervision badge shown on each Frisco Library event detail is derived from the event's stored `age_min`/`age_max` — not a generic per-source label:
+
+The supervision "can kids be dropped off?" badge is the product's key differentiator, so its history matters as much as its current shape (per the documentation convention above):
+
+- **Initially:** shown for **all three sources**, driven by a `supervision_policies` table — Frisco (age-derived), Plano ("no age requirement — parent's discretion"), Play Frisco ("check with venue").
+- **What changed:** during pre-git development the logic was refactored to a **Frisco-only inline function**, and the Plano/Play Frisco branches were dropped.
+- **Why it changed — and this is the important part:** **not a product decision; an unintentional regression.** The refactor improved Frisco (made it event-age-specific), but the other two sources fell out as collateral. Nothing tested or documented the loss, so it shipped blank for weeks.
+- **Rediscovered & restored (2026-08-04):** caught during product review (old screenshots showed the badges the live app no longer had). Logic extracted to `src/lib/supervision.ts` — pure, per-source, unit-tested — with all three sources restored and a completeness guard so no source can silently drop again. Full post-mortem in **"Learning 5"** below.
+
+**Current behaviour, per source.** Frisco Library — derived from the event's stored `age_min`/`age_max` (not a generic label):
 
 | Event age range | Badge shown |
 |---|---|
@@ -557,6 +567,9 @@ The supervision badge shown on each Frisco Library event detail is derived from 
 | No age data | ⚠️ Check with Frisco Library |
 
 Policy source: Frisco Public Library Service Policy §8.5 (2026).
+
+- **Plano Libraries** — 🔵 "Plan to stay": no formal drop-off policy (confirmed by phone across several branches); staff generally prefer a parent stay with younger kids or remain in the library. Deliberately **not** a hard age cutoff, since none officially exists.
+- **Play Frisco** — ⚠️ "Check with venue" + "before dropping off" (Tier 3, unverified).
 
 ### How to talk about it
 *"BiblioCommons doesn't expose age data in their HTML event listings — it's only on the individual event detail pages. For every upcoming event we fetch the detail page and scrape the 'Suitable for:' section, which tells us the exact audience combination. We then compute the age range union and store it as structured age_min/age_max fields. This lets us power a real age filter in the UI rather than relying on which feed the event happened to come from. We also discovered that BiblioCommons occasionally mislabels adult programs in children feeds, so we added a keyword blocklist at both the ingest and API layers as a safety net."*
