@@ -85,9 +85,8 @@ function FilterDropdown({ groupLabel, options, selected, accent, onChange }: {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors"
+        className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
         style={{
-          borderRadius: '999px',
           border: `1px solid ${active ? 'var(--color-accent)' : 'var(--color-border)'}`,
           backgroundColor: active ? 'var(--color-accent-tint)' : 'transparent',
           color: active ? 'var(--color-accent-text)' : 'var(--color-ink-70)',

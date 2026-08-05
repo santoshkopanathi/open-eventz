@@ -68,8 +68,8 @@ test('cards omit structured age ranges but keep Family / inferred markers (§1.1
   // inferred family + bare inferred marker present
   await expect(main.getByText('~ Family ✦').first()).toBeVisible()
   await expect(main.getByText('✦', { exact: true }).first()).toBeVisible()
-  // recurring badge present
-  await expect(main.getByText('↻ Recurring').first()).toBeVisible()
+  // recurring badge present (Weekend Paper: plain "Recurring", the ↻ symbol was removed)
+  await expect(main.getByText('Recurring').first()).toBeVisible()
 })
 
 test('inferred free Play Frisco event → "Free ✦" on card + ONE combined disclosure in detail (Def A)', async ({ page }) => {
@@ -131,7 +131,7 @@ test('Plano tab shows branch dropdown, confirmed gold "Family" badge (§1.3, §5
   await expect(page.getByRole('button', { name: /Branches/ })).toBeVisible()
   const familyBadge = page.locator('main').getByText('Family', { exact: true }).first()
   await expect(familyBadge).toBeVisible()
-  await expect(familyBadge).toHaveCSS('background-color', 'rgb(245, 240, 222)') // gold #F5F0DE
+  await expect(familyBadge).toHaveCSS('background-color', 'rgb(243, 237, 227)') // Weekend Paper fill-subtle #F3EDE3 (was gold #F5F0DE)
 })
 
 test('branch dropdown: one selected shows name, two show group + badge (§5.4, §5.5)', async ({ page }) => {
