@@ -235,10 +235,11 @@ export interface PriceBadge {
   text: string
 }
 
-const FREE_BG = '#D1FAE5'
-const FREE_TEXT = '#065F46'
-const PAID_BG = '#FEF3C7'
-const PAID_TEXT = '#92400E'
+// Weekend Paper: "Free" is the only green in the system; "Paid" is a neutral chip.
+const FREE_BG = '#E6EFE7'
+const FREE_TEXT = '#3F6248'
+const PAID_BG = '#F3EDE3'
+const PAID_TEXT = '#6E675C'
 
 /**
  * Resolves an event to its price badge, or null when nothing should show.

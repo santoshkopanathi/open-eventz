@@ -18,41 +18,46 @@ export interface SupervisionBadge {
   sub?: string    // optional second line: the policy detail / source / caveat
 }
 
+// Weekend Paper: supervision reads as a calm advisory (instruction, not alarm) — one neutral
+// treatment for every source, no emoji, no red-on-pink. The distinction lives in the text.
+const SUP_BG = '#F3EDE3'   // fill-subtle
+const SUP_TEXT = '#1F1B16' // ink
+
 // Frisco Public Library Service Policy §8.5 (2026): children aged 9 or younger must be
 // accompanied by an adult → 10-and-older may attend unattended. Derived from the event's
 // scraped age range, not a generic per-source label.
 function friscoSupervision(ageMin: number | null, ageMax: number | null): SupervisionBadge {
   // Teens (13+) — no adult required
   if (ageMin !== null && ageMin >= 13) {
-    return { bg: '#D1FAE5', text: '#065F46', label: '✅ Can kids be dropped off? Yes — teens 13+ may attend alone' }
+    return { bg: SUP_BG, text: SUP_TEXT, label: 'Can kids be dropped off? Yes — teens 13+ may attend alone' }
   }
   // Toddlers / young kids only (age_max ≤ 9) — adult must stay
   if (ageMax !== null && ageMax <= 9) {
-    return { bg: '#FEE2E2', text: '#991B1B', label: '❌ Can kids be dropped off? No — adult must stay with child' }
+    return { bg: SUP_BG, text: SUP_TEXT, label: 'Can kids be dropped off? No — adult must stay with child' }
   }
   // Mixed 6–12 group — straddles the 10-year policy threshold
   if (ageMin !== null && ageMax !== null) {
-    return { bg: '#DBEAFE', text: '#1E40AF', label: '🔵 Can kids be dropped off? Only if child is 10 or older (Frisco Library policy)' }
+    return { bg: SUP_BG, text: SUP_TEXT, label: 'Can kids be dropped off? Only if child is 10 or older (Frisco Library policy)' }
   }
   // Unknown age data — never guess a threshold
-  return { bg: '#F3F4F6', text: '#374151', label: '⚠️ Can kids be dropped off? Check with Frisco Library' }
+  return { bg: SUP_BG, text: SUP_TEXT, label: 'Can kids be dropped off? Check with Frisco Library' }
 }
 
 // Plano Libraries: no formal drop-off policy (confirmed by phone across several branches).
 // Staff generally prefer a parent stay with younger children, or remain in the library.
 // Rendered as gentle guidance — deliberately NOT a hard age cutoff, since none officially exists.
 const PLANO_SUPERVISION: SupervisionBadge = {
-  bg: '#DBEAFE',
-  text: '#1E40AF',
-  label: '🔵 Can kids be dropped off? Plan to stay',
+  bg: SUP_BG,
+  text: SUP_TEXT,
+  label: 'Can kids be dropped off? Plan to stay',
   sub: 'No formal Plano Library policy — staff generally prefer a parent stay with younger kids, or remain in the library.',
 }
 
 // Play Frisco: supervision policy unverified (Tier 3) — always defer to the venue.
 const PLAY_FRISCO_SUPERVISION: SupervisionBadge = {
-  bg: '#F3F4F6',
-  text: '#374151',
-  label: '⚠️ Can kids be dropped off? Check with venue',
+  bg: SUP_BG,
+  text: SUP_TEXT,
+  label: 'Can kids be dropped off? Check with venue',
   sub: 'Check with venue before dropping off.',
 }
 

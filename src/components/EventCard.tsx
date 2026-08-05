@@ -4,21 +4,6 @@ import type { Event } from '@/lib/types'
 import { cardAgeBadge } from '@/lib/age-badge'
 import { cardPriceBadge } from '@/lib/price'
 
-const SOURCE_LABELS: Record<string, string> = {
-  'frisco-library': 'Frisco Library',
-  'plano-library': 'Plano Libraries',
-  'play-frisco': 'Play Frisco',
-}
-
-const CATEGORY_EMOJI: Record<string, string> = {
-  library: '📚',
-  'parks-rec': '🌳',
-  arts: '🎨',
-  stem: '🔬',
-  sports: '⚽',
-  music: '🎵',
-}
-
 const TZ = 'America/Chicago'
 
 function formatLocation(locationName: string, source: string): string {
@@ -44,6 +29,8 @@ function isMultiDay(start: string, end: string | null) {
   return s !== e
 }
 
+const CHIP: React.CSSProperties = { fontSize: '12px', padding: '4px 10px', borderRadius: 'var(--radius-chip)' }
+
 interface Props {
   event: Event
   selected: boolean
@@ -51,7 +38,6 @@ interface Props {
 }
 
 export default function EventCard({ event, selected, onClick }: Props) {
-  const emoji = CATEGORY_EMOJI[event.category ?? ''] ?? '🎉'
   const cardAge = cardAgeBadge(event)
   const cardPrice = cardPriceBadge(event)
 
@@ -65,84 +51,69 @@ export default function EventCard({ event, selected, onClick }: Props) {
         e.preventDefault()
         onClick()
       }}
-      className="block w-full text-left rounded-xl p-4 border transition-all hover:shadow-md cursor-pointer"
+      className="block w-full text-left p-4 transition-all cursor-pointer"
       style={{
-        backgroundColor: selected ? 'var(--color-primary-light)' : 'var(--color-card)',
-        borderColor: selected ? 'var(--color-primary)' : 'var(--color-border)',
-        borderWidth: selected ? '2px' : '1px',
+        borderRadius: 'var(--radius-input)',
+        backgroundColor: selected ? 'var(--color-paper-sunken)' : 'var(--color-paper)',
+        border: '1px solid var(--color-card-border)',
+        boxShadow: selected ? 'inset 3px 0 0 var(--color-accent)' : 'none',
       }}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-3.5">
         {/* Date stamp */}
         <div
-          className="flex-shrink-0 w-12 h-12 rounded-lg flex flex-col items-center justify-center text-white"
-          style={{ backgroundColor: 'var(--color-primary)' }}
+          className="flex-shrink-0 w-12 flex flex-col items-center justify-center py-1.5"
+          style={{ borderRadius: 'var(--radius-chip)', backgroundColor: 'var(--color-fill-subtle)' }}
         >
-          <span className="text-xs font-semibold uppercase leading-none">
+          <span className="font-mono uppercase leading-none" style={{ fontSize: '10px', letterSpacing: '0.08em', color: 'var(--color-ink-35)' }}>
             {new Date(event.start_datetime).toLocaleDateString('en-US', { month: 'short', timeZone: TZ })}
           </span>
-          <span className="text-xl font-bold leading-tight">
+          <span className="font-bold leading-tight" style={{ fontSize: '18px', color: 'var(--color-ink)' }}>
             {new Date(event.start_datetime).toLocaleDateString('en-US', { day: 'numeric', timeZone: TZ })}
           </span>
         </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-sm leading-snug line-clamp-2">
-            {emoji} {event.title}
+          <h3 className="leading-snug line-clamp-2" style={{ fontWeight: 700, fontSize: '15px', letterSpacing: '-0.01em', color: 'var(--color-ink)' }}>
+            {event.title}
           </h3>
 
-          <div className="mt-1 text-xs text-gray-500">
-            <div className="flex items-start justify-between gap-2">
+          <div className="mt-1.5 flex items-start justify-between gap-2">
+            <span className="font-mono uppercase flex-shrink-0 whitespace-nowrap" style={{ fontSize: '11px', letterSpacing: '0.06em', color: 'var(--color-ink-35)' }}>
               {isMultiDay(event.start_datetime, event.end_datetime ?? null)
-                ? <span className="flex-shrink-0 whitespace-nowrap">📅 {formatShortDate(event.start_datetime)} – {formatShortDate(event.end_datetime!)} · All day</span>
-                : <span className="flex-shrink-0 whitespace-nowrap">🕐 {formatTime(event.start_datetime)}</span>
-              }
-              {/* Badge group — can shrink and wrap so it never overflows the card (min-w-0).
-                  Registration + Recurring collapse to icon-only on mobile (text returns at sm+). */}
-              <div className="min-w-0 flex flex-wrap items-center justify-end gap-1">
-                {cardAge && (
-                  <span
-                    className="px-2 py-0.5 rounded-full font-medium whitespace-nowrap"
-                    style={{ backgroundColor: cardAge.bg, color: cardAge.color }}
-                    title={cardAge.tooltip}
-                  >
-                    {cardAge.content}
-                  </span>
-                )}
-                {cardPrice && (
-                  <span
-                    className="px-2 py-0.5 rounded-full font-medium whitespace-nowrap"
-                    style={{ backgroundColor: cardPrice.bg, color: cardPrice.color }}
-                    title={cardPrice.tooltip}
-                  >
-                    {cardPrice.content}
-                  </span>
-                )}
-                {event.registration_required && (
-                  <span
-                    className="px-2 py-0.5 rounded-full font-medium whitespace-nowrap"
-                    style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}
-                    title="Registration required"
-                    aria-label="Registration required"
-                  >
-                    📋<span className="hidden sm:inline"> Reg.</span>
-                  </span>
-                )}
-                {event.is_recurring && (
-                  <span
-                    className="px-2 py-0.5 rounded-full font-medium border whitespace-nowrap"
-                    style={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-periwinkle)' }}
-                    title="Recurring event"
-                    aria-label="Recurring event"
-                  >
-                    ↻<span className="hidden sm:inline"> Recurring</span>
-                  </span>
-                )}
-              </div>
+                ? `${formatShortDate(event.start_datetime)} – ${formatShortDate(event.end_datetime!)} · All day`
+                : formatTime(event.start_datetime)}
+            </span>
+            {/* Badge group — can shrink and wrap so it never overflows the card (min-w-0). */}
+            <div className="min-w-0 flex flex-wrap items-center justify-end gap-1.5">
+              {cardAge && (
+                <span className="font-medium whitespace-nowrap" style={{ ...CHIP, backgroundColor: cardAge.bg, color: cardAge.color }} title={cardAge.tooltip}>
+                  {cardAge.content}
+                </span>
+              )}
+              {cardPrice && (
+                <span className="font-medium whitespace-nowrap" style={{ ...CHIP, backgroundColor: cardPrice.bg, color: cardPrice.color }} title={cardPrice.tooltip}>
+                  {cardPrice.content}
+                </span>
+              )}
+              {event.registration_required && (
+                <span className="font-medium whitespace-nowrap" style={{ ...CHIP, backgroundColor: 'var(--color-accent-tint)', color: 'var(--color-accent-text)' }} title="Registration required">
+                  Registration
+                </span>
+              )}
+              {event.is_recurring && (
+                <span className="font-medium whitespace-nowrap" style={{ ...CHIP, backgroundColor: 'var(--color-fill-subtle)', color: 'var(--color-ink-50)' }} title="Recurring event">
+                  Recurring
+                </span>
+              )}
             </div>
-            {event.location_name && <div className="mt-0.5">📍 {formatLocation(event.location_name, event.source)}</div>}
           </div>
+          {event.location_name && (
+            <div className="mt-1" style={{ fontSize: '13px', color: 'var(--color-ink-70)' }}>
+              {formatLocation(event.location_name, event.source)}
+            </div>
+          )}
         </div>
       </div>
     </a>

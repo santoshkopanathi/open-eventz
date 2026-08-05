@@ -1,24 +1,107 @@
 @import "tailwindcss";
 
+/* ─────────────────────────────────────────────────────────────
+   "Weekend Paper" theme — warm, editorial, calm.
+   Only rust is used as an accent. No second hue, no gradients.
+   Green appears only in the "Free" chip.
+   ───────────────────────────────────────────────────────────── */
 @theme {
-  --color-primary: #2D3561;
-  --color-primary-dark: #242A52;
-  --color-primary-light: #EEEDF5;
-  --color-accent: #C4B068;
-  --color-bg: #F8F7FA;
-  --color-card: #FFFFFF;
-  --color-border: #ECEAF0;
-  --color-text: #1A1824;
-  --color-periwinkle: #7B82C2;
+  /* Paper surfaces */
+  --color-paper: #FBF7F1;
+  --color-paper-raised: #F8F3EA;
+  --color-paper-sunken: #F6F1E8;
+  --color-fill-subtle: #F3EDE3;
+  --color-fill-track: #F0E9DD;
+
+  /* Ink text scale */
+  --color-ink: #1F1B16;
+  --color-ink-70: #5F594F;
+  --color-ink-body: #443F38;
+  --color-ink-50: #6E675C;
+  --color-ink-35: #8A8378;
+  --color-ink-25: #A79C8B;
+
+  /* Rules & borders (all 1px) */
+  --color-rule: #EDE5D8;
+  --color-rule-soft: #F0E9DD;
+  --color-border: #E4DACA;
+  --color-border-strong: #DCD1BF;
+  --color-card-border: #E1D9CC;
+
+  /* Accent — rust (the only accent hue) */
+  --color-accent: #B4623B;
+  --color-accent-text: #8F4A2B;
+  --color-accent-tint: #F6E7DD;
+  --color-accent-tint-border: #E9CDB9;
+  --color-accent-tint-text: #7A5340;
+  --color-accent-warm: #E8A87C;
+
+  /* Free chip (the only green in the system) */
+  --color-free-tint: #E6EFE7;
+  --color-free-text: #3F6248;
+
+  /* Map */
+  --color-map-bg: #EFE9DE;
+  --color-map-green: #DDE7DA;
+  --color-map-blue: #D9E3EA;
+
+  /* Fonts — wired to next/font vars in layout.tsx */
+  --font-display: var(--font-instrument-serif), Georgia, serif;
+  --font-sans: var(--font-dm-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  /* Radii */
+  --radius-chip: 6px;
+  --radius-input: 10px;
+  --radius-button: 12px;
+  --radius-panel: 20px;
+
+  /* ── Back-compat aliases: existing components still reference these
+        legacy token names; remapped onto the Weekend Paper palette so
+        nothing renders unstyled while components are migrated. ── */
+  --color-primary: #1F1B16;        /* was indigo → ink (primary button fill) */
+  --color-primary-dark: #16130F;   /* ink hover */
+  --color-primary-light: #F3EDE3;  /* → fill-subtle */
+  --color-bg: #FBF7F1;             /* → paper */
+  --color-card: #FBF7F1;           /* → paper (distinguished by border + shadow) */
+  --color-text: #1F1B16;           /* → ink */
+  --color-periwinkle: #8F4A2B;     /* → accent-text */
 }
 
 :root {
-  --background: #F8F7FA;
-  --foreground: #1A1824;
+  --background: #FBF7F1;
+  --foreground: #1F1B16;
+
+  /* Shadows */
+  --shadow-panel: 0 24px 60px rgba(31, 27, 22, 0.10);
+  --shadow-map-pill: 0 6px 18px rgba(31, 27, 22, 0.28);
+  --shadow-map-label: 0 4px 12px rgba(31, 27, 22, 0.12);
+  --shadow-drawer: -18px 0 40px rgba(31, 27, 22, 0.06);
+  --shadow-fab: 0 8px 20px rgba(31, 27, 22, 0.25);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-dm-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Focus-visible: rust ring on every interactive element (design spec). */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* The masthead sits on ink, where rust (#B4623B) fails contrast — use warm rust for its ring. */
+.masthead :focus-visible {
+  outline-color: #E8A87C;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+  }
 }

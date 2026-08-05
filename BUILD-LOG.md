@@ -1187,3 +1187,37 @@ Verified on production: cards render as anchors, plain left-click opens the pane
 Applied in both `src/app/events/[id]/page.tsx` (server page) and `src/components/EventDetail.tsx` (in-app panel) so the shared page and the in-app view stay consistent; `sourceShortLabel()` in `src/lib/site.ts` maps each source to a friendly name.
 
 **The lesson.** A view that becomes shareable inherits a new requirement its in-app ancestor never had: the visitor may have **no navigational context**. Explicit "back to app / back to city" affordances and an unmissable mobile Back matter more on a cold-landed page than they ever did inside the browsing flow — and once controls are seen out of context, visual consistency stops being polish and becomes legibility.
+
+---
+
+## Weekend Paper redesign — Phase 1 (visual theme only)
+
+**Date:** August 2026 · **Branch:** `redesign/weekend-paper-theme` (built and verified on a branch; **not merged/deployed** at time of writing — master untouched, fully reversible).
+
+**Initial situation.** The app shipped in its original theme: an indigo/gold palette (`#2D3561` primary, `#C4B068` accent), Geist fonts, and emoji used liberally — a 🎈 wordmark, category emoji on cards (📚🌳🎨…), 📅🕐📍📋↻ meta icons, a gradient emoji-art welcome panel, and colour-coded emoji supervision/price badges (❌✅🔵⚠️). Functional, but busy and generic.
+
+**Why we changed it.** A design handoff ("Weekend Paper" — warm, editorial, calm) was provided by Claude Design. The user scoped this pass deliberately as **theme only — no new functionality, no IA changes**: the day-grouped agenda, time-segment model, search, distance filtering, and detail reordering from the full handoff were explicitly **deferred to later phases**. The goal was to apply the new visual language to the app exactly as it's structured today, on a branch, fully reversible.
+
+**What we changed — and the reasoning behind the notable calls:**
+
+- **Design tokens (`globals.css`).** Replaced the indigo/gold `@theme` with the full Weekend Paper palette (paper `#FBF7F1`, ink scale, single rust accent `#B4623B`, `Free`-only green). Legacy token names (`--color-primary`, `--color-bg`, …) were **kept and remapped** onto the new palette. *Why:* a token-first foundation keeps the reskin consistent and lets components migrate incrementally without a broken, half-unstyled intermediate state.
+
+- **Fonts (`layout.tsx`).** Instrument Serif (display) / DM Sans (UI) / JetBrains Mono (meta) via `next/font`, replacing Geist. *Why:* the serif+mono pairing is what gives the editorial "paper" character; `next/font` self-hosts them — no layout shift, no external request (consistent with the consent/privacy posture).
+
+- **No emoji anywhere.** Every emoji removed from components and lib badges; only the typographic `✦` inference marker kept (a text symbol, not colour emoji, and it carries real meaning — the estimated-badge signal). *Why:* the design is explicitly emoji-free; emoji read as casual/noisy against a calm editorial layout.
+
+- **Supervision + registration → calm callouts.** Supervision went from red/green/blue colour-coded emoji chips to **one neutral fill-subtle callout** with a grey left bar; registration went from a yellow banner to a one-line accent-tint callout. *Why (the important one):* the handoff's rule is "instruction, not alarm — no red-on-pink," and for the drop-off field this is also a **trust-safety** improvement — a wrong "you can drop off" answer must not be dressed in reassuring colour. A calm, uniform, text-driven treatment lets the *words* carry the meaning. `getSupervisionBadge` logic and its unit tests were untouched (only presentation changed), which proves the colours were never load-bearing.
+
+- **Ink masthead (per a follow-up spec).** The header became the page's **only ink-filled surface**, with a 3px rust bottom rule and a two-colour wordmark ("Open" cream `#FBF7F1` / "Eventz" warm-rust `#E8A87C`). *Why:* the original paper header blended into the paper page; the ink band + rust rule is a deliberate high-contrast anchor. The accent is `#E8A87C`, not the rule's `#B4623B`, because rust fails text contrast on ink — the warm-rust variant keeps the brand tie while staying legible.
+
+- **Controls placement (per user iteration).** Moved the map toggle out of the masthead onto the city-tabs row; put Today/Tomorrow/Weekend presets on their own row with a "Jump to" label and a filled / solid-rust-active treatment distinct from the outlined dropdown filters. *Why:* keeps the masthead clean (wordmark only) and makes the quick time-jumps a scannable, visually separate strip. The presets set the **existing** `date_from`/`date_to` filter — no new backend.
+
+- **Action buttons (per user iteration).** Reordered to calendars → "View on source" → "Get directions", with the primary emphasis swapped onto **Get directions** (ink-filled) and "View on source" left as a bordered secondary. *Why:* user preference — get-directions is the higher-intent in-app action; the outbound source link is secondary.
+
+- **Mobile.** Tagline shows stacked under the wordmark on the first page and is dropped in the detail view; wordmark scales 34→30px; tagline shrinks below 430px so "Plano" doesn't clip.
+
+**Deliberately out of scope (deferred).** Search field + "Saved" pill (real features → Phase 3); map pin/legend restyle, `/dashboard`, and the `/events/[id]` server-page body (Phase 2 / other surfaces); the agenda / day-grouping IA.
+
+**Verification.** `next build` green (14 routes), typecheck clean, 233 unit tests pass, doc-parity OK, no runtime console errors; masthead, relocated controls, presets, centered map title, and 12px callouts all confirmed on the dev server (desktop + mobile). Pre-existing lint findings unchanged (the build already ignores them).
+
+**The lesson.** A pure reskin is still a place to make a *product* decision, not just a cosmetic one: moving the supervision callout from colour-coded-alarm to calm-text isn't styling — it's a trust-safety call about not letting colour imply a safety verdict. Keep the meaning in the words, and keep the logic (and its tests) independent of the presentation so a theme swap can never change behaviour.

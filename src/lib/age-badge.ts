@@ -23,12 +23,12 @@ export interface AgeBadge {
 // mobile, where tapping the card opens the detail view instead.
 export const ESTIMATED_TOOLTIP = 'Estimated from description'
 
-// Structured / confirmed palette: muted gold
-const STRUCTURED_BG = '#F5F0DE'
-const STRUCTURED_TEXT = '#8A7840'
-// Inferred palette: lighter indigo — visually distinct from confirmed badges
-const INFERRED_BG = '#EEEDF5'
-const INFERRED_TEXT = '#2D3561'
+// Structured / confirmed palette: neutral fill-subtle chip (Weekend Paper)
+const STRUCTURED_BG = '#F3EDE3'
+const STRUCTURED_TEXT = '#6E675C'
+// Inferred palette: rust accent-tint — signals an estimated (not confirmed) badge
+const INFERRED_BG = '#F6E7DD'
+const INFERRED_TEXT = '#8F4A2B'
 
 const BUCKET_RANGE: Record<AgeBucket, [number, number]> = {
   toddler: [0, 5],

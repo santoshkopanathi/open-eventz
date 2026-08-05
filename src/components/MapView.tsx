@@ -160,7 +160,7 @@ export default function MapView({ venues = [], selected, directionsTarget, direc
         </Map>
       </APIProvider>
 
-      <div style={{ position: 'absolute', top: 12, left: 12, background: '#fff', borderRadius: 8, padding: '5px 10px', fontSize: 11, fontWeight: 600, boxShadow: '0 1px 4px rgba(0,0,0,0.15)', pointerEvents: 'none', color: '#2D3561' }}>
+      <div style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', background: '#FBF7F1', borderRadius: 999, padding: '8px 18px', fontSize: 15, fontWeight: 700, letterSpacing: '-0.01em', boxShadow: '0 4px 12px rgba(31,27,22,0.12)', pointerEvents: 'none', color: '#1F1B16', whiteSpace: 'nowrap' }}>
         All event venues
       </div>
 

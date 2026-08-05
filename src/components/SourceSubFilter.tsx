@@ -3,11 +3,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { CITY_ACCENT, type City } from './FilterBar'
 
-const CITY_TINT: Record<City, string> = {
-  frisco: 'rgba(196,176,104,0.10)',
-  plano: 'rgba(99,102,241,0.08)',
-}
-
 const AGE_OPTIONS = [
   { value: '0-5', label: 'Toddlers (0–5)' },
   { value: '6-12', label: 'Kids (6–12)' },
@@ -17,6 +12,23 @@ const AGE_OPTIONS = [
 const FRISCO_SOURCE_OPTIONS = [
   { value: 'frisco-library', label: 'Frisco Library' },
   { value: 'play-frisco', label: 'Play Frisco' },
+]
+
+const pad2 = (n: number) => String(n).padStart(2, '0')
+const ymd = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+// Date-range presets — set the EXISTING date_from/date_to filter (no new backend/logic).
+function presetRange(kind: 'today' | 'tomorrow' | 'weekend'): { date_from: string; date_to: string } {
+  const now = new Date()
+  if (kind === 'today') { const s = ymd(now); return { date_from: s, date_to: s } }
+  if (kind === 'tomorrow') { const t = new Date(now); t.setDate(now.getDate() + 1); const s = ymd(t); return { date_from: s, date_to: s } }
+  const sat = new Date(now); sat.setDate(now.getDate() + ((6 - now.getDay() + 7) % 7)) // upcoming Saturday
+  const sun = new Date(sat); sun.setDate(sat.getDate() + 1)
+  return { date_from: ymd(sat), date_to: ymd(sun) }
+}
+const DATE_PRESETS: { id: 'today' | 'tomorrow' | 'weekend'; label: string }[] = [
+  { id: 'today', label: 'Today' },
+  { id: 'tomorrow', label: 'Tomorrow' },
+  { id: 'weekend', label: 'Weekend' },
 ]
 
 export interface SubFilterPatch {
@@ -73,28 +85,29 @@ function FilterDropdown({ groupLabel, options, selected, accent, onChange }: {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1.5 rounded-full px-3 py-1 border text-xs font-medium outline-none transition-colors"
+        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors"
         style={{
-          borderColor: active ? accent : 'var(--color-border)',
-          backgroundColor: active ? accent : 'var(--color-card)',
-          color: active ? '#fff' : 'var(--color-text)',
+          borderRadius: '999px',
+          border: `1px solid ${active ? 'var(--color-accent)' : 'var(--color-border)'}`,
+          backgroundColor: active ? 'var(--color-accent-tint)' : 'transparent',
+          color: active ? 'var(--color-accent-text)' : 'var(--color-ink-70)',
         }}
       >
         <span className="whitespace-nowrap">{buttonLabel}</span>
         {selected.length > 1 && (
           <span
             className="inline-flex items-center justify-center rounded-full text-[10px] font-bold"
-            style={{ backgroundColor: '#fff', color: accent, minWidth: '16px', height: '16px', padding: '0 4px' }}
+            style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-paper)', minWidth: '16px', height: '16px', padding: '0 4px' }}
           >
             {selected.length}
           </span>
         )}
-        <span className="text-[9px]" style={{ opacity: 0.7 }}>{open ? '▲' : '▼'}</span>
+        <span className="text-[10px]" style={{ opacity: 0.6 }}>{open ? '˄' : '˅'}</span>
       </button>
       {open && (
         <div
-          className="absolute top-full mt-1 left-0 z-30 rounded-xl border shadow-lg py-1 min-w-[190px]"
-          style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}
+          className="absolute top-full mt-1 left-0 z-30 border py-1 min-w-[190px]"
+          style={{ backgroundColor: 'var(--color-paper)', borderColor: 'var(--color-border)', borderRadius: 'var(--radius-input)', boxShadow: 'var(--shadow-map-label)' }}
         >
           {options.map(o => (
             <label key={o.value} className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-gray-50 select-none text-xs">
@@ -118,6 +131,8 @@ function FilterDropdown({ groupLabel, options, selected, accent, onChange }: {
 // dropdowns; the city accent carries in via the left border and tinted background.
 export default function SourceSubFilter({ city, sources, branches, ages, date_from, date_to, onPatch, onClear }: Props) {
   const [branchOptions, setBranchOptions] = useState<Option[]>([])
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
   const accent = CITY_ACCENT[city]
 
   useEffect(() => {
@@ -130,27 +145,27 @@ export default function SourceSubFilter({ city, sources, branches, ages, date_fr
 
   return (
     <div
-      className="mb-3 px-4 pt-2.5 pb-3 rounded-lg border"
+      className="mb-3 px-4 pt-2.5 pb-3 border"
       style={{
-        background: CITY_TINT[city],
+        backgroundColor: 'var(--color-fill-subtle)',
         borderColor: 'var(--color-border)',
-        borderLeft: `3px solid ${accent}`,
+        borderRadius: 'var(--radius-input)',
       }}
     >
       {/* Label + clear */}
       <div className="flex items-center justify-between mb-2">
         <span
-          className="text-xs font-bold uppercase tracking-wide px-2 py-1 rounded-md"
-          style={{ background: CITY_TINT[city], color: 'var(--color-primary)' }}
+          className="font-mono uppercase"
+          style={{ fontSize: '11px', letterSpacing: '0.1em', color: 'var(--color-ink-35)' }}
         >
-          {city === 'frisco' ? '📚 Frisco City' : '🏛️ Plano City'}
+          {city === 'frisco' ? 'Frisco City' : 'Plano City'}
         </span>
-        <button onClick={onClear} className="text-xs underline" style={{ color: 'var(--color-periwinkle)' }}>
+        <button onClick={onClear} className="text-xs underline" style={{ color: 'var(--color-accent)' }}>
           Clear filters
         </button>
       </div>
 
-      {/* Filters — source/branch, age, and date range on one line */}
+      {/* Filters — source/branch, age, and date range */}
       <div className="flex flex-wrap items-center gap-2">
         {city === 'frisco' && (
           <FilterDropdown
@@ -177,22 +192,47 @@ export default function SourceSubFilter({ city, sources, branches, ages, date_fr
           accent={accent}
           onChange={next => onPatch({ ages: next })}
         />
-        <span className="text-gray-500 text-xs ml-1">From</span>
+        <span className="text-xs ml-1" style={{ color: 'var(--color-ink-35)' }}>From</span>
         <input
           type="date"
           value={date_from}
           onChange={e => onPatch({ date_from: e.target.value })}
-          className="rounded-lg px-2 py-1 border text-xs outline-none"
-          style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-card)' }}
+          className="px-2 py-1 border text-xs outline-none"
+          style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-paper)', borderRadius: 'var(--radius-input)', color: 'var(--color-ink)' }}
         />
-        <span className="text-gray-500 text-xs">to</span>
+        <span className="text-xs" style={{ color: 'var(--color-ink-35)' }}>to</span>
         <input
           type="date"
           value={date_to}
           onChange={e => onPatch({ date_to: e.target.value })}
-          className="rounded-lg px-2 py-1 border text-xs outline-none"
-          style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-card)' }}
+          className="px-2 py-1 border text-xs outline-none"
+          style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-paper)', borderRadius: 'var(--radius-input)', color: 'var(--color-ink)' }}
         />
+      </div>
+
+      {/* Quick date presets — own row, directly beneath the filters; set date_from/date_to.
+          Filled pills (distinct from the outlined dropdown filters); solid rust when active. */}
+      <div className="flex flex-wrap items-center gap-2 mt-2">
+        <span className="font-mono uppercase mr-0.5" style={{ fontSize: '10px', letterSpacing: '0.1em', color: 'var(--color-ink-35)' }}>Jump to</span>
+        {DATE_PRESETS.map(p => {
+          const r = presetRange(p.id)
+          const active = mounted && date_from === r.date_from && date_to === r.date_to
+          return (
+            <button
+              key={p.id}
+              onClick={() => onPatch(r)}
+              className="px-3.5 py-1.5 text-xs font-semibold transition-colors"
+              style={{
+                borderRadius: '999px',
+                border: `1px solid ${active ? 'var(--color-accent)' : 'var(--color-border)'}`,
+                backgroundColor: active ? 'var(--color-accent)' : 'var(--color-fill-subtle)',
+                color: active ? 'var(--color-paper)' : 'var(--color-ink-70)',
+              }}
+            >
+              {p.label}
+            </button>
+          )
+        })}
       </div>
     </div>
   )

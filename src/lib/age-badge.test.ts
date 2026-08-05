@@ -1,8 +1,9 @@
 import type { Event } from './types'
 import { getAgeBadge, cardAgeBadge, detailAgeBadge, ESTIMATED_TOOLTIP } from './age-badge'
 
-const GOLD_BG = '#F5F0DE'
-const INDIGO_BG = '#EEEDF5'
+// Weekend Paper palette: confirmed = neutral fill-subtle; inferred = rust accent-tint.
+const GOLD_BG = '#F3EDE3'   // confirmed badge bg (fill-subtle)
+const INDIGO_BG = '#F6E7DD' // inferred badge bg (accent-tint)
 
 // Event factory — fills every required field; override what a test cares about.
 function ev(p: Partial<Event>): Event {

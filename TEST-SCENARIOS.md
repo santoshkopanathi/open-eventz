@@ -201,7 +201,7 @@ Cards show only "Family" (confirmed or inferred) and the bare inferred marker; s
 | 12.3 | Tap mobile back button | Overlay closes; list visible (filters preserved) | [R] |
 | 12.4 | Click close (desktop) | Panel closes; welcome panel shown | [R] |
 | 12.5 | Free / paid detail | "Free admission" / "Paid" pill (see §6 for `✦` rules) | [R] |
-| 12.6 | Registration required | Yellow registration banner | [R] |
+| 12.6 | Registration required | Calm accent-tint (rust) callout, one line: "Registration required — sign up before attending" (Weekend Paper — was a yellow banner) | [R] |
 | 12.7 | Supervision "can kids be dropped off?" badge | Per-source drop-off badge — fully specified in **§12A. Supervision Badge** below | [A] [R] · supervision.test.ts |
 | 12.11 | Add to Google Calendar | Opens Google Calendar link, event pre-filled | [R] |
 | 12.12 | Add to Apple Calendar | Opens the `/api/ics/[id]` `text/calendar` route → iOS opens Add-to-Calendar (no file download) | [A] [R] · ics.test.ts |
@@ -214,14 +214,16 @@ Cards show only "Family" (confirmed or inferred) and the bare inferred marker; s
 
 The "can kids be dropped off?" badge is resolved per source by `getSupervisionBadge` (`src/lib/supervision.ts`) and rendered in the event detail panel. All six rows run automatically on every push (Jest unit job). **History:** originally shown for all three sources; silently narrowed to Frisco-only in a pre-git refactor; rediscovered via product review; restored 2026-08-04 (see BUILD-LOG "Drop-off policy badge" / "Learning 5").
 
-| # | Scenario | Expected result | Tag |
+**Visual — Weekend Paper redesign (2026-08-05):** these are now rendered as **one calm fill-subtle callout** with a grey left bar — **no color-coding, no emoji** ("instruction, not alarm"; a wrong "you can drop off" answer should not read as reassurance-by-colour). The per-case distinction lives entirely in the **label text**, which is what the unit tests assert — colours are intentionally not tested, so the redesign didn't touch the suite. (Was: red / blue / green / grey emoji badges.)
+
+| # | Scenario | Expected result (label text; all in the calm callout) | Tag |
 |---|---|---|---|
-| S.1 | Frisco Library, age 0–5 | Red "adult must stay with child" badge | [A] [R] · supervision.test.ts |
-| S.2 | Frisco Library, age 6–12 | Blue "only if child is 10 or older" (drop-off OK at 10+) badge | [A] [R] · supervision.test.ts |
-| S.3 | Frisco Library, teens 13–17 | Green "teens 13+ may attend alone" badge | [A] [R] · supervision.test.ts |
-| S.4 | Plano Libraries, any age | Blue "Plan to stay" badge + "no formal Plano Library policy" sub-line (never a hard age cutoff) | [A] [R] · supervision.test.ts |
-| S.5 | Play Frisco, any event | Grey "Check with venue" badge + "before dropping off" sub-line | [A] [R] · supervision.test.ts |
-| S.6 | No source match (unrecognised source) | No supervision badge rendered (null) | [A] [R] · supervision.test.ts |
+| S.1 | Frisco Library, age 0–5 | "No — adult must stay with child" | [A] [R] · supervision.test.ts |
+| S.2 | Frisco Library, age 6–12 | "only if child is 10 or older" (drop-off OK at 10+) | [A] [R] · supervision.test.ts |
+| S.3 | Frisco Library, teens 13–17 | "teens 13+ may attend alone" | [A] [R] · supervision.test.ts |
+| S.4 | Plano Libraries, any age | "Plan to stay" + "no formal Plano Library policy" sub-line (never a hard age cutoff) | [A] [R] · supervision.test.ts |
+| S.5 | Play Frisco, any event | "Check with venue" + "before dropping off" sub-line | [A] [R] · supervision.test.ts |
+| S.6 | No source match (unrecognised source) | No callout rendered (null) | [A] [R] · supervision.test.ts |
 
 Extra regression guards in the same suite: Frisco *no-age-data* → "check with Frisco Library" (never a guessed threshold); Plano *same badge regardless of age* (no invented cutoff); and a `Record<EventSource, true>` completeness check that fails CI if a new source is added without a supervision case.
 

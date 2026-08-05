@@ -133,34 +133,22 @@ export default function Home() {
   return (
     <div className="flex flex-col h-screen" style={{ backgroundColor: 'var(--color-bg)', color: 'var(--color-text)' }}>
       {/* Top bar */}
-      <header style={{ backgroundColor: 'var(--color-primary)' }} className="flex-shrink-0 px-4 py-3 flex items-center gap-3">
+      {/* Masthead — the only ink-filled surface on the page; 3px rust bottom rule is the trick */}
+      <header className="masthead flex-shrink-0 flex items-center justify-between gap-6" style={{ backgroundColor: '#1F1B16', borderBottom: '3px solid #B4623B', padding: '22px 28px' }}>
         <button
           type="button"
           onClick={resetToHome}
-          className="flex items-center gap-2 text-left cursor-pointer"
+          className="flex flex-col md:flex-row md:items-baseline gap-1 md:gap-4 text-left cursor-pointer min-w-0"
           aria-label="Open Eventz home — reset filters and show all events"
         >
-          <span className="text-2xl">🎈</span>
-          <div>
-            <div className="text-white font-bold text-xl tracking-tight leading-tight">Open Eventz</div>
-            <div className="text-white/60 text-xs leading-tight">Free kids events in Frisco &amp; Plano, TX</div>
-          </div>
-        </button>
-        {/* Map toggle */}
-        <button
-          onClick={() => setMapOn(m => !m)}
-          className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-white/20 transition-all flex-shrink-0"
-          style={{
-            background: mapOn ? 'var(--color-accent)' : 'rgba(255,255,255,0.1)',
-            color: mapOn ? 'var(--color-primary)' : 'rgba(255,255,255,0.7)',
-            fontWeight: mapOn ? 700 : 500,
-          }}
-        >
-          🗺️ Map {mapOn ? 'On' : 'Off'}
+          <span className="font-display leading-none whitespace-nowrap text-[34px] max-[640px]:text-[30px]" style={{ letterSpacing: '-0.015em' }}>
+            <span style={{ color: '#FBF7F1' }}>Open </span><span style={{ color: '#E8A87C' }}>Eventz</span>
+          </span>
+          <span className="font-mono uppercase whitespace-nowrap text-[11px] tracking-[0.14em] max-[430px]:text-[9.5px] max-[430px]:tracking-[0.07em]" style={{ color: '#A79C8B' }}>Free things to do with kids · Frisco &amp; Plano</span>
         </button>
       </header>
 
-      <FilterBar city={city} onCityChange={setCity} />
+      <FilterBar city={city} onCityChange={setCity} mapOn={mapOn} onToggleMap={() => setMapOn(m => !m)} />
 
       {/* Main content — fixed height, scrolls internally */}
       <div className="flex flex-1 min-h-0">
@@ -185,21 +173,17 @@ export default function Home() {
           />
 
           {loading ? (
-            <div className="flex items-center justify-center h-48 text-gray-400">
-              <div className="text-center">
-                <div className="text-4xl mb-3">🔍</div>
-                <p>Loading events…</p>
-              </div>
+            <div className="flex items-center justify-center h-48">
+              <p className="font-mono uppercase" style={{ fontSize: '12px', letterSpacing: '0.1em', color: 'var(--color-ink-35)' }}>Loading events…</p>
             </div>
           ) : events.length === 0 ? (
-            <div className="flex items-center justify-center h-48 text-gray-400">
+            <div className="flex items-center justify-center h-48">
               <div className="text-center">
-                <div className="text-4xl mb-3">📭</div>
-                <p>No events match your filters.</p>
+                <p style={{ color: 'var(--color-ink-70)' }}>No events match your filters.</p>
                 <button
                   onClick={clearActive}
                   className="mt-3 text-sm underline"
-                  style={{ color: 'var(--color-periwinkle)' }}
+                  style={{ color: 'var(--color-accent)' }}
                 >
                   Clear filters
                 </button>
@@ -207,7 +191,7 @@ export default function Home() {
             </div>
           ) : (
             <>
-              <p className="text-sm text-gray-500 mb-3">{events.length} upcoming events</p>
+              <p className="mb-3 font-mono uppercase" style={{ fontSize: '12px', letterSpacing: '0.1em', color: 'var(--color-ink-35)' }}>{events.length} upcoming events</p>
               <div className="flex flex-col gap-3">
                 {displayed.map(event => (
                   <EventCard
@@ -223,7 +207,7 @@ export default function Home() {
                 ))}
               </div>
               {/* Infinite scroll sentinel */}
-              <div ref={sentinelRef} className="py-4 text-center text-sm text-gray-400">
+              <div ref={sentinelRef} className="py-4 text-center font-mono uppercase" style={{ fontSize: '11px', letterSpacing: '0.1em', color: 'var(--color-ink-25)' }}>
                 {displayed.length < events.length ? 'Loading more…' : `All ${events.length} events loaded`}
               </div>
             </>
@@ -232,58 +216,24 @@ export default function Home() {
 
         {/* Welcome panel — shown on desktop when no event selected and map off */}
         {!selected && !mapOn && (
-          <div className="hidden lg:flex flex-1 flex-col overflow-hidden relative">
-            {/* Hero panel */}
-            <div className="flex-1 relative overflow-hidden flex flex-col items-center justify-center text-center px-8"
-              style={{ background: 'linear-gradient(150deg, #E8E6F5 0%, #F5E6EF 40%, #FFF3E0 100%)' }}
-            >
-              {/* Soft blobs */}
-              <div style={{ position:'absolute', top:'-80px', right:'-80px', width:'300px', height:'300px', borderRadius:'50%', background:'rgba(196,176,104,0.12)' }} />
-              <div style={{ position:'absolute', bottom:'-100px', left:'-60px', width:'340px', height:'340px', borderRadius:'50%', background:'rgba(45,53,97,0.07)' }} />
-              <div style={{ position:'absolute', top:'40%', left:'-40px', width:'160px', height:'160px', borderRadius:'50%', background:'rgba(236,72,153,0.07)' }} />
-              <div style={{ position:'absolute', top:'15%', right:'10%', width:'100px', height:'100px', borderRadius:'50%', background:'rgba(99,102,241,0.08)' }} />
-
-              {/* Scattered background items */}
-              {[
-                { emoji:'🎨', top:'6%',  left:'8%',  size:'2.2rem', op:0.55 },
-                { emoji:'🔬', top:'10%', right:'12%', size:'2rem',   op:0.5  },
-                { emoji:'📚', top:'22%', left:'4%',  size:'1.8rem', op:0.45 },
-                { emoji:'⚽', top:'18%', right:'5%', size:'2rem',   op:0.5  },
-                { emoji:'🎵', top:'38%', left:'6%',  size:'1.6rem', op:0.4  },
-                { emoji:'🌳', top:'42%', right:'7%', size:'2rem',   op:0.45 },
-                { emoji:'🧩', bottom:'32%', left:'5%',  size:'1.8rem', op:0.45 },
-                { emoji:'🎭', bottom:'28%', right:'6%', size:'2rem',   op:0.4  },
-                { emoji:'🚴', bottom:'14%', left:'9%',  size:'2rem',   op:0.45 },
-                { emoji:'🎪', bottom:'10%', right:'10%', size:'2.2rem', op:0.5 },
-                { emoji:'🦋', top:'55%', left:'3%',  size:'1.6rem', op:0.4  },
-                { emoji:'🎯', top:'62%', right:'4%', size:'1.8rem', op:0.4  },
-                { emoji:'🧸', top:'75%', left:'7%',  size:'1.8rem', op:0.45 },
-                { emoji:'🪁', top:'5%',  left:'45%', size:'1.6rem', op:0.35 },
-                { emoji:'🎠', bottom:'5%', left:'40%', size:'1.8rem', op:0.4  },
-              ].map((item, i) => (
-                <div key={i} style={{ position:'absolute', top:item.top, bottom:item.bottom, left:item.left, right:item.right, fontSize:item.size, opacity:item.op, pointerEvents:'none', userSelect:'none' }}>
-                  {item.emoji}
+          <div className="hidden lg:flex flex-1 flex-col overflow-hidden" style={{ backgroundColor: 'var(--color-paper-raised)' }}>
+            <div className="flex-1 flex flex-col items-center justify-center text-center px-10">
+              <div className="max-w-md">
+                <div className="font-display mb-4" style={{ fontSize: '44px', lineHeight: 1.1, letterSpacing: '-0.01em', color: 'var(--color-ink)' }}>
+                  Discover free fun for your kids
                 </div>
-              ))}
-
-              {/* Content */}
-              <div className="relative z-10">
-                <div className="text-7xl mb-5">🎈</div>
-                <div className="text-5xl font-bold mb-4 tracking-tight leading-tight" style={{ color: '#2D3561' }}>
-                  Discover free fun<br/>for your kids
-                </div>
-                <p className="text-base leading-relaxed max-w-sm mb-8" style={{ color: '#5A5868' }}>
-                  Upcoming events across Frisco Library, Plano Libraries, and Play Frisco — all in one place. Click any event to see details.
+                <p className="mb-8" style={{ fontSize: '16px', lineHeight: 1.65, color: 'var(--color-ink-70)' }}>
+                  Upcoming events across Frisco Library, Plano Libraries, and Play Frisco — all in one place. Select any event to see the details.
                 </p>
-                <div className="flex gap-4 justify-center flex-wrap">
-                  {[
-                    { label: 'Frisco Library', emoji: '📚' },
-                    { label: 'Plano Libraries', emoji: '🏛️' },
-                    { label: 'Play Frisco', emoji: '🌳' },
-                  ].map(s => (
-                    <div key={s.label} className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-full" style={{ background: 'rgba(45,53,97,0.1)', color: '#2D3561' }}>
-                      <span>{s.emoji}</span><span>{s.label}</span>
-                    </div>
+                <div className="flex gap-2 justify-center flex-wrap">
+                  {['Frisco Library', 'Plano Libraries', 'Play Frisco'].map(label => (
+                    <span
+                      key={label}
+                      className="font-mono uppercase"
+                      style={{ fontSize: '11px', letterSpacing: '0.1em', color: 'var(--color-ink-35)', border: '1px solid var(--color-border)', borderRadius: '999px', padding: '4px 12px' }}
+                    >
+                      {label}
+                    </span>
                   ))}
                 </div>
               </div>
@@ -331,35 +281,31 @@ export default function Home() {
 
       {/* Mobile detail — full-screen with sticky back button */}
       {selected && (
-        <div className="lg:hidden fixed inset-0 z-50 flex flex-col" style={{ backgroundColor: 'var(--color-card)' }}>
+        <div className="lg:hidden fixed inset-0 z-50 flex flex-col" style={{ backgroundColor: 'var(--color-paper)' }}>
           <div
-            className="flex-shrink-0 flex items-center gap-3 px-4 py-3"
-            style={{ backgroundColor: 'var(--color-primary)' }}
+            className="flex-shrink-0 flex items-center gap-3 px-5 py-3 border-b"
+            style={{ backgroundColor: 'var(--color-paper-raised)', borderColor: 'var(--color-border)', boxShadow: '0 1px 3px rgba(31,27,22,0.05)' }}
           >
             <button
               type="button"
               onClick={resetToHome}
-              className="flex items-center gap-2 text-left cursor-pointer"
+              className="flex flex-col text-left cursor-pointer"
               aria-label="Open Eventz home — reset filters and show all events"
             >
-              <span className="text-2xl">🎈</span>
-              <div>
-                <div className="text-white font-bold text-xl tracking-tight leading-tight">Open Eventz</div>
-                <div className="text-white/60 text-xs leading-tight">Free kids events in Frisco &amp; Plano, TX</div>
-              </div>
+              <span className="font-display leading-none" style={{ fontSize: '22px', letterSpacing: '-0.01em', color: 'var(--color-ink)' }}>Open Eventz</span>
             </button>
           </div>
           {/* Back row — beneath the branding bar, directly above the event title */}
           <div
-            className="flex-shrink-0 px-4 py-2 border-b"
-            style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}
+            className="flex-shrink-0 px-5 py-2 border-b"
+            style={{ backgroundColor: 'var(--color-paper)', borderColor: 'var(--color-rule)' }}
           >
             <button
               onClick={() => setSelected(null)}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white transition-opacity hover:opacity-90"
-              style={{ backgroundColor: 'var(--color-primary)' }}
+              className="flex items-center px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
+              style={{ borderRadius: 'var(--radius-button)', backgroundColor: 'var(--color-ink-body)', color: 'var(--color-paper)' }}
             >
-              ‹ Back to list
+              ← Back to list
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">
@@ -374,10 +320,10 @@ export default function Home() {
           <MapView venues={venues} />
           <button
             onClick={() => setMapOn(false)}
-            className="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border shadow"
-            style={{ background: 'var(--color-card)', borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
+            className="absolute top-16 left-3 z-10 flex items-center px-3.5 py-2 text-sm font-medium shadow"
+            style={{ background: 'var(--color-paper)', border: '1px solid var(--color-border-strong)', borderRadius: 'var(--radius-input)', color: 'var(--color-ink)' }}
           >
-            ← List
+            ← Back to list
           </button>
         </div>
       )}
