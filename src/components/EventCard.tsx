@@ -62,8 +62,8 @@ export default function EventCard({ event, selected, onClick }: Props) {
       <div className="flex items-start gap-3.5">
         {/* Date stamp */}
         <div
-          className="flex-shrink-0 w-12 flex flex-col items-center justify-center py-1.5"
-          style={{ borderRadius: 'var(--radius-chip)', backgroundColor: 'var(--color-fill-subtle)' }}
+          className="flex-shrink-0 w-12 flex flex-col items-center justify-center"
+          style={{ minHeight: 56, padding: '10px 0', borderRadius: 'var(--radius-chip)', backgroundColor: 'var(--color-fill-subtle)' }}
         >
           <span className="font-mono uppercase leading-none" style={{ fontSize: '10px', letterSpacing: '0.08em', color: 'var(--color-ink-35)' }}>
             {new Date(event.start_datetime).toLocaleDateString('en-US', { month: 'short', timeZone: TZ })}
@@ -79,8 +79,8 @@ export default function EventCard({ event, selected, onClick }: Props) {
             {event.title}
           </h3>
 
-          <div className="mt-1.5 flex items-start justify-between gap-2">
-            <span className="font-mono uppercase flex-shrink-0 whitespace-nowrap" style={{ fontSize: '11px', letterSpacing: '0.06em', color: 'var(--color-ink-35)' }}>
+          <div className="mt-1.5 flex items-center justify-between gap-2">
+            <span className="font-mono uppercase flex-shrink-0 whitespace-nowrap" style={{ fontSize: '13px', letterSpacing: '0.06em', color: 'var(--color-ink-70)' }}>
               {isMultiDay(event.start_datetime, event.end_datetime ?? null)
                 ? `${formatShortDate(event.start_datetime)} – ${formatShortDate(event.end_datetime!)} · All day`
                 : formatTime(event.start_datetime)}
@@ -98,13 +98,16 @@ export default function EventCard({ event, selected, onClick }: Props) {
                 </span>
               )}
               {event.registration_required && (
-                <span className="font-medium whitespace-nowrap" style={{ ...CHIP, backgroundColor: 'var(--color-accent-tint)', color: 'var(--color-accent-text)' }} title="Registration required">
-                  Registration
+                <span className="font-medium whitespace-nowrap inline-flex items-center" style={{ ...CHIP, backgroundColor: 'var(--color-accent-tint)', color: 'var(--color-accent-text)' }} title="Registration required" aria-label="Registration required">
+                  {/* mobile: icon only; sm+: full text */}
+                  <svg className="sm:hidden" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 4H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 14 2 2 4-4"/></svg>
+                  <span className="hidden sm:inline">Registration</span>
                 </span>
               )}
               {event.is_recurring && (
-                <span className="font-medium whitespace-nowrap" style={{ ...CHIP, backgroundColor: 'var(--color-fill-subtle)', color: 'var(--color-ink-50)' }} title="Recurring event">
-                  Recurring
+                <span className="font-medium whitespace-nowrap inline-flex items-center" style={{ ...CHIP, backgroundColor: 'var(--color-fill-subtle)', color: 'var(--color-ink-50)' }} title="Recurring event" aria-label="Recurring event">
+                  <svg className="sm:hidden" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                  <span className="hidden sm:inline">Recurring</span>
                 </span>
               )}
             </div>

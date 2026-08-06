@@ -63,7 +63,7 @@ Zone 3: Automated in CI, backfilled here for completeness — SEO, calendar, das
 | 2.1 | App loads, no filters | All upcoming events, date-ascending | [R] |
 | 2.2 | Events from all three sources present | Unified list shows all three | [R] |
 | 2.3 | Card content | Title, time, location, source visible without opening detail | [R] |
-| 2.4 | Registration required | "Reg." badge on card | [R] |
+| 2.4 | Registration required | "Registration" badge on card — full text on desktop, clipboard icon on mobile (see §11.5) | [A] [R] · smoke.spec.ts |
 | 2.5 | Date range pre-populated on load | From = today; To = today + 7 days; both set without user action | [R] |
 
 *(Price and age card badges are covered in §3 and §6; recurring in §11.)*
@@ -186,10 +186,11 @@ Cards show only "Family" (confirmed or inferred) and the bare inferred marker; s
 ## 11. Recurring indicator
 | # | Scenario | Expected result | Tag |
 |---|---|---|---|
-| 11.1 | Title on 2+ future dates within a source | `↻ Recurring` badge on card + detail | [A] [R] · recurring.test.ts |
+| 11.1 | Title on 2+ future dates within a source | "Recurring" badge on card + detail (detection logic; Weekend Paper: no `↻` symbol) | [A] [R] · recurring.test.ts |
 | 11.2 | Single-occurrence event | No recurring badge | [A] [R] · recurring.test.ts |
 | 11.3 | Same title in two sources | Not merged (source-scoped) | [A] · recurring.test.ts |
 | 11.4 | Pre-flagged recurring at scrape time | Flag preserved; label not overwritten | [A] · recurring.test.ts |
+| 11.5 | Registration / Recurring badge — **responsive** | Full text on desktop; collapses to a **line-icon on mobile** (Recurring → repeat, Registration → clipboard), each keeping an aria-label + tooltip | [A] [R] · smoke.spec.ts |
 
 ---
 

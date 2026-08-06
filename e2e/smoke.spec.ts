@@ -68,8 +68,21 @@ test('cards omit structured age ranges but keep Family / inferred markers (§1.1
   // inferred family + bare inferred marker present
   await expect(main.getByText('~ Family ✦').first()).toBeVisible()
   await expect(main.getByText('✦', { exact: true }).first()).toBeVisible()
-  // recurring badge present (Weekend Paper: plain "Recurring", the ↻ symbol was removed)
+  // recurring badge shows full text on desktop (mobile collapses to an icon — see next test)
   await expect(main.getByText('Recurring').first()).toBeVisible()
+})
+
+test('Registration/Recurring badges: full text on desktop, icon-only on mobile', async ({ page }) => {
+  const main = page.locator('main')
+  // Desktop (default 1280px): the long labels render as full text
+  await expect(main.getByText('Registration', { exact: true }).first()).toBeVisible()
+  await expect(main.getByText('Recurring', { exact: true }).first()).toBeVisible()
+  // Mobile: labels collapse to line-icons — text hidden, chip still present via its aria-label
+  await page.setViewportSize({ width: 375, height: 800 })
+  await expect(main.getByText('Registration', { exact: true }).first()).toBeHidden()
+  await expect(main.getByText('Recurring', { exact: true }).first()).toBeHidden()
+  await expect(main.getByLabel('Registration required').first()).toBeVisible()
+  await expect(main.getByLabel('Recurring event').first()).toBeVisible()
 })
 
 test('inferred free Play Frisco event → "Free ✦" on card + ONE combined disclosure in detail (Def A)', async ({ page }) => {

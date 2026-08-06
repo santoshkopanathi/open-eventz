@@ -87,9 +87,9 @@ function FilterDropdown({ groupLabel, options, selected, accent, onChange }: {
         onClick={() => setOpen(o => !o)}
         className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
         style={{
-          border: `1px solid ${active ? 'var(--color-accent)' : 'var(--color-border)'}`,
-          backgroundColor: active ? 'var(--color-accent-tint)' : 'transparent',
-          color: active ? 'var(--color-accent-text)' : 'var(--color-ink-70)',
+          border: `1px solid ${active ? 'var(--color-accent)' : 'var(--color-border-strong)'}`,
+          backgroundColor: active ? 'var(--color-accent-tint)' : 'var(--color-paper)',
+          color: active ? 'var(--color-accent-text)' : 'var(--color-ink)',
         }}
       >
         <span className="whitespace-nowrap">{buttonLabel}</span>
@@ -152,13 +152,7 @@ export default function SourceSubFilter({ city, sources, branches, ages, date_fr
       }}
     >
       {/* Label + clear */}
-      <div className="flex items-center justify-between mb-2">
-        <span
-          className="font-mono uppercase"
-          style={{ fontSize: '11px', letterSpacing: '0.1em', color: 'var(--color-ink-35)' }}
-        >
-          {city === 'frisco' ? 'Frisco City' : 'Plano City'}
-        </span>
+      <div className="flex items-center justify-end mb-2">
         <button onClick={onClear} className="text-xs underline" style={{ color: 'var(--color-accent)' }}>
           Clear filters
         </button>
@@ -223,9 +217,9 @@ export default function SourceSubFilter({ city, sources, branches, ages, date_fr
               className="px-3.5 py-1.5 text-xs font-semibold transition-colors"
               style={{
                 borderRadius: '999px',
-                border: `1px solid ${active ? 'var(--color-accent)' : 'var(--color-border)'}`,
-                backgroundColor: active ? 'var(--color-accent)' : 'var(--color-fill-subtle)',
-                color: active ? 'var(--color-paper)' : 'var(--color-ink-70)',
+                border: `1px solid ${active ? 'var(--color-accent)' : 'var(--color-border-strong)'}`,
+                backgroundColor: active ? 'var(--color-accent)' : 'var(--color-paper)',
+                color: active ? 'var(--color-paper)' : 'var(--color-ink)',
               }}
             >
               {p.label}
