@@ -1,8 +1,33 @@
 #!/bin/sh
-# Pre-push gate: type-check + unit tests (fast, no browser needed).
-# E2E (Playwright) is intentionally CI-ONLY — see .github/workflows/ci.yml (job: e2e).
-# It was dropped from this hook because the local chrome-headless-shell binary is often
-# missing/mismatched, which produced false push failures and forced --no-verify.
+# Pre-push gate: typecheck + unit tests, then E2E (Playwright) IF a browser is installed.
+#
+# Why guarded: the local Playwright browser is sometimes missing/mismatched (that's why E2E
+# was originally CI-only). Rather than false-fail and force --no-verify, we WARN and skip E2E
+# when no browser is found. When a browser IS present we run the smoke suite here so UI
+# regressions are caught before they turn CI red (the "green pre-push != green pipeline" trap).
+# E2E still runs unconditionally in CI (.github/workflows/ci.yml, job: e2e).
+# To enable it locally: npx playwright install chromium
 cd "$(git rev-parse --show-toplevel)" || exit 1
-echo "▶ pre-push: typecheck + unit tests (E2E runs in CI)"
-npm run typecheck && npm test
+
+echo "▶ pre-push: typecheck + unit tests"
+npm run typecheck && npm test || exit 1
+
+# --- E2E (guarded on browser presence) ------------------------------------
+has_pw_browser() {
+  for d in "$PLAYWRIGHT_BROWSERS_PATH" \
+           "$HOME/AppData/Local/ms-playwright" \
+           "$LOCALAPPDATA/ms-playwright" \
+           "$HOME/.cache/ms-playwright" \
+           "$HOME/Library/Caches/ms-playwright"; do
+    [ -n "$d" ] && ls "$d"/chromium-* >/dev/null 2>&1 && return 0
+  done
+  return 1
+}
+
+if has_pw_browser; then
+  echo "▶ pre-push: E2E smoke (Playwright)"
+  npm run test:e2e || exit 1
+else
+  echo "⚠ pre-push: Playwright browser not found — SKIPPING E2E (it still runs in CI)."
+  echo "  To run it locally before pushing UI changes: npx playwright install chromium"
+fi

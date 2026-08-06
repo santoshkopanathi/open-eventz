@@ -13,7 +13,7 @@ npm run test:e2e     # Playwright smoke (UI flows, /api mocked)
 
 CI runs all three automatically on push / PR — see `.github/workflows/ci.yml`.
 
-**Git hooks** (`core.hooksPath=.githooks`): `pre-commit` and `pre-push` both run `typecheck + unit` (fast, browser-free). **E2E is CI-only** — no hook runs it, so run `npm run test:e2e` manually before pushing UI changes, or rely on the CI `e2e` job.
+**Git hooks** (`core.hooksPath=.githooks`): `pre-commit` runs `typecheck + unit` (fast, browser-free). **`pre-push` runs `typecheck + unit`, then the Playwright E2E smoke suite — but only when a browser is installed.** If no browser is found it prints a warning and *skips* E2E (so a browserless clone/CI-runner isn't blocked and forced onto `--no-verify`); CI runs E2E unconditionally regardless (`ci.yml`, job `e2e`). Install the browser locally with `npx playwright install chromium`. **Discipline for UI changes:** make sure the browser is installed so pre-push actually *runs* E2E rather than skipping it — a green pre-commit is not a green pipeline (this bit us on the Weekend Paper reskin: unit/typecheck green locally, E2E red in CI — see BUILD-LOG).
 
 **LLM price calibration** (manual, costs money): `npm run calibrate:price` runs the real Claude model against the ground-truth set in `src/lib/__fixtures__/price-calibration.ts` and prints a pass/fail table. Run it when the price/age prompt or model changes, or when drift is suspected — NOT in CI. Needs `ANTHROPIC_API_KEY`. The deterministic half of the calibration set runs for free in the normal Jest suite.
 
