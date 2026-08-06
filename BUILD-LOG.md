@@ -732,6 +732,20 @@ The performance concern was also overstated: ingest runs as a background job, no
 
 ---
 
+### Learning 6 — E2E was CI-only, so a large reskin passed the pre-push hook and turned CI red
+
+**Date:** August 2026
+
+**What happened.** The "Weekend Paper" visual reskin (see the redesign entry above) changed a lot of visible surface — text, colours, DOM structure. The pre-push hook ran typecheck + unit tests (fast, browser-free); the Playwright **E2E smoke suite was CI-only**. So the reskin sailed through the local gate, merged to master, deployed — and **CI went red on E2E.** Four smoke assertions were coupled to presentation the reskin changed: a card label (`↻ Recurring` → `Recurring`), the confirmed-family chip colour (`#F5F0DE` → `#F3EDE3`), and a `button.rounded-full` selector on the filter dropdown (its radius had moved to an inline style).
+
+**Why it happened — root cause.** The local gate didn't include the layer that tests the thing I was most likely to break. For a **UI** change that layer is **E2E**, and it wasn't in the hook — so "green pre-push" said nothing about the actual risk. This is the **second** instance of the same failure mode as the earlier CI-red (the `jest.config.ts` / `ts-node` incident — Concept E in the interview doc): *a green local hook is not a green pipeline.*
+
+**The fix — two parts.** (1) Repaired the three couplings and re-ran the suite (9/9 green). (2) **Hardened the pre-push hook to run the E2E smoke suite** after typecheck + unit — but **guarded on browser presence**: it checks the `ms-playwright` caches (+ `$PLAYWRIGHT_BROWSERS_PATH`) and, if no browser is installed, prints a warning and *skips* E2E rather than false-failing. That graceful skip matters — E2E had been dropped from the hook originally *because* a missing local browser produced false failures and forced `--no-verify`; a naïve "always run E2E" would just re-introduce that. CI still runs E2E unconditionally; the discipline is documented in `TESTING.md`.
+
+**The lesson.** Your local gate has to include the layer that tests what you actually change — for UI work that's E2E, not just unit + typecheck. And when you add a check that's flaky in *some* environments, the robust design is **run-when-possible / skip-gracefully**, not all-or-nothing: that's what lets you tighten the gate without re-introducing the false failures that made you loosen it in the first place.
+
+---
+
 ---
 
 ### Decision 4 — Play Frisco LLM inference: claude-sonnet-4-6 over claude-haiku-4-5
