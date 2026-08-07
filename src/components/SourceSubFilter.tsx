@@ -46,6 +46,7 @@ interface Props {
   ages: string[]         // selected age chips (multi-select)
   date_from: string
   date_to: string
+  canClear: boolean      // true when filters differ from default → show the Clear link
   onPatch: (patch: SubFilterPatch) => void
   onClear: () => void
 }
@@ -128,7 +129,7 @@ function FilterDropdown({ groupLabel, options, selected, accent, onChange }: {
 
 // Secondary filter row for the active city (spec §1). Source/branch and age are multi-select
 // dropdowns; the city accent carries in via the left border and tinted background.
-export default function SourceSubFilter({ city, sources, branches, ages, date_from, date_to, onPatch, onClear }: Props) {
+export default function SourceSubFilter({ city, sources, branches, ages, date_from, date_to, canClear, onPatch, onClear }: Props) {
   const [branchOptions, setBranchOptions] = useState<Option[]>([])
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
@@ -151,14 +152,17 @@ export default function SourceSubFilter({ city, sources, branches, ages, date_fr
         borderRadius: 'var(--radius-input)',
       }}
     >
-      {/* Label + clear */}
-      <div className="flex items-center justify-end mb-2">
-        <button onClick={onClear} className="text-xs underline" style={{ color: 'var(--color-accent)' }}>
-          Clear filters
-        </button>
-      </div>
+      {/* Clear — shown only when a filter is non-default (top-right). Gated on `mounted` too,
+          so the SSR/first-client render never differs (no hydration mismatch on date compares). */}
+      {mounted && canClear && (
+        <div className="flex items-center justify-end mb-2">
+          <button onClick={onClear} className="text-xs underline" style={{ color: 'var(--color-accent)' }}>
+            Clear filters
+          </button>
+        </div>
+      )}
 
-      {/* Filters — source/branch, age, and date range */}
+      {/* Filters — source/branch + age dropdowns */}
       <div className="flex flex-wrap items-center gap-2">
         {city === 'frisco' && (
           <FilterDropdown
@@ -185,28 +189,35 @@ export default function SourceSubFilter({ city, sources, branches, ages, date_fr
           accent={accent}
           onChange={next => onPatch({ ages: next })}
         />
-        <span className="text-xs ml-1" style={{ color: 'var(--color-ink-35)' }}>From</span>
-        <input
-          type="date"
-          value={date_from}
-          onChange={e => onPatch({ date_from: e.target.value })}
-          className="px-2 py-1 border text-xs outline-none"
-          style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-paper)', borderRadius: 'var(--radius-input)', color: 'var(--color-ink)' }}
-        />
-        <span className="text-xs" style={{ color: 'var(--color-ink-35)' }}>to</span>
-        <input
-          type="date"
-          value={date_to}
-          onChange={e => onPatch({ date_to: e.target.value })}
-          className="px-2 py-1 border text-xs outline-none"
-          style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-paper)', borderRadius: 'var(--radius-input)', color: 'var(--color-ink)' }}
-        />
+      </div>
+
+      {/* Date range — its own row (mirrors the Jump-to row); the From/to pair is a single
+          non-wrapping group so it never splits mid-range on mobile (the awkward-wrap fix). */}
+      <div className="flex flex-wrap items-center gap-2 mt-2">
+        <div className="inline-flex items-center gap-1.5">
+          <span className="text-xs" style={{ color: 'var(--color-ink-35)' }}>From</span>
+          <input
+            type="date"
+            value={date_from}
+            onChange={e => onPatch({ date_from: e.target.value })}
+            className="px-2 py-1 border text-xs outline-none"
+            style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-paper)', borderRadius: 'var(--radius-input)', color: 'var(--color-ink)' }}
+          />
+          <span className="text-xs" style={{ color: 'var(--color-ink-35)' }}>to</span>
+          <input
+            type="date"
+            value={date_to}
+            onChange={e => onPatch({ date_to: e.target.value })}
+            className="px-2 py-1 border text-xs outline-none"
+            style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-paper)', borderRadius: 'var(--radius-input)', color: 'var(--color-ink)' }}
+          />
+        </div>
       </div>
 
       {/* Quick date presets — own row, directly beneath the filters; set date_from/date_to.
           Filled pills (distinct from the outlined dropdown filters); solid rust when active. */}
       <div className="flex flex-wrap items-center gap-2 mt-2">
-        <span className="font-mono uppercase mr-0.5" style={{ fontSize: '10px', letterSpacing: '0.1em', color: 'var(--color-ink-35)' }}>Jump to</span>
+        <span className="text-xs" style={{ color: 'var(--color-ink-35)' }}>Jump to</span>
         {DATE_PRESETS.map(p => {
           const r = presetRange(p.id)
           const active = mounted && date_from === r.date_from && date_to === r.date_to

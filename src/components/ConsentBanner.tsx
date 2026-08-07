@@ -32,27 +32,28 @@ export default function ConsentBanner() {
     <div
       role="dialog"
       aria-label="Cookie consent"
-      className="fixed bottom-0 inset-x-0 z-[100] p-4"
+      className="fixed bottom-0 inset-x-0 z-[100] p-2 sm:p-3"
     >
+      {/* Slim single-line bar — stays a compact strip so it barely covers the list on mobile
+          (the row never stacks; buttons stay inline right, the copy takes at most two short lines). */}
       <div
-        className="max-w-3xl mx-auto rounded-xl border shadow-lg p-4 flex flex-col sm:flex-row sm:items-center gap-3"
+        className="max-w-3xl mx-auto rounded-lg border shadow-lg py-2 pl-3.5 pr-2 flex items-center gap-3"
         style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
       >
-        <p className="text-sm leading-relaxed flex-1">
-          We use analytics cookies to understand how families use Open Eventz and improve it.
-          You can accept or decline — declining keeps everything working.
+        <p className="text-xs leading-snug flex-1">
+          Analytics cookies help us improve Open Eventz. Declining keeps everything working.
         </p>
         <div className="flex gap-2 flex-shrink-0">
           <button
             onClick={() => choose(false)}
-            className="px-4 py-2 rounded-lg text-sm font-semibold border transition-colors hover:bg-gray-50"
+            className="px-3 py-1.5 rounded-md text-xs font-semibold border transition-colors hover:bg-gray-50"
             style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
           >
             Decline
           </button>
           <button
             onClick={() => choose(true)}
-            className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            className="px-3 py-1.5 rounded-md text-xs font-semibold text-white transition-opacity hover:opacity-90"
             style={{ backgroundColor: 'var(--color-primary)' }}
           >
             Accept

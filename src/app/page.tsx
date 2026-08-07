@@ -112,6 +112,14 @@ export default function Home() {
     setMapOn(false)
   }
   const active = city === 'frisco' ? frisco : plano
+  // Whether the active city's filters differ from the default (empty selections + default
+  // date window). Drives showing the "Clear filters" link only when there's something to clear.
+  const def = defaultDates()
+  const canClear =
+    (city === 'frisco' ? frisco.sources.length > 0 : plano.branches.length > 0) ||
+    active.ages.length > 0 ||
+    active.date_from !== def.date_from ||
+    active.date_to !== def.date_to
 
   // Infinite scroll: load next page when sentinel comes into view
   useEffect(() => {
@@ -168,6 +176,7 @@ export default function Home() {
             ages={active.ages}
             date_from={active.date_from}
             date_to={active.date_to}
+            canClear={canClear}
             onPatch={patchActive}
             onClear={clearActive}
           />

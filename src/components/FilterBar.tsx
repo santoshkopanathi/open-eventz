@@ -55,7 +55,7 @@ export default function FilterBar({ city, onCityChange, mapOn, onToggleMap }: Pr
       {onToggleMap && (
         <button
           onClick={onToggleMap}
-          className="flex-shrink-0 flex items-center px-3.5 py-2 text-sm transition-colors"
+          className="flex-shrink-0 flex items-center px-3 py-1.5 text-xs transition-colors"
           style={{
             borderRadius: 'var(--radius-input)',
             border: '1px solid var(--color-border-strong)',

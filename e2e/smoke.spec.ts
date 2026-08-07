@@ -139,6 +139,21 @@ test('age dropdown multi-select shows count badge and sends OR params (§4.2, §
   expect(lastEventsUrl).toContain('age=13-17')
 })
 
+test('"Clear filters" is hidden by default and appears only once a filter is active', async ({ page }) => {
+  // Default state: the date window is default and nothing is selected → no Clear link.
+  await expect(page.getByRole('button', { name: 'Clear filters' })).toHaveCount(0)
+  // The dedicated date row is present (From/to inputs — the anti-wrap layout).
+  await expect(page.locator('main').getByText('From', { exact: true })).toBeVisible()
+  // Applying an age filter makes the filter state non-default → Clear appears.
+  await page.getByRole('button', { name: /Age range/ }).click()
+  await page.getByRole('checkbox', { name: 'Teens' }).check()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('button', { name: 'Clear filters' })).toBeVisible()
+  // Clicking it resets to default → Clear disappears again.
+  await page.getByRole('button', { name: 'Clear filters' }).click()
+  await expect(page.getByRole('button', { name: 'Clear filters' })).toHaveCount(0)
+})
+
 test('Plano tab shows branch dropdown, confirmed gold "Family" badge (§1.3, §5.2)', async ({ page }) => {
   await page.getByRole('tab', { name: /Plano City/ }).click()
   await expect(page.getByRole('button', { name: /Branches/ })).toBeVisible()
