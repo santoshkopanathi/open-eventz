@@ -1259,3 +1259,22 @@ Applied in both `src/app/events/[id]/page.tsx` (server page) and `src/components
 **Verification.** typecheck + **233 unit** + **11 E2E** (the new conditional-Clear test) + `next build` all green locally; pre-commit + pre-push hooks green; screenshots confirmed on a 390px mobile viewport (default + filter-active states). **This time the local gate matched CI** — for the reskin the pre-push hook (typecheck+unit only) went green while CI's E2E went red, so per that lesson I ran `npx playwright test` locally before pushing.
 
 **The lesson.** A control that's *always shown* but only sometimes *does something* (the old Clear link) is worse than one that appears on demand — conditional affordances remove the dead state and reclaim space. And when a native input wraps awkwardly, the fix is usually the surrounding layout (give it its own row, keep the pair a non-wrapping unit), not a heavier custom replacement.
+
+---
+
+## Custom domain — `openeventz.com` goes live
+
+**Date:** 2026-08-10 · Full technical record in **[`SEO-DESIGN.md` §8](./SEO-DESIGN.md)**; this is the concise log entry.
+
+**Initial situation.** Production ran on the shared Vercel subdomain `open-eventz.vercel.app`. The app's canonical origin (`SITE_URL` in `src/lib/site.ts`) defaulted to it, so every canonical tag, OpenGraph URL, `robots.txt` host, `sitemap.xml` entry, and Event JSON-LD `url` pointed at `*.vercel.app`.
+
+**Why we changed it.** A shared `*.vercel.app` subdomain is the **biggest structural SEO limitation** we had — zero controllable domain authority, and it blocks a GSC *Domain* property (no DNS control over `vercel.app`). Timed deliberately: the site isn't ranking competitively yet, so there's near-zero search equity at risk — the cheapest moment to move.
+
+**The change.**
+- Registered `openeventz.com` at **Cloudflare**. DNS (Approach A, records at the registrar, both **grey-cloud / DNS-only**): `A @ → 76.76.21.21` and `CNAME www → cname.vercel-dns.com`. *Why grey-cloud:* Vercel owns SSL/CDN/redirects; Cloudflare proxying would double-layer SSL and break cert issuance / cause redirect loops.
+- **Vercel:** added apex + `www`; **canonical = apex**, with `www` set to a **308 permanent redirect → apex** (permanent so Google consolidates; the "redirect apex→www" option left unchecked).
+- **One code lever, no code change:** set `NEXT_PUBLIC_SITE_URL = https://openeventz.com` (Production). The SEO foundation already had `SITE_URL` read this env var, so the whole canonical surface repoints at once. Because `NEXT_PUBLIC_*` is **inlined at build time**, applied it via a **clean redeploy (build cache off)** — a config-only save wouldn't take.
+
+**Follow-up (open).** Create a new GSC **Domain property** (DNS-TXT verified in Cloudflare), resubmit `sitemap.xml`, keep the old URL-prefix property to watch the transition. GA4 needs no change (same measurement ID across domains).
+
+**The lesson.** One indirection — `SITE_URL` reading a single env var — turned a domain move that *could* have been a find-and-replace across sitemap/robots/metadata/JSON-LD into a **one-value cutover + rebuild**. The only real gotcha is that `NEXT_PUBLIC_*` bakes in at build time, so the redeploy must be a clean build, not a settings-only save.

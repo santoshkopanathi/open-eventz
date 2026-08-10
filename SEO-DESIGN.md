@@ -164,7 +164,7 @@ GA4 loads with `analytics_storage` **defaulted to `denied`** via an inline `gtag
 | **Performance** | queries / impressions / clicks (the search funnel) | ~1–3 weeks |
 
 ### Still open / optional
-- Set `NEXT_PUBLIC_SITE_URL` on Vercel *only if* the production domain ever changes from `https://open-eventz.vercel.app` (the default).
+- ~~Set `NEXT_PUBLIC_SITE_URL` on Vercel *only if* the production domain ever changes from `https://open-eventz.vercel.app`.~~ **Done (2026-08-10):** production moved to the custom domain `https://openeventz.com` — full migration record in **§8**.
 - **Later:** a GSC search-funnel panel on the dashboard, once Performance data exists.
 - **Optional follow-up:** rewire the in-app event cards to link to `/events/[id]` (today they open the in-app detail panel; the SEO pages are reached via direct URL / city pages / Google).
 
@@ -173,3 +173,47 @@ GA4 loads with `analytics_storage` **defaulted to `denied`** via an inline `gtag
 ## 7. How to talk about it
 
 *"The app was a single client-rendered page — invisible to search engines at the event level. The foundational SEO decision was to give every event its own server-rendered, indexable URL, while leaving the app's UX untouched. On top of that I added schema.org Event structured data — the highest-leverage move, because it makes each event eligible for Google's rich Event card — plus per-event metadata, city landing pages for the broad local queries, and a dynamic sitemap. I kept one pure, unit-tested gate deciding what's indexable, so the sitemap and the pages can never disagree. The one judgement call was price: we assert 'free' in the structured data for both confirmed and inferred-free events, which is safe because the page visibly shows the same 'Free' badge, and it's a one-line reversal if we ever want to tighten it."*
+
+---
+
+## 8. Custom domain migration — `openeventz.com` (2026-08-10)
+
+*Status: DNS + Vercel + the app's canonical origin cut over to `https://openeventz.com`; Google Search Console re-setup is the remaining follow-up (below).*
+
+### Why move off `*.vercel.app`
+A shared `*.vercel.app` subdomain is **the single biggest structural SEO limitation** the project had: (1) it carries no domain authority you can build on and inherits none you can control; (2) you **cannot create a GSC *Domain* property** for it (no DNS control over `vercel.app`), only a weaker URL-prefix property; (3) it reads as less trustworthy to users. Moving now was deliberately timed — the site **is not yet ranking for competitive terms**, so there is almost no search equity at risk. Waiting only raises the future migration cost.
+
+### DNS (Cloudflare Registrar — Approach A, records at the registrar)
+The apex `openeventz.com` was registered at Cloudflare, so DNS lives in Cloudflare's dashboard (**DNS → Records**). Two records, both **"DNS only" (grey cloud), not Proxied**:
+
+| Type | Name | Value | Proxy |
+|---|---|---|---|
+| `A` | `@` (apex) | `76.76.21.21` | DNS only |
+| `CNAME` | `www` | `cname.vercel-dns.com` | DNS only |
+
+**Why grey-cloud (DNS only) matters:** Vercel terminates SSL and runs the CDN/redirects. Orange-clouding (Cloudflare proxy) puts a *second* SSL/redirect layer in front, which commonly produces "too many redirects" or a cert that never issues. Cloudflare nags to enable proxying — ignore it here; Vercel already provides SSL + global CDN + DDoS protection. (Vercel also shows a soft *"DNS Change Recommended"* suggesting its newer `…vercel-dns-017.com` target; the legacy `76.76.21.21` **continues to work**, so the A record was left as-is — don't touch a working record for a cosmetic badge.)
+
+### Vercel
+- Both `openeventz.com` **and** `www.openeventz.com` added to the project (Production).
+- **Canonical = apex.** `www.openeventz.com` is a **308 Permanent Redirect → `openeventz.com`** (permanent, so Google consolidates to the apex — *not* a 307/302 temporary). The "Redirect apex → www" option was deliberately left **unchecked**.
+- **SSL is automatic** (Let's Encrypt, auto-renew) once DNS resolves. The `*.vercel.app` URL keeps working as the deployment address.
+
+### The one code lever — `NEXT_PUBLIC_SITE_URL`
+The whole canonical surface derives from `SITE_URL` in `src/lib/site.ts` (`process.env.NEXT_PUBLIC_SITE_URL ?? 'https://open-eventz.vercel.app'`). Setting **`NEXT_PUBLIC_SITE_URL = https://openeventz.com`** (Production, no trailing slash) repoints, in one change:
+- `metadataBase` → canonical + OpenGraph/Twitter base (`layout.tsx`),
+- `robots.txt` `host` + `sitemap` link (`robots.ts`),
+- every `sitemap.xml` URL (`sitemap.ts`),
+- every event/city/JSON-LD `url` (`eventUrl`, `cityUrl`, `buildEventJsonLd`).
+
+**It must be a clean rebuild.** `NEXT_PUBLIC_*` is **inlined at build time**, so the existing deployment does not pick up the new value — a redeploy with the **build cache off** guarantees the new origin is baked into every bundle. (No code change was needed; the override hook already existed from the SEO foundation.)
+
+### Google Search Console — post-cutover follow-up (TODO)
+Now that we control the apex's DNS, do the stronger setup:
+1. **Create a new GSC *Domain* property** for `openeventz.com` — verified by a **DNS TXT record** (add it in Cloudflare DNS). A Domain property covers apex + `www` + http/https in one.
+2. **Resubmit `sitemap.xml`** under the new property (it now emits `openeventz.com` URLs).
+3. **Keep the old** `https://open-eventz.vercel.app` URL-prefix property for now to watch the transition; optionally request-index `/`, `/frisco`, `/plano` on the new property.
+4. **GA4 is unaffected** — same measurement ID works across domains; optionally update the data-stream URL + referral-exclusion to `openeventz.com` (cosmetic).
+5. The existing `public/google…​.html` verification file can stay (harmless); the DNS Domain property is the better long-term verification.
+
+### The lesson
+A single well-placed indirection (`SITE_URL` reading one env var) turns what could be a find-and-replace across sitemap, robots, metadata, and JSON-LD into a **one-value cutover with a rebuild** — and because `NEXT_PUBLIC_*` inlines at build time, the only gotcha is remembering the redeploy must be a clean build, not a config-only save.
