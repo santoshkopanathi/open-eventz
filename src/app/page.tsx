@@ -291,19 +291,24 @@ export default function Home() {
       {/* Mobile detail — full-screen with sticky back button */}
       {selected && (
         <div className="lg:hidden fixed inset-0 z-50 flex flex-col" style={{ backgroundColor: 'var(--color-paper)' }}>
-          <div
-            className="flex-shrink-0 flex items-center gap-3 px-5 py-3 border-b"
-            style={{ backgroundColor: 'var(--color-paper-raised)', borderColor: 'var(--color-border)', boxShadow: '0 1px 3px rgba(31,27,22,0.05)' }}
+          {/* Branding bar — matches the home ink masthead (ink band + rust rule + two-colour
+              wordmark + tagline) so the detail view reads as the same product, not a plain page. */}
+          <header
+            className="masthead flex-shrink-0 flex items-center"
+            style={{ backgroundColor: '#1F1B16', borderBottom: '3px solid #B4623B', padding: '14px 20px' }}
           >
             <button
               type="button"
               onClick={resetToHome}
-              className="flex flex-col text-left cursor-pointer"
+              className="flex flex-col gap-0.5 text-left cursor-pointer min-w-0"
               aria-label="Open Eventz home — reset filters and show all events"
             >
-              <span className="font-display leading-none" style={{ fontSize: '22px', letterSpacing: '-0.01em', color: 'var(--color-ink)' }}>Open Eventz</span>
+              <span className="font-display leading-none whitespace-nowrap text-[26px]" style={{ letterSpacing: '-0.015em' }}>
+                <span style={{ color: '#FBF7F1' }}>Open </span><span style={{ color: '#E8A87C' }}>Eventz</span>
+              </span>
+              <span className="font-mono uppercase whitespace-nowrap text-[9px] tracking-[0.1em]" style={{ color: '#A79C8B' }}>Free things to do with kids · Frisco &amp; Plano</span>
             </button>
-          </div>
+          </header>
           {/* Back row — beneath the branding bar, directly above the event title */}
           <div
             className="flex-shrink-0 px-5 py-2 border-b"

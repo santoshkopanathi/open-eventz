@@ -162,8 +162,10 @@ export default function SourceSubFilter({ city, sources, branches, ages, date_fr
         </div>
       )}
 
-      {/* Filters — source/branch + age dropdowns */}
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Filters — source/branch + age dropdowns, the date range, and the quick presets all
+          flow inline on one row on desktop, and wrap to new lines only as the width narrows
+          (e.g. mobile). The From/to pair and the Jump-to label+pills each stay intact on wrap. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         {city === 'frisco' && (
           <FilterDropdown
             groupLabel="Sources"
@@ -189,11 +191,8 @@ export default function SourceSubFilter({ city, sources, branches, ages, date_fr
           accent={accent}
           onChange={next => onPatch({ ages: next })}
         />
-      </div>
 
-      {/* Date range — its own row (mirrors the Jump-to row); the From/to pair is a single
-          non-wrapping group so it never splits mid-range on mobile (the awkward-wrap fix). */}
-      <div className="flex flex-wrap items-center gap-2 mt-2">
+        {/* Date range — non-wrapping group so From/to never splits mid-range */}
         <div className="inline-flex items-center gap-1.5">
           <span className="text-xs" style={{ color: 'var(--color-ink-35)' }}>From</span>
           <input
@@ -212,13 +211,11 @@ export default function SourceSubFilter({ city, sources, branches, ages, date_fr
             style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-paper)', borderRadius: 'var(--radius-input)', color: 'var(--color-ink)' }}
           />
         </div>
-      </div>
 
-      {/* Quick date presets — own row, directly beneath the filters; set date_from/date_to.
-          Filled pills (distinct from the outlined dropdown filters); solid rust when active. */}
-      <div className="flex flex-wrap items-center gap-2 mt-2">
-        <span className="text-xs" style={{ color: 'var(--color-ink-35)' }}>Jump to</span>
-        {DATE_PRESETS.map(p => {
+        {/* Quick presets — label + pills stay together as a group when wrapping */}
+        <div className="inline-flex items-center gap-2">
+          <span className="text-xs" style={{ color: 'var(--color-ink-35)' }}>Jump to</span>
+          {DATE_PRESETS.map(p => {
           const r = presetRange(p.id)
           const active = mounted && date_from === r.date_from && date_to === r.date_to
           return (
@@ -237,6 +234,7 @@ export default function SourceSubFilter({ city, sources, branches, ages, date_fr
             </button>
           )
         })}
+        </div>
       </div>
     </div>
   )
