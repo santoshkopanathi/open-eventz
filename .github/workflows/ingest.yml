@@ -31,7 +31,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Node 22 (not 20): @supabase/supabase-js builds a Realtime client on
+          # createClient() which needs a global WebSocket — first stable in Node 22.
+          # Node 20 throws "Node.js 20 detected without native WebSocket support".
+          node-version: 22
           cache: npm
       - run: npm ci
       - name: Ingest ${{ matrix.source }}
