@@ -6,7 +6,7 @@
 import { XMLParser } from 'fast-xml-parser'
 import { supabaseAdmin } from './supabase'
 import { EventCategory } from './types'
-import { parseFriscoSuitableFor, parseCommunicoAgeGroup, communicoIsFamily } from './age-parsers'
+import { parseCommunicoAgeGroup, communicoIsFamily, mapFriscoAudienceIds } from './age-parsers'
 import { inferPlayFriscoEvent } from './age-inference'
 import { fallbackPriceClass, resolvePriceClass, priceClassToFields, interpretCostField } from './price'
 import { PER_INFERENCE_COST_USD } from './technical-metrics'
@@ -61,12 +61,41 @@ function parseAgeRange(text: string): { age_min: number | null; age_max: number 
   return { age_min: null, age_max: null, age_label: text }
 }
 
+// Frisco audience taxonomy (id -> name), fetched once per run from BiblioCommons' JSON API.
+// The /v2 pages are client-side-rendered, so age lives here (and in each event's audience_ids),
+// not in the server-rendered HTML. Content-negotiated: needs Accept: application/json.
+async function fetchFriscoAudiences(): Promise<Map<string, string>> {
+  const map = new Map<string, string>()
+  try {
+    const res = await fetch('https://friscolibrary.bibliocommons.com/events/event_audiences?client_scope=events&limit=0', {
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      },
+    })
+    if (res.ok) {
+      const j: any = await res.json()
+      const arr: any[] = j.audiences || j.event_audiences || j.data || (Array.isArray(j) ? j : Object.values(j)[0]) || []
+      for (const a of arr) if (a?.id && (a.name || a.title)) map.set(a.id, a.name || a.title)
+    }
+  } catch {
+    // leave empty — every event then hits the all-ages fallback, which the data-quality gate flags
+  }
+  return map
+}
+
 async function ingestFriscoLibrary() {
   const errors: string[] = []
   const events: any[] = []
-  // Deduplicate — BiblioCommons audience_id filter is ignored server-side (requires browser
-  // session cookie), so all paginated fetches return the full unfiltered catalogue
   const seenIds = new Set<string>()
+  let ageResolved = 0
+  let ageFallback = 0
+
+  // Age source (2026-08-13): the JSON API `definition.audience_ids` mapped via this taxonomy.
+  // Replaces the "Suitable for:" HTML scrape, which the client-side-rendered /v2 pages left empty.
+  const audienceTax = await fetchFriscoAudiences()
+  if (audienceTax.size === 0) errors.push('frisco-library: audience taxonomy empty (ages may fall back to all-ages)')
 
   try {
     let page = 1
@@ -128,52 +157,52 @@ async function ingestFriscoLibrary() {
         const descMatch = card.match(/class="cp-event-description[^"]*"[^>]*>([\s\S]*?)<\//)
         const teaserDescription = descMatch?.[1]?.replace(/<[^>]+>/g, '').trim() || ''
 
-        // "Suitable for:" is the sole source of age truth — audience_id feed filter doesn't work
+        // Age + full description from the JSON API (the /v2 detail HTML is JS-rendered → empty).
+        // Default to the all-ages (0–17) fallback; overwrite when the API resolves a real audience.
         let description = teaserDescription
-        let pageAgeMin: number | null = null
-        let pageAgeMax: number | null = null
+        let pageAgeMin: number | null = 0
+        let pageAgeMax: number | null = 17
         let pageAgeLabel: string | null = null
-
+        let featuredImageId: string | null = null
         try {
-          const eventRes = await fetch(eventUrl, {
-            next: { revalidate: 0 },
+          const apiRes = await fetch(`https://friscolibrary.bibliocommons.com/events/events/${eventId}?client_scope=events`, {
             headers: {
+              'Accept': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest',
               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-              'Accept': 'text/html,application/xhtml+xml',
             },
           })
-          if (eventRes.ok) {
-            const eventHtml = await eventRes.text()
-
-            const ageData = parseFriscoSuitableFor(eventHtml)
-            if (ageData.age_min !== null) {
-              pageAgeMin = ageData.age_min
-              pageAgeMax = ageData.age_max
-              pageAgeLabel = ageData.age_label
-            } else {
-              // No "Suitable for:" block — treat as all ages (children + teens)
-              pageAgeMin = 0; pageAgeMax = 17
-            }
-
-            const descStart = eventHtml.indexOf('event-description-content')
-            if (descStart > -1) {
-              const descBlock = eventHtml.slice(descStart, descStart + 8000)
-              const paragraphs: string[] = []
-              const pRegex = /<p[^>]*>([\s\S]*?)<\/p>/g
-              let pMatch
-              while ((pMatch = pRegex.exec(descBlock)) !== null) {
-                const text = decodeHtml(pMatch[1].replace(/<[^>]+>/g, ''))
-                if (text && text.length > 5) paragraphs.push(text)
+          if (apiRes.ok) {
+            const def: any = (await apiRes.json())?.event?.definition ?? null
+            if (def) {
+              featuredImageId = def.featured_image_id ?? null
+              const age = mapFriscoAudienceIds(Array.isArray(def.audience_ids) ? def.audience_ids : [], audienceTax)
+              if (age.age_min !== null) {
+                pageAgeMin = age.age_min; pageAgeMax = age.age_max; pageAgeLabel = age.age_label
+                ageResolved++
+              } else {
+                ageFallback++ // no known audience → keep the 0–17 all-ages fallback
               }
-              if (paragraphs.length > 0) description = paragraphs.join('\n\n')
+              if (typeof def.description === 'string' && def.description.trim()) {
+                description = decodeHtml(def.description.replace(/<[^>]+>/g, ' '))
+              }
+            } else {
+              ageFallback++
             }
+          } else {
+            ageFallback++
           }
         } catch {
-          // page fetch failed — age stays null, event still ingested
+          ageFallback++ // API fetch failed — event still ingested at the all-ages fallback
         }
 
-        const imgMatch = card.match(/class="cp-event-image[^"]*"[^>]*src="([^"]+)"/)
-        const thumbnail = imgMatch?.[1] || null
+        // Card event image — the /v2 markup dropped the old `cp-event-image` class, so match the
+        // BiblioCommons uploads image URL directly. These are category banners (Story Time, Arts,
+        // ESL, …) shared across events of a type — decorative, shown only in the detail view.
+        // The card HTML puts `&amp;` and raw spaces in the filename (e.g. "Arts &amp; Culture 760x230.jpg"),
+        // which 404 if stored verbatim — decode the entity and percent-encode so the URL resolves.
+        const rawImg = card.match(/src="(https:\/\/friscolibrary\.bibliocommons\.com\/events\/uploads\/images\/[^"]+)"/i)?.[1]
+        const thumbnail = rawImg ? encodeURI(decodeHtml(rawImg)) : null
 
         events.push({
           id: `frisco-library-${eventId}`,
@@ -197,7 +226,7 @@ async function ingestFriscoLibrary() {
           event_url: eventUrl,
           category: guessCategory(title, description),
           registration_required: requiresRegistration(`${title} ${description}`),
-          raw_json: { eventId, title, dateStr, location },
+          raw_json: { eventId, title, dateStr, location, featured_image_id: featuredImageId },
           ingested_at: new Date().toISOString(),
         })
       }
@@ -206,6 +235,13 @@ async function ingestFriscoLibrary() {
     }
   } catch (err: any) {
     errors.push(`frisco-library: ${err.message}`)
+  }
+
+  // Layer-2 guard: if most events couldn't resolve a real audience, the source likely changed
+  // shape again — surface it as a run warning (the data-quality gate turns it into a red job).
+  const ageTotal = ageResolved + ageFallback
+  if (ageTotal >= 20 && ageFallback / ageTotal > 0.5) {
+    errors.push(`frisco-library: age fallback rate ${Math.round((ageFallback / ageTotal) * 100)}% (${ageFallback}/${ageTotal}) — audience source may have changed`)
   }
 
   return { events, errors }

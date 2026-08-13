@@ -70,6 +70,19 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
         {sourceShortLabel(event.source)}
       </div>
 
+      {/* Hero image (category banner from the source) — detail view only; hotlinked, and hidden
+          if absent or if it fails to load, so a missing image never leaves a broken box. */}
+      {event.thumbnail_url && (
+        <img
+          src={event.thumbnail_url}
+          alt=""
+          loading="lazy"
+          className="w-full mb-4 object-cover"
+          style={{ height: '150px', borderRadius: 'var(--radius-input)', border: '1px solid var(--color-border)' }}
+          onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+        />
+      )}
+
       {/* Title row */}
       <div className="flex justify-between items-start mb-4 gap-3">
         <h2 className="font-display leading-tight" style={{ fontSize: '30px', letterSpacing: '-0.01em', color: 'var(--color-ink)' }}>

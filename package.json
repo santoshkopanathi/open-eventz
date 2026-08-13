@@ -10,6 +10,7 @@
     "test": "jest",
     "test:e2e": "playwright test",
     "ingest": "tsx scripts/ingest.ts",
+    "validate": "tsx scripts/validate-data.ts",
     "calibrate:price": "jest --config jest.calibration.config.js",
     "test:docs": "node scripts/check-doc-parity.mjs",
     "typecheck": "tsc --noEmit",

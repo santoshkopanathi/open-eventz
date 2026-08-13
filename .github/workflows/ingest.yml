@@ -45,3 +45,26 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           # Only Play Frisco calls Claude; harmless (unused) for the library jobs.
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+  # Post-ingest data-quality gate — real-data checks + live-source canary + pass/fail summary.
+  # Runs after all source jobs; a failure here means the pipeline "succeeded" but wrote bad data.
+  data-quality:
+    name: data-quality gate
+    needs: ingest
+    if: ${{ always() }} # still validate even if a source job failed — bad data is the point
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: Production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Validate ingested data
+        run: npm run validate
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

@@ -1,4 +1,56 @@
-import { parseFriscoSuitableFor, parseCommunicoAgeGroup, communicoIsFamily } from './age-parsers'
+import { parseFriscoSuitableFor, parseCommunicoAgeGroup, communicoIsFamily, mapFriscoAudienceIds } from './age-parsers'
+
+// ---------------------------------------------------------------------------
+// mapFriscoAudienceIds — the JSON-API replacement for the (now client-rendered)
+// "Suitable for:" scrape. Taxonomy mirrors BiblioCommons' 6 real audience IDs.
+// ---------------------------------------------------------------------------
+
+describe('mapFriscoAudienceIds', () => {
+  const TAX = new Map<string, string>([
+    ['adult', 'Adults'],
+    ['teen', 'Teens'],
+    ['c05', 'Children (0-5)'],
+    ['c612', 'Children (6-12)'],
+    ['tween', 'Tween (10-13)'],
+    ['all', 'All Ages'],
+  ])
+
+  test('empty audience_ids → all-null (caller uses the all-ages fallback + counts it)', () => {
+    expect(mapFriscoAudienceIds([], TAX)).toEqual({ age_min: null, age_max: null, age_label: null })
+  })
+
+  test('unknown ids (source changed shape) → all-null', () => {
+    expect(mapFriscoAudienceIds(['nope'], TAX)).toEqual({ age_min: null, age_max: null, age_label: null })
+  })
+
+  test('Children (0-5) only → 0–5 with label', () => {
+    expect(mapFriscoAudienceIds(['c05'], TAX)).toEqual({ age_min: 0, age_max: 5, age_label: 'Children (0-5)' })
+  })
+
+  test('Adults only → 18–99 (excluded downstream) — the D&D-for-Adults case', () => {
+    expect(mapFriscoAudienceIds(['adult'], TAX)).toEqual({ age_min: 18, age_max: 99, age_label: null })
+  })
+
+  test('Adults + Teens → 13–17 (not 0–17) — the Uke-Can-Do-It case', () => {
+    expect(mapFriscoAudienceIds(['adult', 'teen'], TAX)).toEqual({ age_min: 13, age_max: 17, age_label: null })
+  })
+
+  test('Adults + young kids → 0–17 (young child governs)', () => {
+    expect(mapFriscoAudienceIds(['adult', 'c05'], TAX)).toEqual({ age_min: 0, age_max: 17, age_label: null })
+  })
+
+  test('Children (6-12) + Tween → union 6–13', () => {
+    expect(mapFriscoAudienceIds(['c612', 'tween'], TAX)).toEqual({ age_min: 6, age_max: 13, age_label: null })
+  })
+
+  test('All Ages only → 0–17', () => {
+    expect(mapFriscoAudienceIds(['all'], TAX)).toEqual({ age_min: 0, age_max: 17, age_label: 'All Ages' })
+  })
+
+  test('Teens only → 13–17', () => {
+    expect(mapFriscoAudienceIds(['teen'], TAX)).toEqual({ age_min: 13, age_max: 17, age_label: 'Teens' })
+  })
+})
 
 // ---------------------------------------------------------------------------
 // parseFriscoSuitableFor

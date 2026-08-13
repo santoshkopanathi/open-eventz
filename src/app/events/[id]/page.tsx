@@ -149,6 +149,12 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
         </nav>
 
         <article>
+          {/* Hero image (category banner from the source), hotlinked — omitted when absent. */}
+          {event.thumbnail_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={event.thumbnail_url} alt="" className="w-full h-40 object-cover rounded-lg border mb-4" style={{ borderColor: 'var(--color-border)' }} />
+          )}
+
           <h1 className="font-bold text-2xl leading-snug mb-3" style={{ color: 'var(--color-text)' }}>
             {event.title}
           </h1>

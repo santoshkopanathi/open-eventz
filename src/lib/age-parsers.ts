@@ -54,6 +54,53 @@ export function parseFriscoSuitableFor(html: string): AgeData {
   return { age_min, age_max, age_label }
 }
 
+/**
+ * Maps a Frisco Library (BiblioCommons) event's `audience_ids` — from the JSON API
+ * `GET /events/events/{id}?client_scope=events` (`definition.audience_ids`) — to an age range,
+ * resolving IDs to names via the `/events/event_audiences` taxonomy (id→name).
+ *
+ * This REPLACES `parseFriscoSuitableFor`: the `/v2` pages are now client-side-rendered, so the
+ * "Suitable for:" HTML block is empty server-side (the field is hydrated by JS). The JSON API is
+ * the authoritative source the front-end itself reads. See INGEST-DESIGN.md §Frisco.
+ *
+ * Returns all-null when no known audience resolves (empty ids, or an unknown taxonomy) — the
+ * caller treats that as the all-ages (0–17) fallback AND counts it, so a source going dark
+ * shows up as a high fallback rate (the data-quality gate flags it) rather than silently.
+ */
+export function mapFriscoAudienceIds(audienceIds: string[], idToName: Map<string, string>): AgeData {
+  const names = (audienceIds ?? []).map(id => (idToName.get(id) ?? '').toLowerCase()).filter(Boolean)
+  if (names.length === 0) return { age_min: null, age_max: null, age_label: null }
+
+  const hasAdult    = names.some(n => n.includes('adult') || n.includes('senior'))
+  const hasAllAges  = names.some(n => n.includes('all ages') || n.includes('famil'))
+  const hasChild05  = names.some(n => n.includes('children (0') || n.includes('0-5') || n.includes('preschool') || n.includes('toddler') || n.includes('baby') || n.includes('babies'))
+  const hasChild612 = names.some(n => n.includes('children (6') || n.includes('6-12') || (n.includes('kids') && !n.includes('all')))
+  const hasTween    = names.some(n => n.includes('tween'))
+  const hasTeen     = names.some(n => n.includes('teen'))
+  const hasYoungKid = hasChild05 || hasChild612 || hasTween
+
+  // Adult combined with kids — mirror the old "Suitable for:" decision tree:
+  //   adults + young kids (or all-ages) → 0–17 (the young child governs)
+  //   adults + teens only               → 13–17
+  //   adults only                       → 18–99 (excluded downstream)
+  if (hasAdult && (hasYoungKid || hasAllAges)) return { age_min: 0, age_max: 17, age_label: null }
+  if (hasAdult && hasTeen) return { age_min: 13, age_max: 17, age_label: null }
+  if (hasAdult) return { age_min: 18, age_max: 99, age_label: null }
+
+  const mins: number[] = []
+  const maxs: number[] = []
+  if (hasChild05)  { mins.push(0);  maxs.push(5)  }
+  if (hasChild612) { mins.push(6);  maxs.push(12) }
+  if (hasTween)    { mins.push(10); maxs.push(13) }
+  if (hasTeen)     { mins.push(13); maxs.push(17) }
+  if (hasAllAges)  { mins.push(0);  maxs.push(17) }
+  if (mins.length === 0) return { age_min: null, age_max: null, age_label: null }
+
+  // Single-audience events keep the taxonomy's own label (e.g. "Children (0-5)").
+  const age_label = audienceIds.length === 1 ? (idToName.get(audienceIds[0]) ?? null) : null
+  return { age_min: Math.min(...mins), age_max: Math.max(...maxs), age_label }
+}
+
 export const COMMUNICO_AUDIENCE: Record<string, { age_min: number; age_max: number; label: string }> = {
   'Babies':              { age_min: 0,  age_max: 1,  label: 'Babies' },
   'Toddlers':            { age_min: 1,  age_max: 3,  label: 'Toddlers' },

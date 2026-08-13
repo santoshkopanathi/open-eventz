@@ -16,7 +16,7 @@ There is **no per-source magic** — three scraper functions, each hitting the s
 
 | Source | Runner function | Fetches from | How |
 |---|---|---|---|
-| **Frisco Library** | `runFriscoIngest()` → `ingestFriscoLibrary()` | `friscolibrary.bibliocommons.com/v2/events?page=N` + each event's detail page | Paginated **HTML scrape** (`cp-events-search-item`); the detail page's **"Suitable for:"** block is the age source |
+| **Frisco Library** | `runFriscoIngest()` → `ingestFriscoLibrary()` | `friscolibrary.bibliocommons.com/v2/events?page=N` (listing) + the **JSON API** `/events/events/{id}?client_scope=events` (per event) | Paginated **HTML scrape** for the listing/IDs; **age + description + image come from the JSON API** (`definition.audience_ids` mapped via the `/events/event_audiences` taxonomy). *(Was: scraping the detail page's "Suitable for:" HTML block — see the CSR note below.)* |
 | **Plano Libraries** | `runPlanoIngest()` → `ingestPlanoLibrary()` | `plano.libnet.info/feeds?data=<base64>` for each of **5 branches** + each event's AGE GROUP page | **Communico RSS** (base64-token filter, `days=365`) + per-event detail fetch |
 | **Play Frisco** | `runPlayFriscoIngest()` → `ingestPlayFrisco()` | `friscotexas.gov/calendar.aspx…` (list) → `Calendar.aspx?EID=…` (each event) | **CivicPlus two-pass scrape** + a **Claude** LLM call per *new* event (age + price inference) |
 
@@ -26,6 +26,24 @@ All three live in [`src/lib/ingest.ts`](src/lib/ingest.ts) and write to the shar
 - **Libraries accumulate** (upsert only — old rows stay until their date passes). **Play Frisco is purged** each run: any `play-frisco` row not in the current batch is deleted. So a Play Frisco run that fetches 0 events (off-season, or a scrape break) leaves the source **empty** — which is exactly why "Play Frisco = 0" shows up first when something is wrong.
 - **Play Frisco LLM is cached.** Inference runs only for events **not already** in the DB (`kid_relevant` still null). A re-ingest of known events makes **0 Claude calls** (and costs $0). The first run after a gap is the expensive one.
 - **Frisco adult-keyword cleanup** and **Play Frisco exclude-keyword cleanup** run at the end of their own source's job.
+
+### Frisco Library — why age/description/image come from a JSON API, not the HTML (2026-08-13)
+
+BiblioCommons moved event pages to a **client-side-rendered `/v2`** app: the "Suitable for:" audience is hydrated by JavaScript after load, so the server-side HTML we `fetch` has an **empty** `<span itemprop="name">` — no JSON-LD, no `__NEXT_DATA__`. Scraping that block returned null for every event, which fell to the `0–17` "all ages" fallback → **adult events leaked past the `age_min < 18` gate and every kid age-filter became a no-op** (304/306 events stored as 0–17). Fix: read the same data the front-end reads, from BiblioCommons' **unauthenticated JSON API**:
+
+- **Per event:** `GET /events/events/{id}?client_scope=events` with header `Accept: application/json` → `event.definition` (`audience_ids`, `title`, `description`, `featured_image_id`). *(Same URL with a normal browser `Accept` returns the HTML page — it's content-negotiated.)*
+- **Taxonomy (once/run):** `GET /events/event_audiences?client_scope=events&limit=0` → 6 stable audience IDs → names → age ranges:
+
+  | audience_id | name | age |
+  |---|---|---|
+  | `5d7be0…` | Adults | 18–99 (excluded by the API gate) |
+  | `5d8a3b…` | Teens | 13–17 |
+  | `5d93b3bf…` | Children (0-5) | 0–5 |
+  | `5d93b3c7…` | Children (6-12) | 6–12 |
+  | `5d94f9ec…` | Tween (10-13) | 10–13 |
+  | `614cf0…` | All Ages | 0–17 |
+
+  Mapping (pure, unit-tested `mapFriscoAudienceIds`): kid audiences → union (min-of-mins, max-of-maxes); adults-only → 18–99 (excluded downstream); adults + kids → 0–17. This is deterministic and authoritative — chosen over LLM inference precisely because the data still existed, just client-rendered. `featured_image_id` is retained for a later event-image feature.
 
 ---
 
@@ -97,6 +115,27 @@ So splitting into per-source jobs needed **no migration and no dashboard change*
 
 ---
 
-## 8. How to talk about it
+## 8. Data-quality gate — catching a silent source change (2026-08-13)
+
+**Why it exists.** The unit/E2E suites are **logic-only and mocked** — they never see real ingested data. So when BiblioCommons went client-side-rendered and every Frisco age collapsed to `0–17`, *every test stayed green* while production served adult events to a kids app and the age filter became a no-op. The pipeline "succeeded" (rows written, run `ok`) because the parser's graceful fallback fired silently. The fix isn't just a better parser — it's a guardrail pointed at the **real output**, mapped to the three ways this hid:
+
+| Layer | Failure mode | Guardrail |
+|---|---|---|
+| 1 | Mocks/fixtures never touch the live source | **Live-source canary** — `validate-data.ts` fetches real BiblioCommons events and asserts `audience_ids` still resolve to the taxonomy |
+| 2 | Graceful `0–17` fallback fired 304× with no error | **Fallback-rate warning** — `ingestFriscoLibrary` counts resolved-vs-fallback; >50% fallback pushes a run warning (dashboard-visible) |
+| 3 | Nothing ran on real data post-ingest | **Post-ingest data-quality gate** — a `data-quality` job (below) asserts DB invariants + runs the real filters on real rows, red on failure |
+
+**The gate.** `.github/workflows/ingest.yml` → job `data-quality` (`needs: ingest`, `if: always()`), runs `npm run validate` → [`scripts/validate-data.ts`](scripts/validate-data.ts) against the live DB. Pure checks live in [`src/lib/data-quality.ts`](src/lib/data-quality.ts) (unit-tested against a *healthy* and a *the-incident* fixture):
+- **Frisco age variety** — no single `(age_min,age_max)` bucket > 85% (the incident was ~100% `0–17`);
+- **No adult-title leaks** — 0 events whose title targets adults but stored `age_min < 18`;
+- **Toddler filter narrows** — `passesAgeFilter(e, [[0,5]])` matches < 90% (a real-data filter regression);
+- **Per-source non-empty** + **freshness** (newest ingest ≤ 48h);
+- **Live-source canary** (layer 1).
+
+It writes a ✓/✗ table to `$GITHUB_STEP_SUMMARY` and **exits non-zero on any failure** → red job + GitHub notification. Run locally with `npm run validate`. **Net effect: a silent upstream change is now a RED pipeline, not a green ingest over corrupt data.**
+
+---
+
+## 9. How to talk about it
 
 *"A full scrape of three civic sources is minutes of work and ~1,800 requests — it never fit inside a serverless function's timeout, so the 'daily cron' silently did nothing and the data went stale whenever no one ran it by hand. I moved ingest off the request path entirely: the scraper logic is now a plain function, and a nightly GitHub Actions workflow runs one independent job per source, calling it directly with no HTTP timeout. Per-source jobs mean a slow or broken source can't take the others down, and each has isolated logs. The old endpoint stays as a manual trigger, and the telemetry keeps working because per-source run rows aggregate cleanly on the dashboard."*
