@@ -19,12 +19,14 @@ Use this to prep for portfolio conversations, interviews, or stakeholder demos.
 
 ### a) What happens every morning (ingest)
 
-Triggered manually via:
+> **Updated 2026-08-12 — full detail now lives in [`INGEST-DESIGN.md`](./INGEST-DESIGN.md).** Ingest runs as a **nightly GitHub Actions workflow with one independent job per source** (`runFriscoIngest` / `runPlanoIngest` / `runPlayFriscoIngest` in `src/lib/ingest.ts`, invoked by `scripts/ingest.ts`). The old single Vercel cron was removed — it could never finish inside the 10s function limit. The `POST /api/ingest` route below still works for **manual/local** runs (it now just calls `runAllIngest()`).
+
+Manual/local trigger:
 ```
 POST /api/ingest   (Authorization: Bearer <secret>)
 ```
 
-The ingest route runs three scrapers in sequence:
+The ingest runs three scrapers (now one per scheduled job) in sequence:
 
 1. **Frisco Library (BiblioCommons)** — paginates through the event listing, then fetches each event's detail page to scrape the "Suitable for:" block for age data
 2. **Plano Libraries (Communico)** — loops through 5 branch RSS feeds, deduplicates cross-branch events, fetches each event detail page to scrape the AGE GROUP block
@@ -34,7 +36,7 @@ For each source:
 - **Upsert into Supabase** — if the event already exists (same ID), it updates it; if new, it inserts it
 - **Stale event cleanup** — Play Frisco deletes any events from Supabase that weren't in today's batch (they've been removed from the city calendar)
 
-Returns a JSON summary of events ingested and any errors. No automatic scheduling — the DB is now updated and nothing else happens until a user visits the site.
+Returns a JSON summary of events ingested and any errors. Scheduling is handled by the nightly GitHub Actions workflow (see the callout above / `INGEST-DESIGN.md`); once the DB is updated nothing else happens until a user visits the site.
 
 ---
 
@@ -1278,3 +1280,26 @@ Applied in both `src/app/events/[id]/page.tsx` (server page) and `src/components
 **Follow-up (open).** Create a new GSC **Domain property** (DNS-TXT verified in Cloudflare), resubmit `sitemap.xml`, keep the old URL-prefix property to watch the transition. GA4 needs no change (same measurement ID across domains).
 
 **The lesson.** One indirection — `SITE_URL` reading a single env var — turned a domain move that *could* have been a find-and-replace across sitemap/robots/metadata/JSON-LD into a **one-value cutover + rebuild**. The only real gotcha is that `NEXT_PUBLIC_*` bakes in at build time, so the redeploy must be a clean build, not a settings-only save.
+
+---
+
+## Automated ingest — nightly, per-source, off Vercel
+
+**Date:** 2026-08-12 · Full record in **[`INGEST-DESIGN.md`](./INGEST-DESIGN.md)**; this is the concise log entry.
+
+**Initial situation.** A single **Vercel Cron** (`vercel.json`, `0 8 * * *`) sent `POST /api/ingest`, and that one route ran all three scrapers **sequentially in one serverless invocation**. A full ingest is ~1,800 fetches + LLM calls (minutes) and **cannot finish inside Vercel's 10s function limit** — so the daily cron ran ~10s, got killed before the final upsert, and refreshed nothing. Real ingests were **manual local runs**, and none had happened since **2026-07-22** → the site was ~3 weeks stale (Frisco showing old events, Play Frisco showing 0 because its purge-to-batch step means an empty run wipes it).
+
+**Why we changed it.** Diagnosed the gap the user reported (2026-08-12): compared the live BiblioCommons `/v2/events` page to prod — the markup our scraper keys on was **intact** (20 `cp-events-search-item` blocks/page), so it was **pure staleness, not a parser break**. The real fix is a reliable scheduler that isn't bound by the serverless timeout.
+
+**What we built.**
+- **Extracted the ingest** from the route into [`src/lib/ingest.ts`](src/lib/ingest.ts) — a mechanical move (no logic change) so it's a plain function with **no Next.js/HTTP dependency**. Split the monolithic POST body into **three per-source runners** (`runFriscoIngest` / `runPlanoIngest` / `runPlayFriscoIngest`) + a `runAllIngest` for the manual route. Per-source dedup/upsert is equivalent to the old single pass (IDs are namespaced `{source}-{id}`).
+- **`scripts/ingest.ts`** — a standalone runner (`npm run ingest -- <source>`), run via `tsx`; loads `.env.local` locally (no-op in CI), calls the runner **directly** (no request timeout). A `check` mode validates module resolution + env with no network.
+- **`.github/workflows/ingest.yml`** — nightly (`0 11 * * *` ≈ 6 AM CT) + manual `workflow_dispatch`, with **one independent job per source** (`matrix` + `fail-fast: false`) so a slow/broken source can't block the others, each with isolated logs.
+- **Retired the Vercel cron** (`vercel.json` → `{}`); the `/api/ingest` route is now a thin `runAllIngest()` wrapper kept for manual/local use.
+- **No migration, no dashboard change:** per-source `ingest_runs` rows aggregate cleanly (dashboard reads per-source counts from the events table; `lastIngest`/`ingestHistory`/`llmCost` tolerate multiple rows).
+
+**Why 3 independent jobs (the user's call).** Failure isolation — one source rate-limited or broken doesn't fail the batch — plus separate logs and the option of per-source schedules later. Cost is free (public-repo Actions minutes); Play Frisco LLM is cached so only new events cost anything.
+
+**Verification.** typecheck + **233 unit** + **11 E2E** + `next build` green; the extraction is behavior-preserving. `npm run ingest -- check` confirms the standalone runner resolves the module tree (relative imports, no `@` alias) and loads env — no prod write. **Open risk to confirm on the first cloud run:** datacenter-IP scraping (BiblioCommons served a datacenter IP fine; Play Frisco/CivicPlus is the unknown). **User to do:** add the 4 GitHub secrets, then trigger once.
+
+**The lesson.** The staleness wasn't a scraper bug — it was an **architecture** bug: a minutes-long job wired to a 10-second box, "succeeding" (green cron) while doing nothing. Move long work off the request path and give it a scheduler sized to the work; and split by unit-of-failure (source) so one bad actor degrades one thing, not everything.

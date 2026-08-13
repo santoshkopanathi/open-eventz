@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "jest",
     "test:e2e": "playwright test",
+    "ingest": "tsx scripts/ingest.ts",
     "calibrate:price": "jest --config jest.calibration.config.js",
     "test:docs": "node scripts/check-doc-parity.mjs",
     "typecheck": "tsc --noEmit",
@@ -32,11 +33,13 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "jest": "^30.4.2",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.11",
+    "tsx": "^4.23.12",
     "typescript": "^5"
   }
 }

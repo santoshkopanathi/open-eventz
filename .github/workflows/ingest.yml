@@ -1,0 +1,40 @@
+name: Ingest events
+
+# Nightly data refresh + a manual "Run workflow" button. Replaces the old Vercel cron,
+# which could never finish a full ingest inside the 10s function limit. Each source runs as
+# its OWN job (matrix + fail-fast: false) so one slow or broken source never blocks the
+# others, and each has isolated logs. See INGEST-DESIGN.md.
+on:
+  schedule:
+    - cron: '0 11 * * *' # 11:00 UTC ≈ 6:00 AM Central — fresh before the daytime browse
+  workflow_dispatch: {}
+
+# Don't let a manual run overlap the nightly one (avoids a double Play Frisco purge race).
+concurrency:
+  group: ingest
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    name: ingest (${{ matrix.source }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false # one source failing must NOT cancel the others
+      matrix:
+        source: [frisco, plano, play-frisco]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Ingest ${{ matrix.source }}
+        run: npm run ingest -- ${{ matrix.source }}
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # Only Play Frisco calls Claude; harmless (unused) for the library jobs.
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
