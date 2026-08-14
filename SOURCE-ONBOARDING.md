@@ -17,6 +17,7 @@ Related: `INGEST-DESIGN.md` (how ingest runs), `TESTING.md` + `TEST-SCENARIOS.md
 5. **Pair every new source with a real-data check.** Logic/mocked tests can't catch a data break — add at least a non-empty + freshness assertion to the data-quality gate. *(Frisco age incident.)*
 6. **Log a ruled-out source and why.** An undocumented "no" gets re-litigated. *(VisitFrisco — build-ID URLs, mostly nightlife → logged out.)*
 7. **Don't trust a source's own UTC — verify it against a known event time.** Convert the **local wall time** using the venue's real timezone (`centralWallTimeToUtc`, DST-aware). *(Kaleidoscope's WordPress TZ is misconfigured as UTC+5, so its `utc_*` was 10h wrong — an evening concert showed as 7:30 AM until we switched to the local `start_date`.)*
+8. **Never let the RUNTIME's timezone decide — always `parseCentralWallTime`, never a bare `new Date(str)`.** A date string with no offset is resolved in the machine's timezone, so the same feed produced correct times on a Central dev machine and **5–6h early** on the UTC GitHub Actions runner that does the nightly ingest. Corollary: a source may **lie about having an offset** — Plano's RSS stamps `+0000` on plainly local times, so the offset is ignored on purpose. Test with `TZ=UTC npx jest`, not just locally. *(The "5:00 AM story time" incident — three of four sources were affected.)*
 
 Prefer data sources in this order: **documented JSON API > JSON-LD embedded in the page > RSS/iCal feed > HTML scrape.**
 

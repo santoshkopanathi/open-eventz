@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { Event } from '@/lib/types'
 import { detailAgeBadge } from '@/lib/age-badge'
-import { getSupervisionBadge } from '@/lib/supervision'
+import SupervisionCallout from './SupervisionCallout'
 import { detailPriceBadge } from '@/lib/price'
 import { inferenceDisclosure } from '@/lib/inference-disclosure'
 import { trackEvent } from '@/lib/analytics'
@@ -51,8 +51,6 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
     const data = await res.json()
     setLikes(data.count)
   }
-
-  const supervisionBadge = getSupervisionBadge(event)
 
   const detailAge = detailAgeBadge(event)
   const detailPrice = detailPriceBadge(event)
@@ -159,17 +157,9 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
         </div>
       )}
 
-      {/* Supervision "can kids be dropped off?" callout — all sources (src/lib/supervision.ts).
-          Calm fill-subtle with a grey left bar; instruction, not alarm — no red-on-pink, no emoji. */}
-      {supervisionBadge && (
-        <div className="mb-3 flex gap-2.5" style={{ borderRadius: 'var(--radius-input)', border: '1px solid var(--color-border)', backgroundColor: supervisionBadge.bg, padding: '9px 12px' }}>
-          <div style={{ width: 3, borderRadius: 2, backgroundColor: 'var(--color-border-strong)', flexShrink: 0 }} />
-          <div>
-            <div style={{ fontSize: '12px', fontWeight: 600, color: supervisionBadge.text }}>{supervisionBadge.label}</div>
-            {supervisionBadge.sub && <div className="mt-0.5" style={{ fontSize: '11px', color: 'var(--color-ink-50)' }}>{supervisionBadge.sub}</div>}
-          </div>
-        </div>
-      )}
+      {/* Supervision "can kids be dropped off?" callout — all sources (src/lib/supervision.ts),
+          shared with the /events/[id] server page so the two detail surfaces can't drift. */}
+      <SupervisionCallout event={event} className="mb-3" />
 
       {event.description && (
         <div className="mb-5">

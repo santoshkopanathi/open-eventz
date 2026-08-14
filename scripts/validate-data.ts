@@ -47,22 +47,32 @@ async function main() {
 
   // Upcoming events per source — the population users actually see (mirrors /api/events).
   const upcoming = (src: string) => db.from('events').select('*').eq('source', src).gte('start_datetime', nowIso).limit(1000)
-  const sourceCount = (src: string) =>
-    db.from('events').select('id', { count: 'exact', head: true }).eq('source', src).gte('start_datetime', nowIso)
-  const [{ data: frisco }, { count: planoCount }, { count: playCount }, { count: kaleidoscopeCount }] = await Promise.all([
+  // Rows (not just counts) for every source — the start-time check needs the actual timestamps.
+  const [{ data: frisco }, { data: plano }, { data: play }, { data: kaleidoscope }] = await Promise.all([
     upcoming('frisco-library'),
-    sourceCount('plano-library'),
-    sourceCount('play-frisco'),
-    sourceCount('kaleidoscope-park'),
+    upcoming('plano-library'),
+    upcoming('play-frisco'),
+    upcoming('kaleidoscope-park'),
   ])
+  const planoCount = plano?.length ?? 0
+  const playCount = play?.length ?? 0
+  const kaleidoscopeCount = kaleidoscope?.length ?? 0
 
   // Frisco age-health (the checks that would have caught this incident)
   checks.push(...dq.friscoAgeChecks(frisco ?? []))
 
   // Per-source non-empty (Plano should never be near-zero; Play Frisco can legitimately be low)
-  checks.push({ name: 'plano: non-empty', pass: (planoCount ?? 0) >= 30, detail: `${planoCount ?? 0} upcoming (min 30)` })
-  checks.push({ name: 'play-frisco: present', pass: (playCount ?? 0) >= 0, detail: `${playCount ?? 0} upcoming` })
-  checks.push({ name: 'kaleidoscope-park: non-empty', pass: (kaleidoscopeCount ?? 0) >= 5, detail: `${kaleidoscopeCount ?? 0} upcoming (min 5)` })
+  checks.push({ name: 'plano: non-empty', pass: planoCount >= 30, detail: `${planoCount} upcoming (min 30)` })
+  checks.push({ name: 'play-frisco: present', pass: playCount >= 0, detail: `${playCount} upcoming` })
+  checks.push({ name: 'kaleidoscope-park: non-empty', pass: kaleidoscopeCount >= 5, detail: `${kaleidoscopeCount} upcoming (min 5)` })
+
+  // Start-time sanity per source — catches a wall-clock time parsed in the wrong timezone, which
+  // shifted every Frisco/Plano event 5–6h early when the nightly ingest moved to a UTC runner.
+  // Per-source so a red line names the source whose timezone handling broke.
+  checks.push(dq.startTimeChecks(frisco ?? [], 'frisco'))
+  checks.push(dq.startTimeChecks(plano ?? [], 'plano'))
+  checks.push(dq.startTimeChecks(play ?? [], 'play-frisco'))
+  checks.push(dq.startTimeChecks(kaleidoscope ?? [], 'kaleidoscope-park'))
 
   // Freshness — newest ingest within ~48h (catches a pipeline that silently stopped writing)
   const { data: newest } = await db.from('events').select('ingested_at').order('ingested_at', { ascending: false }).limit(1)

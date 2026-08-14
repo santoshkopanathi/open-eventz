@@ -1372,3 +1372,54 @@ Applied in both `src/app/events/[id]/page.tsx` (server page) and `src/components
 **Follow-up (timezone bug, caught by looking at prod).** The launch review of the live events caught wrong times — an evening concert showing 7:30 AM. Root cause: the source's WordPress timezone is misconfigured as a fixed **"UTC+5"**, so its `utc_start_date` is **10 hours wrong**. Fixed by using the **local `start_date`** converted as America/Chicago via a new pure, DST-aware `centralWallTimeToUtc` (`src/lib/datetime.ts` + 6 unit tests, incl. the CDT/CST boundary). Re-ingested (0 LLM calls — cached); prod now correct (Live After 5 → 5:30 PM, Tree Lighting Nov 20 → 6:00 PM CST). New playbook principle #7: *don't trust a source's UTC — verify against a known event time.*
 
 **The lesson.** The second-source cost is where a data product's expansion thesis is proven or disproven. Ours got *cheaper*: a documented playbook + a reused classifier meant adding a whole new source was mostly wiring, and the two novel things (a WAF-blocked API, a misconfigured source timezone) became durable playbook principles instead of fresh surprises. And a reminder: **look at the live thing** — the timezone bug passed every gate and only showed itself in the rendered event times.
+
+---
+
+## The event page grows up — supervision badge, Weekend Paper theme, and a 5 AM story time
+
+**Date:** 2026-08-14. Two planned items on `/events/[id]`, plus a production bug that only surfaced because we opened the live page to check the first two.
+
+### Initial situation
+
+`src/app/events/[id]/page.tsx` — the server-rendered per-event page, the thing a **shared link lands on** and the thing Google indexes — had been left out of two prior passes:
+
+1. **No supervision badge.** "Can kids be dropped off?" is the product's differentiating answer, and it rendered *only* in the in-app detail panel. A parent who received a shared link got the one signal we exist to provide: nothing.
+2. **Still on the pre-reskin theme.** While the rest of the app moved to Weekend Paper, this page kept the old indigo `--color-primary` header with a 🎈 wordmark, emoji meta rows (📅 📍 📋 🗺️), Tailwind `text-gray-*` greys, and a yellow registration banner — the exact treatment the redesign had ruled out. It was explicitly deferred as "Phase 2 / other surfaces."
+
+### What we changed
+
+**Supervision badge — extracted, not copy-pasted.** Rather than duplicate the callout markup, the treatment moved into a shared `src/components/SupervisionCallout.tsx` used by **both** detail surfaces. *Why the extraction mattered here:* this badge has now gone missing twice — once silently narrowed to Frisco-only in a pre-git refactor, once absent from this page since the day it shipped. One component means a surface either shows it for every source or not at all; it can no longer drift per-source or per-surface. Backed by a new `supervision-surfaces.test.ts`, which asserts each detail surface renders `<SupervisionCallout>` and that **no** surface calls `getSupervisionBadge` directly. It's a source-text check rather than a render test (the repo has no react-testing-library) — the same idea as the existing `check-doc-parity.mjs`: the list of surfaces *is* the spec.
+
+**Weekend Paper restyle.** Ink masthead + 3px rust rule + two-colour wordmark (matching the home page and the mobile overlay — a cold-landed visitor should recognise the product), mono/rust source kicker, Instrument Serif title, token-driven text scale, chip row and registration/supervision callouts identical to the in-app panel, and every emoji removed. The two "exit" links became **bordered secondaries** so the page keeps exactly one ink-filled CTA (Get directions) — ink stays meaningful. Also restored **Add to Apple Calendar**, which the log claimed was on both surfaces but was only ever on the in-app one.
+
+### The bug we found by looking
+
+Opening the finished page on a real event showed: **"Friday, August 14, 2026 at 5:00 AM"** for a Family Story Time.
+
+Not a rendering bug — the stored data. Checking the source settled it: BiblioCommons publishes `definition.start: "2026-08-14T10:00"` (10 AM, no offset) and its own `index_start: "2026-08-14T15:00:00Z"`. We had stored `10:00Z`. **Five hours early.**
+
+**Root cause.** A date string with no offset is resolved by `new Date(str)` in the **runtime's** timezone. Three of four sources publish exactly that:
+
+| Source | String | Old behaviour |
+|---|---|---|
+| Frisco Library | `August 14, 2026 10:00 AM` | runtime TZ |
+| Plano RSS | `Mon, 17 Aug 2026 09:30:00 +0000` | offset stripped, then runtime TZ |
+| Play Frisco | `2026-08-15T08:00:00` | runtime TZ |
+
+Locally that is **correct** — the dev machine is `America/Chicago`. The nightly ingest, however, moved to **GitHub Actions on 2026-08-12**, and Actions runners are **UTC**. So the automation that fixed our staleness problem quietly began writing every Frisco and Plano event 5–6 hours early. Both the timezone assumption and the automation were individually fine; the combination wasn't, and nothing in the pipeline was looking at a clock.
+
+Note the Plano case is its own trap: the feed stamps `+0000` on times that are plainly local (a 9:30 AM storytime published as `09:30:00 +0000`). The old code was *right* to distrust that offset — it just handed the naive remainder to the machine's timezone instead of the venue's.
+
+**The fix.** A pure `parseCentralWallTime()` in `src/lib/datetime.ts` (joining `centralWallTimeToUtc`, which already solved this for Kaleidoscope) that accepts all three shapes and resolves them as America/Chicago, DST-aware. All three sources now call it, including Play Frisco's end-time, which used `setHours` — also runtime-local. Unparseable input returns `null` and the event is **skipped**, never stored at a guessed time. Ten new unit tests use **verbatim source strings**, and the suite now runs clean under both `TZ=America/Chicago` and `TZ=UTC` — the second is the one that would have failed.
+
+**The guardrail.** Logic tests would not have caught this either, so it also gets a Layer-3 check: `implausiblyEarlyEvents` / `startTimeChecks` in `data-quality.ts`, wired per-source into `validate-data.ts`. Nothing a family attends starts before **7 AM Central** — one stray outlier is tolerated (5% threshold), a whole source shifting is not, and the failing line names the source. `validate-data.ts` now pulls rows rather than counts for all four sources to support it.
+
+### Verification
+
+typecheck · **273 unit tests** (up from 256), green under both `TZ=America/Chicago` and `TZ=UTC` · 11 E2E · `next build` · doc-parity — all green. The restyled page verified on the dev server across all four sources at desktop and 375px mobile: computed masthead `rgb(31,27,22)` with the rust rule, Instrument Serif title, fill-subtle supervision callout, ink CTA, no horizontal overflow, hero images loading, and zero emoji in the rendered text.
+
+**Production data is still wrong until a re-ingest runs** — the fix is in the ingest code, so the stored timestamps only correct themselves on the next run with this code deployed.
+
+### The lesson
+
+Two of the last three bugs here were found by **opening the live page**, not by a test — and this one was invisible in every environment where a human would naturally look, because a developer's laptop is in the venue's timezone. The general form: *an implicit dependency on the machine is a bug that only appears when the machine changes.* Moving ingest to CI didn't break the parsing; it revealed that the parsing had never specified a timezone at all. Anywhere a value's meaning depends on ambient runtime state, pin it explicitly and write the test that pins it — then run the suite under the other setting, because the assertion that matters is the one your machine can't fail.

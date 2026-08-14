@@ -130,9 +130,25 @@ So splitting into per-source jobs needed **no migration and no dashboard change*
 - **No adult-title leaks** — 0 events whose title targets adults but stored `age_min < 18`;
 - **Toddler filter narrows** — `passesAgeFilter(e, [[0,5]])` matches < 90% (a real-data filter regression);
 - **Per-source non-empty** + **freshness** (newest ingest ≤ 48h);
+- **Start times plausible** *(added 2026-08-14)* — per source, ≤ 5% of upcoming events start before **7 AM Central**. See §8.1;
 - **Live-source canary** (layer 1).
 
 It writes a ✓/✗ table to `$GITHUB_STEP_SUMMARY` and **exits non-zero on any failure** → red job + GitHub notification. Run locally with `npm run validate`. **Net effect: a silent upstream change is now a RED pipeline, not a green ingest over corrupt data.**
+
+### 8.1 Source timezones — the ingest runs in UTC (2026-08-14)
+
+Every source publishes **local wall-clock** times with no usable offset:
+
+| Source | Field | Example |
+|---|---|---|
+| Frisco Library | card date + `event-time` | `August 14, 2026 10:00 AM` |
+| Plano | RSS `pubDate` | `Mon, 17 Aug 2026 09:30:00 +0000` — the offset is **false**, the time is local |
+| Play Frisco | `itemprop="startDate"` | `2026-08-15T08:00:00` |
+| Kaleidoscope | `start_date` | `2026-09-03 17:30:00` (its `utc_*` is 10h wrong — §7 of SOURCE-ONBOARDING) |
+
+Parsing any of these with a bare `new Date(str)` resolves them in the **runtime's** timezone. That was invisible while ingest ran by hand on a Central machine, and became a live bug the moment it moved to **GitHub Actions runners, which are UTC** — every Frisco and Plano event was stored **5–6 hours early** (production showed 5:00 AM story times).
+
+All sources now go through the pure, DST-aware **`parseCentralWallTime()`** in [`src/lib/datetime.ts`](src/lib/datetime.ts), which accepts all three shapes above and resolves them as `America/Chicago`. Unparseable input returns `null` → the event is skipped, never stored at a guessed time. Unit tests use verbatim source strings and **the suite must pass under `TZ=UTC npx jest`** as well as locally — that is the assertion a Central dev machine cannot fail on its own.
 
 ---
 

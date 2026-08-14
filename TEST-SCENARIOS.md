@@ -76,6 +76,18 @@ The layer that would have caught the Frisco age break: it asserts against the **
 | 1.5.4 | Per-source non-empty + freshness | `validate-data.ts`: each library source ≥ a min count; newest `ingested_at` ≤ 48h; else red | [R] [M] |
 | 1.5.5 | Live-source canary | `validate-data.ts` fetches a real event and asserts BiblioCommons still returns resolvable `audience_ids` (the exact contract that broke); else red | [R] [M] |
 | 1.5.6 | Any check fails → pipeline red | Non-zero exit → red `data-quality` job + a `$GITHUB_STEP_SUMMARY` ✓/✗ table | [R] |
+| 1.5.7 | Start times plausible *(new 2026-08-14)* | Per source, ≤ 5% of upcoming events start before **7 AM Central**; a whole source shifting (the timezone incident — 5:00 AM story times) fails the gate and names the source | [A] [R] · data-quality.test.ts |
+
+### 1.5A Source timezone handling *(new 2026-08-14 — the "5:00 AM story time" incident)*
+Every source publishes **local wall-clock** times with no usable offset. Parsing them with a bare `new Date(str)` resolves in the **runtime's** timezone — correct on a Central dev machine, **5–6 hours early** on the UTC GitHub Actions runner that does the nightly ingest. All sources now go through `parseCentralWallTime` (`src/lib/datetime.ts`).
+| # | Scenario | Expected result | Tag |
+|---|---|---|---|
+| 1.5A.1 | Frisco Library card date+time | `"August 14, 2026 10:00 AM"` → `15:00Z` (10 AM CDT), never `10:00Z` | [A] [R] · datetime.test.ts |
+| 1.5A.2 | Plano RSS `pubDate` | `"Mon, 17 Aug 2026 09:30:00 +0000"` → `14:30Z` — the `+0000` is **ignored on purpose** (the feed stamps it on plainly local times) | [A] [R] · datetime.test.ts |
+| 1.5A.3 | Play Frisco CivicPlus `startDate` | `"2026-08-15T08:00:00"` → `13:00Z` | [A] [R] · datetime.test.ts |
+| 1.5A.4 | DST boundary | A December event shifts by 6h (CST), an August event by 5h (CDT) | [A] [R] · datetime.test.ts |
+| 1.5A.5 | Machine-timezone independence | The same source string yields the same instant under `TZ=UTC` and `TZ=America/Chicago` (run `TZ=UTC npx jest` — this is the actual bug) | [A] [R] · datetime.test.ts |
+| 1.5A.6 | Unparseable time | Returns `null` → the event is **skipped**, never stored at a guessed time | [A] [R] · datetime.test.ts |
 
 ### 1.6 Kaleidoscope Park (The Events Calendar REST API) *(new 2026-08-13 — first onboarding via SOURCE-ONBOARDING.md)*
 | # | Scenario | Expected result | Tag |
@@ -238,6 +250,7 @@ Cards show only "Family" (confirmed or inferred) and the bare inferred marker; s
 | 12.5 | Free / paid detail | "Free admission" / "Paid" pill (see §6 for `✦` rules) | [R] |
 | 12.6 | Registration required | Calm accent-tint (rust) callout, one line: "Registration required — sign up before attending" (Weekend Paper — was a yellow banner) | [R] |
 | 12.7 | Supervision "can kids be dropped off?" badge | Per-source drop-off badge — fully specified in **§12A. Supervision Badge** below | [A] [R] · supervision.test.ts |
+| 12.10 | Supervision badge on **every** detail surface *(new 2026-08-14)* | Both the in-app panel and the `/events/[id]` server page render it, from the shared `SupervisionCallout` component — the server page had shipped without it since day one | [A] [R] · supervision-surfaces.test.ts |
 | 12.8 | Hero image *(2026-08)* | When the event has a `thumbnail_url`, a banner renders at the top of the detail view (drawer + `/events/[id]`); hidden when absent or if the image fails to load (`onError`) — never a broken box; detail-view only (not on cards) | [R] [M] |
 | 12.9 | Mobile detail header *(2026-08)* | The mobile full-screen detail overlay header matches the home ink masthead (ink band + rust rule + two-colour "Open Eventz" wordmark + tagline), not a plain paper bar | [M] |
 | 12.11 | Add to Google Calendar | Opens Google Calendar link, event pre-filled | [R] |
@@ -363,6 +376,8 @@ Tests that guard shipped work (SEO, calendar, analytics plumbing) but had no PM 
 | 19.1.4 | Indexable gate | Excludes not-kid-relevant, adults-only, Frisco adult-keyword, past one-off events | [A] [R] · seo-indexable.test.ts |
 | 19.1.5 | CT "today" boundary | `startOfTodayCtIso` maps to midnight CT (05:00 UTC), rolls back before 05:00 | [A] [R] · seo-indexable.test.ts |
 | 19.1.6 | Canonical URLs / source→org | `eventUrl`/`cityUrl`/`sourceOrg`/`sourceCity` build correct absolute URLs and labels | [A] [R] · site.test.ts |
+| 19.1.7 | `/events/[id]` visual parity *(new 2026-08-14)* | The server page uses the Weekend Paper theme — ink masthead + 3px rust rule, Instrument Serif title, token colours, **no emoji** — and carries the same chip row, callouts, and four action buttons as the in-app detail panel | [R] [M] |
+| 19.1.8 | `/events/[id]` supervision badge *(new 2026-08-14)* | Renders the drop-off callout for every source via the shared component — see §12.10 | [A] [R] · supervision-surfaces.test.ts |
 
 ### 19.2 Calendar (.ics)
 | # | Scenario | Expected | Tag |

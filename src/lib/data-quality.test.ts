@@ -1,5 +1,5 @@
 import type { Event } from './types'
-import { dominantAgeBucketShare, adultTitleLeaks, ageFilterNarrowShare, friscoAgeChecks } from './data-quality'
+import { dominantAgeBucketShare, adultTitleLeaks, ageFilterNarrowShare, friscoAgeChecks, implausiblyEarlyEvents, startTimeChecks } from './data-quality'
 
 function ev(over: Partial<Event>): Event {
   return {
@@ -69,5 +69,49 @@ describe('friscoAgeChecks', () => {
     expect(byName['frisco: age variety']).toBe(false)
     expect(byName['frisco: no adult-title leaks']).toBe(false)
     expect(byName['frisco: toddler filter narrows']).toBe(false)
+  })
+})
+
+// The timezone incident: source wall-clock times parsed in the runtime's timezone, so the UTC
+// Actions runner stored every event 5h early (10:00 AM CDT storytime → 10:00Z → 5:00 AM CT).
+// TIMES_SHIFTED holds the exact ISO values production had; TIMES_OK holds the corrected ones.
+const TIMES_OK: Event[] = [
+  ev({ id: 'ok1', title: 'Family Story Time', start_datetime: '2026-08-14T15:00:00Z' }),   // 10:00 AM CT
+  ev({ id: 'ok2', title: 'Rhyme Time',        start_datetime: '2026-08-14T14:30:00Z' }),   //  9:30 AM CT
+  ev({ id: 'ok3', title: 'Uke Can Do It',     start_datetime: '2026-08-15T15:30:00Z' }),   // 10:30 AM CT
+  ev({ id: 'ok4', title: 'Live After 5',      start_datetime: '2026-09-03T22:30:00Z' }),   //  5:30 PM CT
+]
+const TIMES_SHIFTED: Event[] = [
+  ev({ id: 'tz1', title: 'Family Story Time', start_datetime: '2026-08-14T10:00:00Z' }),   //  5:00 AM CT
+  ev({ id: 'tz2', title: 'Rhyme Time',        start_datetime: '2026-08-14T09:30:00Z' }),   //  4:30 AM CT
+  ev({ id: 'tz3', title: 'Uke Can Do It',     start_datetime: '2026-08-15T10:30:00Z' }),   //  5:30 AM CT
+  ev({ id: 'tz4', title: 'Toddler Time',      start_datetime: '2026-08-14T11:00:00Z' }),   //  6:00 AM CT
+]
+
+describe('implausiblyEarlyEvents / startTimeChecks', () => {
+  test('correct times → nothing flagged', () => {
+    expect(implausiblyEarlyEvents(TIMES_OK)).toHaveLength(0)
+    expect(startTimeChecks(TIMES_OK, 'frisco').pass).toBe(true)
+  })
+
+  test('the timezone incident → every shifted event flagged, check fails', () => {
+    expect(implausiblyEarlyEvents(TIMES_SHIFTED)).toHaveLength(4)
+    const check = startTimeChecks(TIMES_SHIFTED, 'frisco')
+    expect(check.pass).toBe(false)
+    expect(check.detail).toContain('check timezone handling')
+  })
+
+  test('a single genuine early outlier does not fail a healthy source', () => {
+    const mostlyFine = [...Array.from({ length: 40 }, (_, i) => ev({ id: `f${i}`, start_datetime: '2026-08-14T15:00:00Z' })),
+      ev({ id: 'early', title: 'Sunrise Yoga', start_datetime: '2026-08-14T11:00:00Z' })]
+    expect(startTimeChecks(mostlyFine, 'frisco').pass).toBe(true)
+  })
+
+  test('evening events are never flagged (concerts, tree lightings)', () => {
+    expect(implausiblyEarlyEvents([ev({ start_datetime: '2026-11-21T00:00:00Z' })])).toHaveLength(0) // 6 PM CST
+  })
+
+  test('empty source → passes (non-empty checks own that failure)', () => {
+    expect(startTimeChecks([], 'play-frisco').pass).toBe(true)
   })
 })

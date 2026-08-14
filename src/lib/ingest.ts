@@ -11,7 +11,7 @@ import { inferPlayFriscoEvent } from './age-inference'
 import { fallbackPriceClass, resolvePriceClass, priceClassToFields, interpretCostField } from './price'
 import { PER_INFERENCE_COST_USD } from './technical-metrics'
 import { markRecurring } from './recurring'
-import { centralWallTimeToUtc } from './datetime'
+import { centralWallTimeToUtc, parseCentralWallTime } from './datetime'
 
 // Adult programs that BiblioCommons incorrectly includes in children audience feeds
 const FRISCO_ADULT_KEYWORDS = [
@@ -149,8 +149,11 @@ async function ingestFriscoLibrary() {
         const rawTime = timeStr?.split('–')[0]?.trim() || ''
         const normalizedTime = rawTime.replace(/(\d+:\d+)(am|pm)/i, (_, t, p) => `${t} ${p.toUpperCase()}`)
         const dateStr = `${month} ${day}, ${year} ${normalizedTime}`.trim()
-        const startDate = new Date(dateStr)
-        if (isNaN(startDate.getTime())) continue
+        // BiblioCommons publishes local wall-clock time with no offset. Resolve it as
+        // America/Chicago, not as the runtime's timezone — a bare `new Date(dateStr)` was
+        // correct on a Central dev machine but 5–6h early on the UTC Actions runner.
+        const startDate = parseCentralWallTime(dateStr)
+        if (!startDate || isNaN(startDate.getTime())) continue
 
         const locationMatch = card.match(/class="cp-event-location[^"]*"[^>]*>([^<]+)</)
         const location = locationMatch?.[1]?.trim() || 'Frisco Public Library'
@@ -310,7 +313,12 @@ async function ingestPlanoLibrary() {
       if (seenIds.has(eventId)) continue
       seenIds.add(eventId)
 
-      const startDate = new Date(pubDate.replace(/\s*\+0000$/, ''))
+      // The feed stamps `+0000` on times that are plainly LOCAL (a 9:30 AM storytime is
+      // published as `09:30:00 +0000`), so the offset is ignored and the wall time is resolved
+      // as America/Chicago. Previously the offset was stripped and parsed in the runtime's
+      // timezone — right locally, 5–6h early on the UTC Actions runner.
+      const startDate = parseCentralWallTime(pubDate)
+      if (!startDate || isNaN(startDate.getTime())) continue
 
       // Fetch event page for authoritative age data — AGE GROUP block is present on 100% of
       // Plano events (validated across 42 events, all 5 branches), so no fallback needed
@@ -469,12 +477,15 @@ async function ingestPlayFrisco() {
       // the EID regex also catches). Skip silently; a real parser break shows up as a bulk drop
       // the data-quality gate would catch, not as per-EID noise that marks every run 'warn'.
       if (!startMatch) continue
-      const startDate = new Date(startMatch[1].trim())
-      if (isNaN(startDate.getTime()) || startDate > horizon) continue
+      // CivicPlus emits an offset-less local time (`2026-08-15T08:00:00`) → resolve as
+      // America/Chicago, not as the runtime's timezone (5–6h early on the UTC Actions runner).
+      const startWall = startMatch[1].trim()
+      const startDate = parseCentralWallTime(startWall)
+      if (!startDate || isNaN(startDate.getTime()) || startDate > horizon) continue
 
       // End datetime — CivicPlus has no endDate itemprop; parse from "Time:" detail block
       const endMatch = html.match(/itemprop="endDate"[^>]*>([^<]+)<\//i)
-      let endDate: Date | null = endMatch ? new Date(endMatch[1]) : null
+      let endDate: Date | null = endMatch ? parseCentralWallTime(endMatch[1]) : null
       if (!endDate) {
         const timeBlockMatch = html.match(/specificDetailHeader[^>]*>\s*Time:[\s\S]{0,100}?specificDetailItem[^>]*>([\s\S]*?)<\/div>/i)
         if (timeBlockMatch) {
@@ -485,8 +496,9 @@ async function ingestPlayFrisco() {
             const [timePart, meridiem] = endTimeStr.split(/\s+/)
             const [hrs, mins] = timePart.split(':').map(Number)
             const hours24 = meridiem.toUpperCase() === 'PM' && hrs !== 12 ? hrs + 12 : (meridiem.toUpperCase() === 'AM' && hrs === 12 ? 0 : hrs)
-            endDate = new Date(startDate)
-            endDate.setHours(hours24, mins, 0, 0)
+            // Same Central calendar day as the start (taken from the raw wall string, not from
+            // startDate — `setHours` would apply the runtime's timezone, not the venue's).
+            endDate = parseCentralWallTime(`${startWall.slice(0, 10)} ${String(hours24).padStart(2, '0')}:${String(mins).padStart(2, '0')}:00`)
           }
         }
       }
