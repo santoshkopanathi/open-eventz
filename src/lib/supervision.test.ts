@@ -71,6 +71,7 @@ describe('getSupervisionBadge — coverage guard (regression for the silently-dr
     'frisco-library': true,
     'plano-library': true,
     'play-frisco': true,
+    'kaleidoscope-park': true,
   }
   test('every EventSource returns a supervision badge — none silently drops out', () => {
     for (const source of Object.keys(ALL_SOURCES) as EventSource[]) {

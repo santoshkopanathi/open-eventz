@@ -5,7 +5,7 @@
 // See INGEST-DESIGN.md for the full architecture.
 import { XMLParser } from 'fast-xml-parser'
 import { supabaseAdmin } from './supabase'
-import { EventCategory } from './types'
+import { EventCategory, EventSource } from './types'
 import { parseCommunicoAgeGroup, communicoIsFamily, mapFriscoAudienceIds } from './age-parsers'
 import { inferPlayFriscoEvent } from './age-inference'
 import { fallbackPriceClass, resolvePriceClass, priceClassToFields, interpretCostField } from './price'
@@ -592,7 +592,7 @@ async function ingestPlayFrisco() {
 // ---------------------------------------------------------------------------
 
 export interface SourceIngestResult {
-  source: 'frisco-library' | 'plano-library' | 'play-frisco'
+  source: EventSource
   fetched: number
   upserted: number
   llm_calls: number
@@ -693,77 +693,13 @@ export async function runPlanoIngest(): Promise<SourceIngestResult> {
 export async function runPlayFriscoIngest(): Promise<SourceIngestResult> {
   const db = supabaseAdmin()
   const errors: string[] = []
-  let llmCalls = 0
   const t0 = Date.now()
 
   const playFrisco = await ingestPlayFrisco()
   errors.push(...playFrisco.errors)
 
-  // LLM inference (age + price) for NEW Play Frisco events only — cached events reuse their
-  // stored inference + price (no repeat Claude call). Identical to the original combined pass.
-  if (playFrisco.events.length > 0) {
-    const ids = playFrisco.events.map((e: any) => e.id)
-    const { data: priorRows } = await db
-      .from('events')
-      .select('id, kid_relevant, age_buckets, age_confidence, age_reasoning, is_free, price_text, price_class, price_confidence, price_reasoning')
-      .eq('source', 'play-frisco')
-      .in('id', ids)
-    const priorMap = new Map<string, any>((priorRows ?? []).map((r: any) => [r.id, r]))
-
-    for (const e of playFrisco.events) {
-      const priceLocked = e._priceLocked === true
-      delete e._priceLocked
-      const prior = priorMap.get(e.id)
-      if (prior && prior.kid_relevant !== null) {
-        e.kid_relevant = prior.kid_relevant
-        e.age_buckets = prior.age_buckets
-        e.age_confidence = prior.age_confidence
-        e.age_reasoning = prior.age_reasoning
-        e.price_class = prior.price_class
-        e.price_confidence = prior.price_confidence
-        e.price_reasoning = prior.price_reasoning
-        e.is_free = prior.is_free
-        e.price_text = prior.price_text
-        continue
-      }
-      llmCalls++
-      const result = await inferPlayFriscoEvent({ title: e.title, description: e.description ?? '' })
-      if (result) {
-        e.kid_relevant = result.kid_relevant
-        e.age_buckets = result.age_buckets
-        e.age_confidence = result.confidence
-        e.age_reasoning = result.reasoning
-        if (!priceLocked) {
-          const resolved = resolvePriceClass({
-            price: result.price,
-            price_confidence: result.price_confidence,
-            title: e.title,
-            description: e.description ?? '',
-            registration_required: e.registration_required,
-          })
-          const priceFields = priceClassToFields(resolved.price_class)
-          e.price_class = resolved.price_class
-          e.price_confidence = resolved.price_confidence
-          e.price_reasoning = result.price_reasoning
-          e.is_free = priceFields.is_free
-          e.price_text = priceFields.price_text
-        }
-      } else {
-        // LLM call failed — fail-closed: hide rather than default-show an unclassified event.
-        e.kid_relevant = false
-        e.age_reasoning = 'classification unavailable (hidden)'
-      }
-    }
-
-    // Fail-closed pass (covers cached events too): hide anything the LLM flagged low-confidence
-    // (explicitly uncertain per the prompt) or that is explicitly adults-only — belt-and-suspenders
-    // on top of the LLM's kid_relevant, so no uncertain/adult event surfaces in a kids app.
-    const ADULT_OVERRIDE = /\badults?\s*only\b|\b21\s*\+|\b18\s*\+|\bmust be 21\b/i
-    for (const e of playFrisco.events) {
-      if (e.age_confidence === 'low') e.kid_relevant = false
-      if (ADULT_OVERRIDE.test(`${e.title} ${e.description ?? ''}`)) e.kid_relevant = false
-    }
-  }
+  // LLM-primary classification (age + price), fail-closed — the shared helper (also used by Kaleidoscope).
+  const llmCalls = await classifyEvents(db, 'play-frisco', playFrisco.events)
 
   const events = dedupeMerge(playFrisco.events)
   markRecurring(events)
@@ -792,25 +728,227 @@ export async function runPlayFriscoIngest(): Promise<SourceIngestResult> {
   return { source: 'play-frisco', fetched: playFrisco.events.length, upserted, llm_calls: llmCalls, errors }
 }
 
-// Combined run — all three sources sequentially. Used by the /api/ingest route for
-// local/manual runs; the scheduled path runs each source as its own GitHub Actions job.
+// Combined run — all sources sequentially. Used by the /api/ingest route for local/manual runs;
+// the scheduled path runs each source as its own GitHub Actions job.
 export async function runAllIngest(): Promise<{
   ok: boolean
   upserted: number
-  counts: { frisco_library: number; plano_library: number; play_frisco: number }
+  counts: { frisco_library: number; plano_library: number; play_frisco: number; kaleidoscope_park: number }
   errors: string[]
 }> {
   const frisco = await runFriscoIngest()
   const plano = await runPlanoIngest()
   const playFrisco = await runPlayFriscoIngest()
+  const kaleidoscope = await runKaleidoscopeIngest()
   return {
     ok: true,
-    upserted: frisco.upserted + plano.upserted + playFrisco.upserted,
+    upserted: frisco.upserted + plano.upserted + playFrisco.upserted + kaleidoscope.upserted,
     counts: {
       frisco_library: frisco.fetched,
       plano_library: plano.fetched,
       play_frisco: playFrisco.fetched,
+      kaleidoscope_park: kaleidoscope.fetched,
     },
-    errors: [...frisco.errors, ...plano.errors, ...playFrisco.errors],
+    errors: [...frisco.errors, ...plano.errors, ...playFrisco.errors, ...kaleidoscope.errors],
   }
+}
+
+// ---------------------------------------------------------------------------
+// Shared LLM classifier pass — LLM-primary + fail-closed. Used by every source whose events
+// carry no structured age (Play Frisco, Kaleidoscope Park). Cached per event (a re-ingest of
+// known events makes 0 calls). Low-confidence or explicitly-adult events are hidden
+// (`kid_relevant=false`). Returns the number of Claude calls made. See SOURCE-ONBOARDING.md.
+// ---------------------------------------------------------------------------
+async function classifyEvents(db: ReturnType<typeof supabaseAdmin>, source: EventSource, events: any[]): Promise<number> {
+  if (events.length === 0) return 0
+  let llmCalls = 0
+  const ids = events.map((e: any) => e.id)
+  const { data: priorRows } = await db
+    .from('events')
+    .select('id, kid_relevant, age_buckets, age_confidence, age_reasoning, is_free, price_text, price_class, price_confidence, price_reasoning')
+    .eq('source', source)
+    .in('id', ids)
+  const priorMap = new Map<string, any>((priorRows ?? []).map((r: any) => [r.id, r]))
+
+  for (const e of events) {
+    const priceLocked = e._priceLocked === true
+    delete e._priceLocked
+    const prior = priorMap.get(e.id)
+    if (prior && prior.kid_relevant !== null) {
+      // Cache hit — carry forward the stored inference + price (no repeat Claude call).
+      e.kid_relevant = prior.kid_relevant
+      e.age_buckets = prior.age_buckets
+      e.age_confidence = prior.age_confidence
+      e.age_reasoning = prior.age_reasoning
+      e.price_class = prior.price_class
+      e.price_confidence = prior.price_confidence
+      e.price_reasoning = prior.price_reasoning
+      e.is_free = prior.is_free
+      e.price_text = prior.price_text
+      continue
+    }
+    llmCalls++
+    const result = await inferPlayFriscoEvent({ title: e.title, description: e.description ?? '' })
+    if (result) {
+      e.kid_relevant = result.kid_relevant
+      e.age_buckets = result.age_buckets
+      e.age_confidence = result.confidence
+      e.age_reasoning = result.reasoning
+      if (!priceLocked) {
+        const resolved = resolvePriceClass({
+          price: result.price,
+          price_confidence: result.price_confidence,
+          title: e.title,
+          description: e.description ?? '',
+          registration_required: e.registration_required,
+        })
+        const priceFields = priceClassToFields(resolved.price_class)
+        e.price_class = resolved.price_class
+        e.price_confidence = resolved.price_confidence
+        e.price_reasoning = result.price_reasoning
+        e.is_free = priceFields.is_free
+        e.price_text = priceFields.price_text
+      }
+    } else {
+      // LLM call failed — fail-closed: hide rather than default-show an unclassified event.
+      e.kid_relevant = false
+      e.age_reasoning = 'classification unavailable (hidden)'
+    }
+  }
+
+  // Fail-closed pass (covers cached events too): hide anything low-confidence (explicitly uncertain
+  // per the prompt) or explicitly adults-only — belt-and-suspenders on top of the LLM.
+  const ADULT_OVERRIDE = /\badults?\s*only\b|\b21\s*\+|\b18\s*\+|\bmust be 21\b/i
+  for (const e of events) {
+    if (e.age_confidence === 'low') e.kid_relevant = false
+    if (ADULT_OVERRIDE.test(`${e.title} ${e.description ?? ''}`)) e.kid_relevant = false
+  }
+  return llmCalls
+}
+
+// ---------------------------------------------------------------------------
+// Kaleidoscope Park (Frisco signature park) — WordPress + The Events Calendar REST API.
+// Best-case source: fully structured JSON. The bare API is WAF-blocked (403); it returns 200
+// with a browser UA + Accept: application/json + Referer. All events are at the park, so
+// sub-venues share the park's coordinates. See SOURCE-ONBOARDING.md worked example.
+// ---------------------------------------------------------------------------
+const KALEIDOSCOPE_API = 'https://kaleidoscopepark.org/wp-json/tribe/events/v1/events'
+const KALEIDOSCOPE_COORDS = { lat: 33.0978, lng: -96.8230 } // Kaleidoscope Park @ Hall Park, Frisco
+const KALEIDOSCOPE_HEADERS = {
+  'Accept': 'application/json',
+  'Referer': 'https://kaleidoscopepark.org/events/',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+}
+
+async function ingestKaleidoscope() {
+  const errors: string[] = []
+  const events: any[] = []
+  const startDate = new Date().toISOString().slice(0, 10) // upcoming events only
+
+  try {
+    let page = 1
+    let totalPages = 1
+    do {
+      const res = await fetch(`${KALEIDOSCOPE_API}?per_page=50&page=${page}&start_date=${startDate}`, {
+        headers: KALEIDOSCOPE_HEADERS,
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const json: any = await res.json()
+      totalPages = json.total_pages ?? 1
+
+      for (const e of (json.events ?? [])) {
+        // The API provides UTC directly (utc_start_date) — no timezone math needed.
+        const start = e.utc_start_date ? new Date(String(e.utc_start_date).replace(' ', 'T') + 'Z') : null
+        if (!start || isNaN(start.getTime())) continue
+        const end = e.utc_end_date ? new Date(String(e.utc_end_date).replace(' ', 'T') + 'Z') : null
+        const title = decodeHtml(e.title ?? '')
+        if (!title) continue
+        const description = e.description ? decodeHtml(String(e.description).replace(/<[^>]+>/g, ' ')) : null
+        const image = e.image?.url ? encodeURI(decodeHtml(String(e.image.url))) : null
+
+        // Price: the Tribe `cost` string ("Free" / "$X" / "") is authoritative when present;
+        // an empty cost → free-by-default inference (same six-layer model as Play Frisco).
+        const costText = typeof e.cost === 'string' ? e.cost.trim() : ''
+        const costFieldClass = interpretCostField(costText)
+        const priceLocked = costFieldClass !== null
+        const resolved = priceLocked
+          ? { price_class: costFieldClass!, price_confidence: 'confirmed' as const }
+          : fallbackPriceClass({ title, description: description ?? '', registration_required: requiresRegistration(`${title} ${description ?? ''}`) })
+        const priceFields = priceClassToFields(resolved.price_class)
+
+        events.push({
+          id: `kaleidoscope-park-${e.id}`,
+          source: 'kaleidoscope-park',
+          title,
+          description,
+          start_datetime: start.toISOString(),
+          end_datetime: end && !isNaN(end.getTime()) ? end.toISOString() : null,
+          location_name: e.venue?.venue ? decodeHtml(String(e.venue.venue)) : 'Kaleidoscope Park',
+          location_address: e.venue?.address ? decodeHtml(String(e.venue.address)) : '6635 Warren Parkway, Frisco, TX',
+          location_lat: e.venue?.geo_lat ? Number(e.venue.geo_lat) : KALEIDOSCOPE_COORDS.lat,
+          location_lng: e.venue?.geo_lng ? Number(e.venue.geo_lng) : KALEIDOSCOPE_COORDS.lng,
+          is_free: priceFields.is_free,
+          price_text: priceFields.price_text,
+          price_class: resolved.price_class,
+          price_confidence: resolved.price_confidence,
+          price_reasoning: priceLocked ? `Cost field: "${costText}"` : null,
+          _priceLocked: priceLocked,
+          age_min: null,
+          age_max: null,
+          age_label: null,
+          kid_relevant: null, // set by classifyEvents (LLM pass) in runKaleidoscopeIngest
+          age_buckets: null,
+          age_confidence: null,
+          age_reasoning: null,
+          is_recurring: false,
+          recurrence_label: null,
+          thumbnail_url: image,
+          event_url: e.url || 'https://kaleidoscopepark.org/events/',
+          category: guessCategory(title, description ?? ''),
+          registration_required: requiresRegistration(`${title} ${description ?? ''}`),
+          raw_json: { id: e.id, venue: e.venue?.venue ?? null },
+          ingested_at: new Date().toISOString(),
+        })
+      }
+      page++
+    } while (page <= totalPages)
+  } catch (err: any) {
+    errors.push(`kaleidoscope-park: ${err.message}`)
+  }
+
+  return { events, errors }
+}
+
+export async function runKaleidoscopeIngest(): Promise<SourceIngestResult> {
+  const db = supabaseAdmin()
+  const errors: string[] = []
+  const t0 = Date.now()
+
+  const kaleidoscope = await ingestKaleidoscope()
+  errors.push(...kaleidoscope.errors)
+
+  // LLM-primary classification (age + price), fail-closed — the shared helper.
+  const llmCalls = await classifyEvents(db, 'kaleidoscope-park', kaleidoscope.events)
+
+  const events = dedupeMerge(kaleidoscope.events)
+  markRecurring(events)
+
+  let upserted = 0
+  if (events.length > 0) {
+    const { error } = await db.from('events').upsert(events, { onConflict: 'id' })
+    if (error) errors.push(`db upsert (kaleidoscope): ${error.message}`)
+    else upserted = events.length
+  }
+
+  // Purge stale — delete any kaleidoscope-park event not in this batch (Tribe events can be removed).
+  if (kaleidoscope.events.length > 0) {
+    const currentIds = kaleidoscope.events.map((e: any) => e.id)
+    const { error } = await db.from('events').delete().eq('source', 'kaleidoscope-park').not('id', 'in', `(${currentIds.join(',')})`)
+    if (error) errors.push(`purge-stale-kaleidoscope: ${error.message}`)
+  }
+
+  // ingest_runs has no kaleidoscope column; log with upserted + llm_calls (per-source counts on the
+  // dashboard come from the events table, so this is fine).
+  await recordRun(db, { upserted, llmCalls, errors, t0 })
+  return { source: 'kaleidoscope-park', fetched: kaleidoscope.events.length, upserted, llm_calls: llmCalls, errors }
 }

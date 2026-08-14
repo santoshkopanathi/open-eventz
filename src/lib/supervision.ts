@@ -61,6 +61,14 @@ const PLAY_FRISCO_SUPERVISION: SupervisionBadge = {
   sub: 'Check with venue before dropping off.',
 }
 
+// Kaleidoscope Park: a public park's events, no formal drop-off/childcare policy (Tier 3) — defer.
+const KALEIDOSCOPE_SUPERVISION: SupervisionBadge = {
+  bg: SUP_BG,
+  text: SUP_TEXT,
+  label: 'Can kids be dropped off? Check with venue',
+  sub: 'Check with venue before dropping off.',
+}
+
 /**
  * Supervision / drop-off badge for the event detail view, resolved per source.
  * Returns null for an unrecognised source (renders no badge — safe on bad data). Every KNOWN
@@ -75,6 +83,8 @@ export function getSupervisionBadge(event: Event): SupervisionBadge | null {
       return PLANO_SUPERVISION
     case 'play-frisco':
       return PLAY_FRISCO_SUPERVISION
+    case 'kaleidoscope-park':
+      return KALEIDOSCOPE_SUPERVISION
     default:
       return null
   }

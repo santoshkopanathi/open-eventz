@@ -8,7 +8,7 @@ const ACCENT = '#C4B068', PRIMARY = 'var(--color-primary)', PERI = 'var(--color-
 const OK = '#16A34A', WARN = '#D97706', ERR = '#DC2626', NONE = '#E5E7EB'
 const GREEN = '#065F46', AMBER = '#92400E', BLUE = '#1E40AF'
 const STATUS: Record<string, string> = { ok: OK, warn: WARN, err: ERR, none: NONE }
-const SRC: Record<string, string> = { 'frisco-library': 'Frisco Library', 'plano-library': 'Plano Libraries', 'play-frisco': 'Play Frisco' }
+const SRC: Record<string, string> = { 'frisco-library': 'Frisco Library', 'plano-library': 'Plano Libraries', 'play-frisco': 'Play Frisco', 'kaleidoscope-park': 'Kaleidoscope Park' }
 const FILTER_LABEL: Record<string, string> = { ages: 'Age range', date_from: 'Date range', date_to: 'Date range', sources: 'Source / host', branches: 'Branch (Plano)' }
 const pct = (x: number) => `${Math.round(x * 100)}%`
 const fmtTime = (iso: string | null) => iso ? new Date(iso).toLocaleString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—'

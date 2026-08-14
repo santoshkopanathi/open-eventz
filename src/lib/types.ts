@@ -1,4 +1,4 @@
-export type EventSource = 'frisco-library' | 'plano-library' | 'play-frisco'
+export type EventSource = 'frisco-library' | 'plano-library' | 'play-frisco' | 'kaleidoscope-park'
 export type EventCategory = 'library' | 'parks-rec' | 'arts' | 'stem' | 'sports' | 'music'
 
 export interface Event {

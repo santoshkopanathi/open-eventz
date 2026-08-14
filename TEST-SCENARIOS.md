@@ -77,6 +77,17 @@ The layer that would have caught the Frisco age break: it asserts against the **
 | 1.5.5 | Live-source canary | `validate-data.ts` fetches a real event and asserts BiblioCommons still returns resolvable `audience_ids` (the exact contract that broke); else red | [R] [M] |
 | 1.5.6 | Any check fails → pipeline red | Non-zero exit → red `data-quality` job + a `$GITHUB_STEP_SUMMARY` ✓/✗ table | [R] |
 
+### 1.6 Kaleidoscope Park (The Events Calendar REST API) *(new 2026-08-13 — first onboarding via SOURCE-ONBOARDING.md)*
+| # | Scenario | Expected result | Tag |
+|---|---|---|---|
+| 1.6.1 | Ingest via `/wp-json/tribe/events/v1/events` | Events populated; bare request is 403 → 200 with `Accept: application/json` + browser UA + `Referer` | [R] [M] |
+| 1.6.2 | UTC dates from the API | `start_datetime` from `utc_start_date` (no timezone math); venue geo empty → park-coords fallback | [R] [M] |
+| 1.6.3 | Mixed-audience classification (LLM-primary) | LLM decides kid-vs-adult; e.g. "Pop & Pour" (21+ wine) → `kid_relevant:false`, hidden; SaturYAY!/festivals shown | [M] |
+| 1.6.4 | Price + image | `cost` field authoritative when present, else inferred; `image.url` → hero (detail-view only) | [R] [M] |
+| 1.6.5 | Stale purge | Events removed from the API are deleted from the table on the next run | [R] [M] |
+| 1.6.6 | Supervision badge | "Check with venue" (park, no drop-off policy) — enforced by the completeness guard | [A] [R] · supervision.test.ts |
+| 1.6.7 | Non-empty data-quality check | `kaleidoscope-park` ≥ 5 upcoming, else the gate fails (§1.5) | [R] [M] |
+
 ---
 
 ## 2. Event Display — List View (core)

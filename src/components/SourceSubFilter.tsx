@@ -12,6 +12,7 @@ const AGE_OPTIONS = [
 const FRISCO_SOURCE_OPTIONS = [
   { value: 'frisco-library', label: 'Frisco Library' },
   { value: 'play-frisco', label: 'Play Frisco' },
+  { value: 'kaleidoscope-park', label: 'Kaleidoscope Park' },
 ]
 
 const pad2 = (n: number) => String(n).padStart(2, '0')

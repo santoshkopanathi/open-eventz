@@ -26,7 +26,7 @@ jobs:
     strategy:
       fail-fast: false # one source failing must NOT cancel the others
       matrix:
-        source: [frisco, plano, play-frisco]
+        source: [frisco, plano, play-frisco, kaleidoscope]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -62,7 +62,7 @@ export default function Home() {
     const params = new URLSearchParams()
 
     if (city === 'frisco') {
-      const srcs = frisco.sources.length ? frisco.sources : ['frisco-library', 'play-frisco']
+      const srcs = frisco.sources.length ? frisco.sources : ['frisco-library', 'play-frisco', 'kaleidoscope-park']
       srcs.forEach(s => params.append('source', s))
       frisco.ages.forEach(a => params.append('age', a))
       if (frisco.date_from) params.set('date_from', frisco.date_from)

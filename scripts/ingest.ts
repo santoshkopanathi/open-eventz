@@ -21,7 +21,7 @@ import { config } from 'dotenv'
 // import below.
 config({ path: '.env.local' })
 
-const SOURCES = ['frisco', 'plano', 'play-frisco', 'all', 'check'] as const
+const SOURCES = ['frisco', 'plano', 'play-frisco', 'kaleidoscope', 'all', 'check'] as const
 type Src = (typeof SOURCES)[number]
 
 const REQUIRED_ENV = [
@@ -42,9 +42,9 @@ async function main() {
     console.error(`[ingest] missing required env: ${missing.join(', ')}`)
     process.exit(2)
   }
-  // Play Frisco needs the Anthropic key for inference; the libraries do not.
-  if ((arg === 'play-frisco' || arg === 'all') && !process.env.ANTHROPIC_API_KEY) {
-    console.error('[ingest] ANTHROPIC_API_KEY is required for play-frisco inference')
+  // Play Frisco and Kaleidoscope use the Anthropic key for LLM classification; the libraries don't.
+  if ((arg === 'play-frisco' || arg === 'kaleidoscope' || arg === 'all') && !process.env.ANTHROPIC_API_KEY) {
+    console.error(`[ingest] ANTHROPIC_API_KEY is required for ${arg} inference`)
     process.exit(2)
   }
 
@@ -52,7 +52,7 @@ async function main() {
   const ingest = await import('../src/lib/ingest')
 
   if (arg === 'check') {
-    const ok = ['runFriscoIngest', 'runPlanoIngest', 'runPlayFriscoIngest', 'runAllIngest']
+    const ok = ['runFriscoIngest', 'runPlanoIngest', 'runPlayFriscoIngest', 'runKaleidoscopeIngest', 'runAllIngest']
       .every(fn => typeof (ingest as Record<string, unknown>)[fn] === 'function')
     console.log(`[ingest] check: modules resolved=${ok}, env present`)
     process.exit(ok ? 0 : 1)
@@ -62,6 +62,7 @@ async function main() {
     arg === 'frisco' ? ingest.runFriscoIngest :
     arg === 'plano' ? ingest.runPlanoIngest :
     arg === 'play-frisco' ? ingest.runPlayFriscoIngest :
+    arg === 'kaleidoscope' ? ingest.runKaleidoscopeIngest :
     ingest.runAllIngest
 
   console.log(`[ingest] starting: ${arg}`)

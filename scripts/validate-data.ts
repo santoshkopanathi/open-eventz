@@ -47,10 +47,13 @@ async function main() {
 
   // Upcoming events per source — the population users actually see (mirrors /api/events).
   const upcoming = (src: string) => db.from('events').select('*').eq('source', src).gte('start_datetime', nowIso).limit(1000)
-  const [{ data: frisco }, { count: planoCount }, { count: playCount }] = await Promise.all([
+  const sourceCount = (src: string) =>
+    db.from('events').select('id', { count: 'exact', head: true }).eq('source', src).gte('start_datetime', nowIso)
+  const [{ data: frisco }, { count: planoCount }, { count: playCount }, { count: kaleidoscopeCount }] = await Promise.all([
     upcoming('frisco-library'),
-    db.from('events').select('id', { count: 'exact', head: true }).eq('source', 'plano-library').gte('start_datetime', nowIso),
-    db.from('events').select('id', { count: 'exact', head: true }).eq('source', 'play-frisco').gte('start_datetime', nowIso),
+    sourceCount('plano-library'),
+    sourceCount('play-frisco'),
+    sourceCount('kaleidoscope-park'),
   ])
 
   // Frisco age-health (the checks that would have caught this incident)
@@ -59,6 +62,7 @@ async function main() {
   // Per-source non-empty (Plano should never be near-zero; Play Frisco can legitimately be low)
   checks.push({ name: 'plano: non-empty', pass: (planoCount ?? 0) >= 30, detail: `${planoCount ?? 0} upcoming (min 30)` })
   checks.push({ name: 'play-frisco: present', pass: (playCount ?? 0) >= 0, detail: `${playCount ?? 0} upcoming` })
+  checks.push({ name: 'kaleidoscope-park: non-empty', pass: (kaleidoscopeCount ?? 0) >= 5, detail: `${kaleidoscopeCount ?? 0} upcoming (min 5)` })
 
   // Freshness — newest ingest within ~48h (catches a pipeline that silently stopped writing)
   const { data: newest } = await db.from('events').select('ingested_at').order('ingested_at', { ascending: false }).limit(1)

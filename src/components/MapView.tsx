@@ -7,15 +7,17 @@ import type { Venue, Event } from '@/lib/types'
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!
 
 const SOURCE_COLOR: Record<string, string> = {
-  'frisco-library': '#0F6E56',
-  'plano-library':  '#534AB7',
-  'play-frisco':    '#2D3561',
+  'frisco-library':   '#0F6E56',
+  'plano-library':    '#534AB7',
+  'play-frisco':      '#2D3561',
+  'kaleidoscope-park':'#B4623B',
 }
 
 const SOURCE_LABEL: Record<string, string> = {
-  'frisco-library': 'Frisco Library',
-  'plano-library':  'Plano Libraries',
-  'play-frisco':    'Play Frisco',
+  'frisco-library':   'Frisco Library',
+  'plano-library':    'Plano Libraries',
+  'play-frisco':      'Play Frisco',
+  'kaleidoscope-park':'Kaleidoscope Park',
 }
 
 function PanController({ selected }: { selected?: Event | null }) {

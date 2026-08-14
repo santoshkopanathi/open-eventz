@@ -30,6 +30,7 @@ const SOURCE_ORG: Record<EventSource, SourceOrg> = {
   'frisco-library': { name: 'Frisco Public Library', url: 'https://www.friscolibrary.com/' },
   'plano-library': { name: 'Plano Public Library', url: 'https://library.plano.gov/' },
   'play-frisco': { name: 'Play Frisco (Frisco Parks & Recreation)', url: 'https://www.friscotexas.gov/291/Parks-Recreation' },
+  'kaleidoscope-park': { name: 'Kaleidoscope Park', url: 'https://kaleidoscopepark.org/events/' },
 }
 
 export function sourceOrg(source: EventSource): SourceOrg {
@@ -41,6 +42,7 @@ const SOURCE_SHORT_LABEL: Record<EventSource, string> = {
   'frisco-library': 'Frisco Library',
   'plano-library': 'Plano Libraries',
   'play-frisco': 'Play Frisco',
+  'kaleidoscope-park': 'Kaleidoscope Park',
 }
 
 export function sourceShortLabel(source: EventSource): string {
