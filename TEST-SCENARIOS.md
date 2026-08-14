@@ -1,6 +1,6 @@
 # Open Eventz — Functional Test Scenarios
-Version: consolidated (base + v1.1 + v1.2)
-Last updated: 2026-07-23
+Version: consolidated (base + v1.1 + v1.2 + 2026-08 data-quality)
+Last updated: 2026-08-13
 
 Tag key:
 [A] = Automated — a Jest or Playwright test exists
@@ -16,6 +16,12 @@ Zone 3: Automated in CI, backfilled here for completeness — SEO, calendar, das
 > rows name their covering test file inline in the tag cell. Superseded scenarios from earlier
 > versioned docs are merged in (newest wins); the originals are archived under `02-product/`.
 
+> **Why the 2026-08-13 additions (§1.1 rework, §1.5, §9.7/9.9, §12.8–9, §13.2).** A silent source
+> break (BiblioCommons → client-side rendering) corrupted every Frisco age while all mocked/logic
+> tests stayed green — so these scenarios assert against the **real output** (a live-DB data-quality
+> gate §1.5 + a source canary). Rule: **logic tests can't catch bad data — pair every ingest/source
+> change with a real-data assertion.** Full story: BUILD-LOG "Frisco age filter broke".
+
 ---
 
 ## 1. Data Ingest Pipeline
@@ -26,9 +32,11 @@ Zone 3: Automated in CI, backfilled here for completeness — SEO, calendar, das
 | 1.1.1 | Ingest runs against the live Frisco Library calendar | Events table populated; no ingest errors | [R] [M] |
 | 1.1.2 | Time formatted `10:00am` (no space) | Parsed as 10:00 AM; no date-parse error | [R] [M] |
 | 1.1.3 | Same event in multiple audience feeds | One record per event; no duplicate IDs | [R] [M] |
-| 1.1.4 | Detail page scraped for age data | `age_label` populated from "Suitable for:" block | [R] [M] |
-| 1.1.5 | No "Suitable for:" block on detail page | `age_label` null; event still ingested | [R] [M] |
-| 1.1.6 | Detail-page fetch returns HTTP error | Error logged for that event; others continue; other sources unaffected | [R] [M] |
+| 1.1.4 | Age data source *(2026-08: JSON API)* | `age_min/age_max` from the detail **JSON API** `definition.audience_ids`, mapped via the `/events/event_audiences` taxonomy (`mapFriscoAudienceIds`) — **not** the "Suitable for:" HTML, which the client-rendered `/v2` pages leave empty | [A] [R] · age-parsers.test.ts |
+| 1.1.5 | Empty/unknown `audience_ids` | Falls back to all-ages `0–17` **and is counted**; an abnormally high fallback rate → run warning + the data-quality gate fails (§1.5.1) | [A] [R] · age-parsers.test.ts, data-quality.test.ts |
+| 1.1.6 | Adults-only audience (e.g. "D&D for Adults") | `age_min=18`; excluded at the API (`age_min < 18`); never appears in any kid filter | [A] [R] · age-parsers.test.ts |
+| 1.1.7 | Event image (detail view only) | From the card `uploads/images` URL, `&amp;`/spaces encoded so it resolves; hero image in the detail view; graceful when absent | [R] [M] |
+| 1.1.8 | Detail JSON-API fetch returns HTTP error | Event still ingested (age → 0–17 fallback); others continue; other sources unaffected | [R] [M] |
 
 ### 1.2 Plano Libraries (Communico RSS)
 | # | Scenario | Expected result | Tag |
@@ -47,6 +55,9 @@ Zone 3: Automated in CI, backfilled here for completeness — SEO, calendar, das
 | 1.3.2 | Event absent from today's scrape | Deleted from table (stale cleanup) | [R] [M] |
 | 1.3.3 | CivicPlus HTML structure changes | Fails gracefully; banner shown; library events unaffected | [R] [M] |
 | 1.3.4 | Paid event (structured `Cost` field) | `is_free=false`, `price_text` stored | [R] [M] |
+| 1.3.5 | Coverage window *(2026-08)* | Scrapes ~6 months out (was effectively ~1 month — a per-event `startDate` check overrode the loop); events months ahead now appear | [R] [M] |
+| 1.3.6 | Event image *(2026-08)* | From the detail-page `og:image`; keeps only real `/ImageRepository/Document` images, drops the generic calendar-icon fallback; detail-view only, graceful when absent | [R] [M] |
+| 1.3.7 | Keyword pre-filter is governance-only *(2026-08)* | `PARKS_REC_EXCLUDE_KEYWORDS` skips only city-admin noise (council/board/work-session…); kid-vs-adult is the LLM's call (§13.2), not a keyword list | [R] [M] |
 
 ### 1.4 Ingest security & architecture
 | # | Scenario | Expected result | Tag |
@@ -54,6 +65,17 @@ Zone 3: Automated in CI, backfilled here for completeness — SEO, calendar, das
 | 1.4.1 | `/api/ingest` without bearer token | 401; no ingest runs | [R] [M] |
 | 1.4.2 | `/api/ingest` with valid token | Runs; 200 with summary | [R] [M] |
 | 1.4.3 | Composite ID for existing event | Upsert updates; no duplicate row | [R] [M] |
+
+### 1.5 Data-quality gate — post-ingest, REAL data *(new 2026-08-13 — see the "why" note at the top)*
+The layer that would have caught the Frisco age break: it asserts against the **real DB** (not mocks), so a silent source/data break turns the pipeline **red** instead of a green ingest over corrupt data. Runs as the `data-quality` job in `.github/workflows/ingest.yml` (`needs: ingest`) and locally via `npm run validate`; pure checks in `src/lib/data-quality.ts`.
+| # | Scenario | Expected result | Tag |
+|---|---|---|---|
+| 1.5.1 | Frisco age variety | No single `(age_min,age_max)` bucket > 85% of events (the incident was ~100% `0–17`); else gate fails | [A] [R] · data-quality.test.ts |
+| 1.5.2 | No adult-title leaks | 0 events whose title targets adults ("for adults"/"21+"/…) stored kid-visible (`age_min < 18`); else fails | [A] [R] · data-quality.test.ts |
+| 1.5.3 | Toddler filter narrows (real data) | `passesAgeFilter(0–5)` matches < 90% of events (near-100% match = filter no-op); else fails | [A] [R] · data-quality.test.ts |
+| 1.5.4 | Per-source non-empty + freshness | `validate-data.ts`: each library source ≥ a min count; newest `ingested_at` ≤ 48h; else red | [R] [M] |
+| 1.5.5 | Live-source canary | `validate-data.ts` fetches a real event and asserts BiblioCommons still returns resolvable `audience_ids` (the exact contract that broke); else red | [R] [M] |
+| 1.5.6 | Any check fails → pipeline red | Non-zero exit → red `data-quality` job + a `$GITHUB_STEP_SUMMARY` ✓/✗ table | [R] |
 
 ---
 
@@ -166,8 +188,9 @@ Cards show only "Family" (confirmed or inferred) and the bare inferred marker; s
 | 9.4 | Exactly one option selected | Button shows that option's name | [M] |
 | 9.5 | Two or more selected | Button shows group label + count badge | [M] |
 | 9.6 | Zero selected | Group label, no badge (= all) | [M] |
-| 9.7 | Date inputs placement | Same filter row on desktop; wrap on narrow widths | [M] |
+| 9.7 | Filter row layout *(2026-08)* | Dropdowns + date range + Today/Tomorrow/Weekend presets flow inline on one row on desktop; wrap to stacked rows only as the width narrows (mobile) | [M] |
 | 9.8 | Click outside an open dropdown | Dropdown closes | [M] |
+| 9.9 | "Clear filters" visibility *(2026-08)* | Hidden by default; appears only when a filter is non-default (any source/branch/age selected, or the date range moved); clicking it resets and hides it again | [A] [R] · e2e/smoke.spec.ts |
 
 ---
 
@@ -204,6 +227,8 @@ Cards show only "Family" (confirmed or inferred) and the bare inferred marker; s
 | 12.5 | Free / paid detail | "Free admission" / "Paid" pill (see §6 for `✦` rules) | [R] |
 | 12.6 | Registration required | Calm accent-tint (rust) callout, one line: "Registration required — sign up before attending" (Weekend Paper — was a yellow banner) | [R] |
 | 12.7 | Supervision "can kids be dropped off?" badge | Per-source drop-off badge — fully specified in **§12A. Supervision Badge** below | [A] [R] · supervision.test.ts |
+| 12.8 | Hero image *(2026-08)* | When the event has a `thumbnail_url`, a banner renders at the top of the detail view (drawer + `/events/[id]`); hidden when absent or if the image fails to load (`onError`) — never a broken box; detail-view only (not on cards) | [R] [M] |
+| 12.9 | Mobile detail header *(2026-08)* | The mobile full-screen detail overlay header matches the home ink masthead (ink band + rust rule + two-colour "Open Eventz" wordmark + tagline), not a plain paper bar | [M] |
 | 12.11 | Add to Google Calendar | Opens Google Calendar link, event pre-filled | [R] |
 | 12.12 | Add to Apple Calendar | Opens the `/api/ics/[id]` `text/calendar` route → iOS opens Add-to-Calendar (no file download) | [A] [R] · ics.test.ts |
 | 12.13 | Get directions | Opens directions with venue address | [R] |
@@ -248,12 +273,14 @@ Extra regression guards in the same suite: Frisco *no-age-data* → "check with 
 ### 13.2 Inference behavior
 | # | Scenario | Expected result | Tag |
 |---|---|---|---|
-| 13.2.1 | Adult-only event (e.g. board meeting) | `kid_relevant:false`; excluded from all views | [M] |
-| 13.2.2 | Confidence low | Buckets stored but not shown; no badge | [M] |
-| 13.2.3 | Claude returns malformed JSON | Error logged; event stored without age data; no ingest failure | [M] |
-| 13.2.4 | Claude times out | Error logged; event stored; pipeline continues | [M] |
-| 13.2.5 | Event already inferred in DB | Re-ingest does not re-call Claude (cache) | [M] |
-| 13.2.6 | New Play Frisco event | Next ingest infers only the new event | [M] |
+| 13.2.1 | LLM-primary classifier *(2026-08)* | The LLM's `kid_relevant` decides kid-vs-adult for **every** real event; adult/professional items (call-for-art, receptions, adult workshops) → `false`, excluded, each with a stored `reasoning` | [M] |
+| 13.2.2 | Confidence `low` → **fail-closed** *(2026-08)* | `kid_relevant` forced `false` (hidden) — uncertain = don't risk showing an adult event (was: "stored but no badge") | [M] |
+| 13.2.3 | Claude returns malformed JSON → fail-closed | Error logged; `kid_relevant:false` (hidden); no ingest failure | [M] |
+| 13.2.4 | Claude times out / API error → fail-closed | Error logged; `kid_relevant:false` (hidden); pipeline continues | [M] |
+| 13.2.5 | Explicit "adults only / 21+ / 18+" | Hard post-LLM override → `kid_relevant:false` regardless of the model (belt-and-suspenders) | [M] |
+| 13.2.6 | Ambiguous same-name events | LLM splits by description — "Cycle the City" greenbelt (family) shown vs civic ride with officials hidden — where a keyword list couldn't | [M] |
+| 13.2.7 | Event already inferred in DB | Re-ingest does not re-call Claude (cache); the fail-closed pass is still re-applied to cached rows | [M] |
+| 13.2.8 | New Play Frisco event | Next ingest infers only the new event | [M] |
 
 ---
 
