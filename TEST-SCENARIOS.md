@@ -81,7 +81,7 @@ The layer that would have caught the Frisco age break: it asserts against the **
 | # | Scenario | Expected result | Tag |
 |---|---|---|---|
 | 1.6.1 | Ingest via `/wp-json/tribe/events/v1/events` | Events populated; bare request is 403 → 200 with `Accept: application/json` + browser UA + `Referer` | [R] [M] |
-| 1.6.2 | UTC dates from the API | `start_datetime` from `utc_start_date` (no timezone math); venue geo empty → park-coords fallback | [R] [M] |
+| 1.6.2 | Timezone (source UTC is wrong) | `start_datetime` from the LOCAL `start_date` converted as America/Chicago, DST-aware — the source's `utc_*` is 10h off (WordPress TZ misconfigured as UTC+5); venue geo empty → park-coords fallback | [A] [R] · datetime.test.ts |
 | 1.6.3 | Mixed-audience classification (LLM-primary) | LLM decides kid-vs-adult; e.g. "Pop & Pour" (21+ wine) → `kid_relevant:false`, hidden; SaturYAY!/festivals shown | [M] |
 | 1.6.4 | Price + image | `cost` field authoritative when present, else inferred; `image.url` → hero (detail-view only) | [R] [M] |
 | 1.6.5 | Stale purge | Events removed from the API are deleted from the table on the next run | [R] [M] |

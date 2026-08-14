@@ -11,6 +11,7 @@ import { inferPlayFriscoEvent } from './age-inference'
 import { fallbackPriceClass, resolvePriceClass, priceClassToFields, interpretCostField } from './price'
 import { PER_INFERENCE_COST_USD } from './technical-metrics'
 import { markRecurring } from './recurring'
+import { centralWallTimeToUtc } from './datetime'
 
 // Adult programs that BiblioCommons incorrectly includes in children audience feeds
 const FRISCO_ADULT_KEYWORDS = [
@@ -857,10 +858,11 @@ async function ingestKaleidoscope() {
       totalPages = json.total_pages ?? 1
 
       for (const e of (json.events ?? [])) {
-        // The API provides UTC directly (utc_start_date) — no timezone math needed.
-        const start = e.utc_start_date ? new Date(String(e.utc_start_date).replace(' ', 'T') + 'Z') : null
+        // Use the LOCAL wall time (start_date) as America/Chicago — the source's utc_* is 10h wrong
+        // (its WordPress TZ is misconfigured as UTC+5). See centralWallTimeToUtc above.
+        const start = centralWallTimeToUtc(e.start_date ?? '')
         if (!start || isNaN(start.getTime())) continue
-        const end = e.utc_end_date ? new Date(String(e.utc_end_date).replace(' ', 'T') + 'Z') : null
+        const end = e.end_date ? centralWallTimeToUtc(e.end_date) : null
         const title = decodeHtml(e.title ?? '')
         if (!title) continue
         const description = e.description ? decodeHtml(String(e.description).replace(/<[^>]+>/g, ' ')) : null
