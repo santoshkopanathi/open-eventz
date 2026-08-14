@@ -380,14 +380,15 @@ function getFriscoVenueCoords(locationName: string): { lat: number; lng: number 
   return { lat: 33.1506, lng: -96.8236 } // center of Frisco as fallback
 }
 
+// Cheap pre-filter for city-government / administrative items that are never community events,
+// so we don't pay the LLM to classify obvious noise. Deliberately SHORT and multi-word (to avoid
+// false positives like "Board Game Night") — the actual kid-vs-adult decision is the LLM's job
+// (inferPlayFriscoEvent), which generalises without per-source keyword upkeep. See BUILD-LOG
+// "Play Frisco classifier: LLM-primary".
 const PARKS_REC_EXCLUDE_KEYWORDS = [
-  'board', 'council', 'commission', 'meeting', 'senior', 'adult fitness',
-  'workshop for adults', 'work session', 'irrigation', 'advisory',
-  'planning', 'coffee with mayor', 'coffee with the mayor', 'chunk your junk', 'cycle the city',
-  'game room', 'professional', 'ride with', 'taychas trail',
-  'bird walk', 'spirit of america', 'reception,', 'harold bacchus',
-  'conversational english', 'citizenship class', 'score mentor',
-  'vendor application', 'vendor app',
+  'city council', 'council meeting', 'commission meeting', 'board meeting',
+  'board of', 'work session', 'advisory board', 'advisory committee',
+  'planning commission', 'coffee with the mayor', 'coffee with mayor',
 ]
 
 // CID=85 (Cultural Affairs) + CID=81 (Parks & Rec) — same combined URL the city uses
@@ -409,14 +410,16 @@ async function ingestPlayFrisco() {
   const errors: string[] = []
   const events: any[] = []
 
-  const oneMonthFromNow = new Date()
-  oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1)
+  // Horizon: include events up to ~6 months out. Was 1 month, which hid most CID=85/81
+  // (Cultural Affairs / Parks & Rec) events since those are often scheduled a few months ahead.
+  const horizon = new Date()
+  horizon.setMonth(horizon.getMonth() + 6)
 
-  // Collect EIDs from the current month + next 2 months
+  // Collect EIDs from the current month + the next ~6 months of calendar pages
   const eids = new Set<string>()
   const now = new Date()
 
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 6; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() + i, 1)
     const month = d.getMonth() + 1
     const year = d.getFullYear()
@@ -461,9 +464,12 @@ async function ingestPlayFrisco() {
 
       // Start datetime — CivicPlus puts date as text content of a hidden div with itemprop="startDate"
       const startMatch = html.match(/itemprop="startDate"[^>]*>([^<]+)<\//i)
-      if (!startMatch) { errors.push(`play-frisco EID ${eid}: no startDate itemprop`); continue }
+      // No startDate → not a real event page (low EIDs like 1/37/58 are calendar nav links that
+      // the EID regex also catches). Skip silently; a real parser break shows up as a bulk drop
+      // the data-quality gate would catch, not as per-EID noise that marks every run 'warn'.
+      if (!startMatch) continue
       const startDate = new Date(startMatch[1].trim())
-      if (isNaN(startDate.getTime()) || startDate > oneMonthFromNow) continue
+      if (isNaN(startDate.getTime()) || startDate > horizon) continue
 
       // End datetime — CivicPlus has no endDate itemprop; parse from "Time:" detail block
       const endMatch = html.match(/itemprop="endDate"[^>]*>([^<]+)<\//i)
@@ -527,6 +533,13 @@ async function ingestPlayFrisco() {
         : fallbackPriceClass({ title, description, registration_required })
       const priceFields = priceClassToFields(resolved.price_class)
 
+      // Event image — CivicPlus exposes it as og:image on the detail page. A real per-event image
+      // lives under /ImageRepository/Document; events WITHOUT one fall back to a generic calendar
+      // icon (/Images/SocialMedia/IconModuleCalendar.png), which we drop so we never show a boring
+      // placeholder as a hero. Hotlinked, detail-view only, graceful when absent.
+      const ogRaw = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i)?.[1] ?? null
+      const ogImage = ogRaw && /ImageRepository\/Document/i.test(ogRaw) ? ogRaw : null
+
       events.push({
         id: `play-frisco-${eid}`,
         source: 'play-frisco',
@@ -554,7 +567,7 @@ async function ingestPlayFrisco() {
         age_reasoning: null,
         is_recurring: false,
         recurrence_label: null,
-        thumbnail_url: null,
+        thumbnail_url: ogImage,
         event_url: url,
         category: guessCategory(title, description),
         registration_required,
@@ -735,7 +748,20 @@ export async function runPlayFriscoIngest(): Promise<SourceIngestResult> {
           e.is_free = priceFields.is_free
           e.price_text = priceFields.price_text
         }
+      } else {
+        // LLM call failed — fail-closed: hide rather than default-show an unclassified event.
+        e.kid_relevant = false
+        e.age_reasoning = 'classification unavailable (hidden)'
       }
+    }
+
+    // Fail-closed pass (covers cached events too): hide anything the LLM flagged low-confidence
+    // (explicitly uncertain per the prompt) or that is explicitly adults-only — belt-and-suspenders
+    // on top of the LLM's kid_relevant, so no uncertain/adult event surfaces in a kids app.
+    const ADULT_OVERRIDE = /\badults?\s*only\b|\b21\s*\+|\b18\s*\+|\bmust be 21\b/i
+    for (const e of playFrisco.events) {
+      if (e.age_confidence === 'low') e.kid_relevant = false
+      if (ADULT_OVERRIDE.test(`${e.title} ${e.description ?? ''}`)) e.kid_relevant = false
     }
   }
 
