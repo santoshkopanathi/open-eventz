@@ -111,6 +111,22 @@ describe('implausiblyEarlyEvents / startTimeChecks', () => {
     expect(implausiblyEarlyEvents([ev({ start_datetime: '2026-11-21T00:00:00Z' })])).toHaveLength(0) // 6 PM CST
   })
 
+  test('exact-midnight all-day events are NOT flagged (real data, caught on the live gate)', () => {
+    // Sources use 00:00 for "all day, no meaningful time". Flagging these made the gate red on
+    // legitimate rows: 9 Frisco "LIBRARY CLOSED" days and Play Frisco's "Unplug Texas Day".
+    const allDay = [
+      ev({ id: 'closed', title: 'LIBRARY CLOSED',   start_datetime: '2026-10-19T05:00:00Z' }), // 12:00 AM CDT
+      ev({ id: 'unplug', title: 'Unplug Texas Day', start_datetime: '2026-10-21T05:00:00Z' }), // 12:00 AM CDT
+      ev({ id: 'winter', title: 'LIBRARY CLOSED',   start_datetime: '2026-12-25T06:00:00Z' }), // 12:00 AM CST
+    ]
+    expect(implausiblyEarlyEvents(allDay)).toHaveLength(0)
+    expect(startTimeChecks(allDay, 'frisco').pass).toBe(true)
+  })
+
+  test('12:30 AM is still flagged — only exact midnight is treated as all-day', () => {
+    expect(implausiblyEarlyEvents([ev({ start_datetime: '2026-10-19T05:30:00Z' })])).toHaveLength(1)
+  })
+
   test('empty source → passes (non-empty checks own that failure)', () => {
     expect(startTimeChecks([], 'play-frisco').pass).toBe(true)
   })

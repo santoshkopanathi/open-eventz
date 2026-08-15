@@ -51,27 +51,39 @@ export function ageFilterNarrowShare(events: Event[]): number {
   return events.filter(e => passesAgeFilter(e, [[0, 5]])).length / events.length
 }
 
-// Nothing a family attends starts before this hour, Central. A kids storytime at 5:00 AM is not
+// Nothing a family attends starts between these hours, Central. A kids storytime at 5:00 AM is not
 // an odd event — it is a timezone bug. Late-evening is left alone (concerts, tree lightings).
 const EARLIEST_PLAUSIBLE_HOUR_CT = 7
 
-function centralHour(iso: string): number {
-  const h = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', hour: '2-digit', hour12: false })
-    .formatToParts(new Date(iso)).find(p => p.type === 'hour')?.value
-  return h === undefined ? -1 : +h % 24
+function centralParts(iso: string): { hour: number; minute: number } | null {
+  const p = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', hour: '2-digit', minute: '2-digit', hour12: false })
+    .formatToParts(new Date(iso))
+  const hour = p.find(x => x.type === 'hour')?.value
+  const minute = p.find(x => x.type === 'minute')?.value
+  if (hour === undefined || minute === undefined) return null
+  return { hour: +hour % 24, minute: +minute }
 }
 
 /**
- * Events starting implausibly early in Central time. This is the fingerprint of a wall-clock time
- * parsed in the wrong timezone: the ingest used a bare `new Date(str)` on offset-less source
- * strings, so the nightly UTC Actions runner stored every Frisco/Plano event 5–6 hours early and
- * production showed 5:00 AM story times. Correct data has effectively none of these; a whole
- * source shifting at once produces dozens.
+ * Events starting implausibly early in Central time — the fingerprint of a wall-clock time parsed
+ * in the wrong timezone. The ingest used a bare `new Date(str)` on offset-less source strings, so
+ * the nightly UTC Actions runner stored every Frisco/Plano event 5–6 hours early and production
+ * showed 5:00 AM story times. Correct data has effectively none of these; a whole source shifting
+ * at once produces dozens.
+ *
+ * EXACT MIDNIGHT IS EXCLUDED. Sources use 00:00 as "all day, no meaningful time" — library
+ * closures, civic observances ("Unplug Texas Day"), application windows. Those are legitimate and
+ * would otherwise be flagged forever. The exclusion is safe because the bug's signature is
+ * early-morning-but-not-midnight (the incident produced 4:30 / 5:00 / 5:30 / 6:00 AM), and because
+ * a shift moves an entire source at once — dozens of events land in the 1–7 AM window, so the
+ * check still fires loudly even if one masked event slips through.
  */
 export function implausiblyEarlyEvents(events: Event[]): Event[] {
   return events.filter(e => {
-    const h = centralHour(e.start_datetime)
-    return h >= 0 && h < EARLIEST_PLAUSIBLE_HOUR_CT
+    const t = centralParts(e.start_datetime)
+    if (!t) return false
+    if (t.hour === 0 && t.minute === 0) return false // all-day marker, not a shifted time
+    return t.hour < EARLIEST_PLAUSIBLE_HOUR_CT
   })
 }
 
@@ -87,8 +99,8 @@ export function startTimeChecks(events: Event[], sourceLabel: string, maxShare =
     name: `${sourceLabel}: start times plausible`,
     pass: share <= maxShare,
     detail: early.length
-      ? `${early.length}/${events.length} start before ${EARLIEST_PLAUSIBLE_HOUR_CT} AM CT, e.g. "${early[0].title}" — check timezone handling`
-      : `none before ${EARLIEST_PLAUSIBLE_HOUR_CT} AM CT`,
+      ? `${early.length}/${events.length} start between 12:01 and ${EARLIEST_PLAUSIBLE_HOUR_CT}:00 AM CT, e.g. "${early[0].title}" — check timezone handling`
+      : `none between 12:01 and ${EARLIEST_PLAUSIBLE_HOUR_CT}:00 AM CT (exact-midnight all-day events excluded)`,
   }
 }
 

@@ -76,7 +76,8 @@ The layer that would have caught the Frisco age break: it asserts against the **
 | 1.5.4 | Per-source non-empty + freshness | `validate-data.ts`: each library source ≥ a min count; newest `ingested_at` ≤ 48h; else red | [R] [M] |
 | 1.5.5 | Live-source canary | `validate-data.ts` fetches a real event and asserts BiblioCommons still returns resolvable `audience_ids` (the exact contract that broke); else red | [R] [M] |
 | 1.5.6 | Any check fails → pipeline red | Non-zero exit → red `data-quality` job + a `$GITHUB_STEP_SUMMARY` ✓/✗ table | [R] |
-| 1.5.7 | Start times plausible *(new 2026-08-14)* | Per source, ≤ 5% of upcoming events start before **7 AM Central**; a whole source shifting (the timezone incident — 5:00 AM story times) fails the gate and names the source | [A] [R] · data-quality.test.ts |
+| 1.5.7 | Start times plausible *(new 2026-08-14)* | Per source, ≤ 5% of upcoming events start between **12:01 and 7:00 AM Central**; a whole source shifting (the timezone incident — 5:00 AM story times) fails the gate and names the source | [A] [R] · data-quality.test.ts |
+| 1.5.8 | All-day events not flagged *(new 2026-08-14)* | **Exact midnight** = "all day, no meaningful time" (LIBRARY CLOSED, Unplug Texas Day) and is excluded; 12:30 AM is still flagged. Found when the check first ran on real data and went red on 11 legitimate rows | [A] [R] · data-quality.test.ts |
 
 ### 1.5A Source timezone handling *(new 2026-08-14 — the "5:00 AM story time" incident)*
 Every source publishes **local wall-clock** times with no usable offset. Parsing them with a bare `new Date(str)` resolves in the **runtime's** timezone — correct on a Central dev machine, **5–6 hours early** on the UTC GitHub Actions runner that does the nightly ingest. All sources now go through `parseCentralWallTime` (`src/lib/datetime.ts`).

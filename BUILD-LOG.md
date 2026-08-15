@@ -1418,7 +1418,11 @@ Note the Plano case is its own trap: the feed stamps `+0000` on times that are p
 
 typecheck · **273 unit tests** (up from 256), green under both `TZ=America/Chicago` and `TZ=UTC` · 11 E2E · `next build` · doc-parity — all green. The restyled page verified on the dev server across all four sources at desktop and 375px mobile: computed masthead `rgb(31,27,22)` with the rust rule, Instrument Serif title, fill-subtle supervision callout, ink CTA, no horizontal overflow, hero images loading, and zero emoji in the rendered text.
 
-**Production data is still wrong until a re-ingest runs** — the fix is in the ingest code, so the stored timestamps only correct themselves on the next run with this code deployed.
+**Deployed and re-ingested (same day).** Pushed `191b71b`, then re-ran Frisco (337), Plano (1,187) and Play Frisco (31) — 0 errors, 0 LLM calls. Prod times verified correct: Family Story Time 5:30 AM → **10:30 AM**, Plano storytimes 5:30/6:00 AM → **10:30/11:00 AM**, matching each source's own published time. Worth noting the `ingested_at` stamps found during diagnosis read **6:11 AM CT that same morning** — the bad rows weren't stale, the nightly had rewritten them hours earlier, which is why the push had to precede the re-ingest.
+
+**The guardrail was wrong on its first contact with real data.** Run against the live DB, the new start-time check went red on 11 legitimate rows: 9 Frisco `LIBRARY CLOSED` days and Play Frisco's `Unplug Texas Day` / `Merry Main Street Vendor Applications Open`. All were **exactly 12:00 AM** — sources use midnight to mean "all day, no meaningful time," and the check had conflated that with a shifted time. Fixed by excluding exact midnight and flagging 12:01–7:00 AM only. That's safe precisely because of how the bug behaves: it moves an **entire source at once**, so dozens of events land in the 1–7 AM window and the check still fires loudly. Gate now: 13/13 green on real data.
+
+**Second lesson, from the guardrail itself.** A check written from the shape of one incident encodes that incident's assumptions. This one assumed "early morning ⇒ broken" and only met "midnight ⇒ all day" when pointed at production. A data-quality rule isn't finished when its unit tests pass against the fixture that inspired it — it's finished after it has run against real data and you've looked at what it flagged. A guardrail that cries wolf gets disabled, which is worse than not having written it.
 
 ### The lesson
 
