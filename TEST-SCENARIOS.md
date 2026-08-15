@@ -79,6 +79,24 @@ The layer that would have caught the Frisco age break: it asserts against the **
 | 1.5.7 | Start times plausible *(new 2026-08-14)* | Per source, ≤ 5% of upcoming events start between **12:01 and 7:00 AM Central**; a whole source shifting (the timezone incident — 5:00 AM story times) fails the gate and names the source | [A] [R] · data-quality.test.ts |
 | 1.5.8 | All-day events not flagged *(new 2026-08-14)* | **Exact midnight** = "all day, no meaningful time" (LIBRARY CLOSED, Unplug Texas Day) and is excluded; 12:30 AM is still flagged. Found when the check first ran on real data and went red on 11 legitimate rows | [A] [R] · data-quality.test.ts |
 
+### 1.5B Pre-write ingest guard — fail-closed *(new 2026-08-15)*
+**Product rule: a wrong event time is worse than a missing event.** Every runner writes through `guardedUpsert`, which screens the batch via `screenBatch` (`src/lib/ingest-guard.ts`) **before** the upsert. On abort nothing is written and the purge/cleanup steps are skipped, so the previously-stored correct rows survive. Escape hatch `INGEST_ALLOW_TIME_SHIFT=1` for an intended mass correction.
+| # | Scenario | Expected result | Tag |
+|---|---|---|---|
+| 1.5B.1 | Event with an implausible start (12:01–7:00 AM CT) | **Dropped** — never written; the rest of the batch still publishes | [A] [R] · ingest-guard.test.ts |
+| 1.5B.2 | Unparseable `start_datetime` | Dropped — never guessed, never stored | [A] [R] · ingest-guard.test.ts |
+| 1.5B.3 | **The incident** — every event shifted by the same −300 min | **Whole batch rejected**, stored rows untouched | [A] [R] · ingest-guard.test.ts |
+| 1.5B.4 | Uniform shift landing at *plausible* hours (e.g. 10 AM → 3 PM) | Still rejected — the uniform offset is the tell, not the hour | [A] [R] · ingest-guard.test.ts |
+| 1.5B.5 | A few genuine reschedules | **Not** rejected — real changes are individually varied | [A] [R] · ingest-guard.test.ts |
+| 1.5B.6 | >10% of events implausible | Whole batch rejected rather than publishing a fraction | [A] [R] · ingest-guard.test.ts |
+| 1.5B.7 | Partial/empty scrape (< half the stored set) | Rejected — a failed scrape must not read as "events cancelled" | [A] [R] · ingest-guard.test.ts |
+| 1.5B.8 | Intended correction + `INGEST_ALLOW_TIME_SHIFT=1` | Shift allowed; implausible times still blocked | [A] [R] · ingest-guard.test.ts |
+| 1.5B.9 | Brand-new source (nothing stored) | Writes normally — no overlap to compare | [A] [R] · ingest-guard.test.ts |
+| 1.5B.10 | Cannot read stored events | Refuses to write rather than write blind | [R] [M] |
+| 1.5B.11 | No write path bypasses the guard | Exactly **one** `events.upsert` exists in `ingest.ts` | [A] [R] · no-ambient-timezone.test.ts |
+| 1.5B.12 | Bare `new Date(<arg>)` in ingest | Fails unless allowlisted with a reason — verified by reintroducing the original bug | [A] [R] · no-ambient-timezone.test.ts |
+| 1.5B.13 | Unit suite runs in both timezones | CI runs Jest at `TZ=UTC` (runner) **and** `TZ=America/Chicago`; a one-timezone suite can't catch a timezone bug | [R] |
+
 ### 1.5A Source timezone handling *(new 2026-08-14 — the "5:00 AM story time" incident)*
 Every source publishes **local wall-clock** times with no usable offset. Parsing them with a bare `new Date(str)` resolves in the **runtime's** timezone — correct on a Central dev machine, **5–6 hours early** on the UTC GitHub Actions runner that does the nightly ingest. All sources now go through `parseCentralWallTime` (`src/lib/datetime.ts`).
 | # | Scenario | Expected result | Tag |

@@ -19,6 +19,15 @@ jobs:
       - name: Unit tests (with coverage)
         id: unit
         run: npm test -- --coverage --coverageReporters=text-summary --coverageReporters=lcov --coverageReporters=html
+      # Second pass in the OPPOSITE timezone. The "5:00 AM story time" bug was invisible on a
+      # Central dev machine and only appeared on UTC runners; a suite that runs in one timezone
+      # can't catch a time bug that depends on the timezone. Central is pinned here because the
+      # runner is already UTC, so this pair covers both sides.
+      - name: Unit tests (America/Chicago — timezone-independence check)
+        id: unit_tz
+        run: npm test
+        env:
+          TZ: America/Chicago
       - name: Upload coverage report
         if: always()
         uses: actions/upload-artifact@v4
@@ -33,7 +42,8 @@ jobs:
           {
             echo "### Type-check & unit tests"
             echo "- Type-check: ${{ steps.typecheck.outcome }}"
-            echo "- Unit tests (Jest): ${{ steps.unit.outcome }}"
+            echo "- Unit tests (Jest, runner TZ=UTC): ${{ steps.unit.outcome }}"
+            echo "- Unit tests (TZ=America/Chicago): ${{ steps.unit_tz.outcome }}"
             echo "- Coverage report uploaded as the \`coverage\` artifact (HTML + lcov)."
           } >> "$GITHUB_STEP_SUMMARY"
 

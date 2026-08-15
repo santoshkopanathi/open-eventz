@@ -135,6 +135,22 @@ So splitting into per-source jobs needed **no migration and no dashboard change*
 
 It writes a ✓/✗ table to `$GITHUB_STEP_SUMMARY` and **exits non-zero on any failure** → red job + GitHub notification. Run locally with `npm run validate`. **Net effect: a silent upstream change is now a RED pipeline, not a green ingest over corrupt data.**
 
+### 8.0 Pre-write guard — the write path is fail-closed (2026-08-15)
+
+The gate above runs **after** the upsert: it makes the pipeline red, but production has already served the bad data. After the timezone incident reached real users, the write path itself became fail-closed.
+
+Every runner writes through **`guardedUpsert`** (in `ingest.ts`), which calls **`screenBatch`** ([`src/lib/ingest-guard.ts`](src/lib/ingest-guard.ts)) before touching the DB. Product rule encoded: **a wrong event time is worse than a missing event.**
+
+| Rule | Catches | On trip |
+|---|---|---|
+| Implausible start (12:01–7:00 AM CT; exact midnight allowed as all-day) | individually broken times | event **dropped** |
+| Uniform shift (≥80% of overlapping events moved by the same non-zero offset, ≥20 overlap) | any clock/timezone bug — **including shifts that land at plausible hours** | **batch rejected** |
+| Shrink (batch < half the stored set) | partial/failed scrape read as "events cancelled" | **batch rejected** |
+
+On abort nothing is written **and the purge/cleanup steps are skipped** — a rejected batch must not delete rows either. `INGEST_ALLOW_TIME_SHIFT=1` permits an intended mass correction; it forgives only the shift rule, not implausible times. If stored events can't be read, the guard refuses to write rather than write blind.
+
+Two structural guards keep it in place: `no-ambient-timezone.test.ts` asserts there is exactly **one** `events.upsert` in the module (no runner can bypass the guard) and that every `new Date(<arg>)` is allowlisted with a reason; CI runs the unit suite under both `TZ=UTC` and `TZ=America/Chicago`.
+
 ### 8.1 Source timezones — the ingest runs in UTC (2026-08-14)
 
 Every source publishes **local wall-clock** times with no usable offset:

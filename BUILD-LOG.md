@@ -1427,3 +1427,50 @@ typecheck · **273 unit tests** (up from 256), green under both `TZ=America/Chic
 ### The lesson
 
 Two of the last three bugs here were found by **opening the live page**, not by a test — and this one was invisible in every environment where a human would naturally look, because a developer's laptop is in the venue's timezone. The general form: *an implicit dependency on the machine is a bug that only appears when the machine changes.* Moving ingest to CI didn't break the parsing; it revealed that the parsing had never specified a timezone at all. Anywhere a value's meaning depends on ambient runtime state, pin it explicitly and write the test that pins it — then run the suite under the other setting, because the assertion that matters is the one your machine can't fail.
+
+---
+
+## Post-mortem: wrong event times, and the shift to fail-closed ingest
+
+**Date:** 2026-08-15. *(Guard: [`src/lib/ingest-guard.ts`](src/lib/ingest-guard.ts). Incident detail in the entry above.)*
+
+Real users were on the site — it had been posted publicly — while Frisco and Plano events displayed 5–6 hours early. The user set the product rule that this section encodes: **a wrong event time is worse than a missing event.** A parent who arrives at the wrong hour is failed harder than one who never saw the event.
+
+### What went wrong
+
+`new Date("August 14, 2026 10:00 AM")` resolves an offset-less string in the **runtime's** timezone. Three of four sources publish exactly that shape. On a Central dev machine the result was correct; on the UTC GitHub Actions runner the nightly ingest wrote every event 5–6 hours early.
+
+### Why we missed it — four independent failures
+
+1. **The bug was invisible where humans looked.** Every manual check happened on a machine in the venue's timezone. The only environment that produced wrong data was the one nobody watches.
+2. **The trigger was a change to the environment, not the code.** The timezone assumption was latent from day one. Moving ingest to GitHub Actions on 2026-08-12 activated it. Nothing prompted a re-audit of runtime assumptions when the runtime changed — the diff was "where it runs", and the review question was "does it still run?"
+3. **We fixed an instance and called it a class.** On 2026-08-14 the Kaleidoscope timezone bug was fixed and written up as playbook Principle #7 — *don't trust a source's UTC.* The other three sources were never audited against it. A principle recorded but not applied retroactively is a note, not a control. **This is the miss that stings**: the answer was already written down.
+4. **Every guardrail ran after the write.** The data-quality gate turns the pipeline red, but only once production is already serving wrong times. Detection is not prevention.
+
+### What changed — the write path is now fail-closed
+
+All four runners write through a single `guardedUpsert`, which screens the batch **before** it touches the database. Three independent rules, any of which aborts:
+
+| Rule | Catches | On trip |
+|---|---|---|
+| **Implausible start** — no event between 12:01 and 7:00 AM CT (exact midnight = all-day, allowed) | individually broken times | that event is **dropped**, never written |
+| **Uniform shift** — ≥80% of overlapping events moved by the *same* non-zero offset | the whole class of clock bugs | **whole batch rejected** |
+| **Shrink** — batch < half the stored set | a partial or failed scrape being read as "events cancelled" | **whole batch rejected** |
+
+On abort, nothing is written **and the purge/cleanup steps are skipped** — otherwise a rejected batch would still delete good rows. The previously stored, correct events simply remain.
+
+The uniform-shift rule is the important one. A genuine reschedule moves *one* event by an arbitrary amount; a clock bug moves *every* event by an identical amount. That signature catches shifts we haven't thought of — a 1-hour DST error, a source changing timezone, an off-by-one-day parse — **including ones that land at perfectly plausible hours**, which no plausible-hours rule can see.
+
+**Escape hatch:** `INGEST_ALLOW_TIME_SHIFT=1` permits an intended mass correction (the re-ingest that *fixes* a timezone bug is supposed to move everything at once). Explicit by design. Note it forgives only the shift — a batch of implausible times stays blocked even with the hatch set.
+
+### Preventing the class, not the instance
+
+- **`no-ambient-timezone.test.ts`** — every `new Date(<arg>)` in `ingest.ts` must be on an allowlist with a stated reason. Source times must go through `parseCentralWallTime`. It also asserts there is exactly **one** `events.upsert` in the module, so a future runner can't quietly bypass the guard. *(The first version of this test used a regex that matched string literals — it missed all three real call sites and would have passed while the bug was live. Replaced with the allowlist, then verified by reintroducing the original bug and watching it fail at the right line. **A guard you haven't seen fail is not a guard.**)*
+- **CI runs the unit suite in both timezones** — the runner is UTC, and a second pass pins `TZ=America/Chicago`. A suite that runs in one timezone cannot catch a bug that depends on the timezone.
+- **Drilled against the real database** before shipping: replaying the incident against live data aborts on all three rules (`uniform -300min shift across 100% of 178 existing events`), a partial scrape aborts, a healthy re-scrape writes normally.
+
+### The lesson
+
+The honest failure here isn't the timezone bug — it's that we had already written the principle that would have prevented it and never applied it backwards. When you learn a lesson from one source, **audit every other source for the same shape that day**, or the write-up is just a nicer way of being surprised twice.
+
+And the structural one: a check that runs after a write can only tell you how long you were wrong. If bad data must never reach users, the check has to sit *in front of* the write and be willing to publish nothing at all. Choosing "fewer events" over "wrong events" is a product decision, and it has to be encoded where the writing happens — not in a dashboard someone reads the next morning.

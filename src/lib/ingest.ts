@@ -12,6 +12,7 @@ import { fallbackPriceClass, resolvePriceClass, priceClassToFields, interpretCos
 import { PER_INFERENCE_COST_USD } from './technical-metrics'
 import { markRecurring } from './recurring'
 import { centralWallTimeToUtc, parseCentralWallTime } from './datetime'
+import { screenBatch } from './ingest-guard'
 
 // Adult programs that BiblioCommons incorrectly includes in children audience feeds
 const FRISCO_ADULT_KEYWORDS = [
@@ -653,6 +654,57 @@ async function recordRun(
   if (error) o.errors.push(`ingest_runs insert: ${error.message}`)
 }
 
+/**
+ * The ONLY way this module writes events. Screens a scraped batch against what is already
+ * stored and refuses to publish anything it can't vouch for.
+ *
+ * Product rule: a wrong event time is worse than a missing event. So individually-bad events
+ * are dropped, and a systemically-bad batch is rejected wholesale — leaving the previously
+ * stored (correct) rows in place rather than overwriting them. Callers MUST also skip their
+ * purge/cleanup steps when `aborted` is true, or a rejected batch would still delete rows.
+ *
+ * Escape hatch: INGEST_ALLOW_TIME_SHIFT=1 permits an intended mass time correction (e.g. the
+ * re-ingest that fixes a timezone bug). Explicit by design — never the default.
+ */
+async function guardedUpsert(
+  db: ReturnType<typeof supabaseAdmin>,
+  source: EventSource,
+  events: any[],
+  errors: string[],
+): Promise<{ upserted: number; aborted: boolean; dropped: number }> {
+  if (events.length === 0) return { upserted: 0, aborted: false, dropped: 0 }
+
+  const { data: stored, error: readErr } = await db
+    .from('events')
+    .select('id,start_datetime')
+    .eq('source', source)
+  if (readErr) {
+    // Can't compare against the current state → refuse rather than write blind.
+    errors.push(`guard (${source}): could not read stored events (${readErr.message}) — refusing to write`)
+    return { upserted: 0, aborted: true, dropped: 0 }
+  }
+
+  const decision = screenBatch(events, stored ?? [], {
+    allowTimeShift: process.env.INGEST_ALLOW_TIME_SHIFT === '1',
+  })
+  for (const r of decision.reasons) {
+    console.warn(`[ingest] guard (${source}): ${r}`)
+    errors.push(`guard (${source}): ${r}`)
+  }
+
+  if (decision.abort) {
+    console.error(`[ingest] guard (${source}): BATCH REJECTED — ${stored?.length ?? 0} stored events left untouched`)
+    return { upserted: 0, aborted: true, dropped: decision.dropped.length }
+  }
+
+  const { error } = await db.from('events').upsert(decision.write, { onConflict: 'id' })
+  if (error) {
+    errors.push(`db upsert (${source}): ${error.message}`)
+    return { upserted: 0, aborted: true, dropped: decision.dropped.length }
+  }
+  return { upserted: decision.write.length, aborted: false, dropped: decision.dropped.length }
+}
+
 export async function runFriscoIngest(): Promise<SourceIngestResult> {
   const db = supabaseAdmin()
   const errors: string[] = []
@@ -664,17 +716,15 @@ export async function runFriscoIngest(): Promise<SourceIngestResult> {
   const events = dedupeMerge(frisco.events)
   markRecurring(events)
 
-  let upserted = 0
-  if (events.length > 0) {
-    const { error } = await db.from('events').upsert(events, { onConflict: 'id' })
-    if (error) errors.push(`db upsert (frisco): ${error.message}`)
-    else upserted = events.length
-  }
+  const { upserted, aborted } = await guardedUpsert(db, 'frisco-library', events, errors)
 
-  // Remove Frisco Library adult programs mislabeled under children audience feeds
-  for (const kw of FRISCO_ADULT_KEYWORDS) {
-    const { error } = await db.from('events').delete().eq('source', 'frisco-library').ilike('title', `%${kw}%`)
-    if (error) errors.push(`cleanup-frisco-adult/${kw}: ${error.message}`)
+  // Remove Frisco Library adult programs mislabeled under children audience feeds.
+  // Skipped when the batch was rejected — cleanup must not act on data we refused to trust.
+  if (!aborted) {
+    for (const kw of FRISCO_ADULT_KEYWORDS) {
+      const { error } = await db.from('events').delete().eq('source', 'frisco-library').ilike('title', `%${kw}%`)
+      if (error) errors.push(`cleanup-frisco-adult/${kw}: ${error.message}`)
+    }
   }
 
   await recordRun(db, { frisco: frisco.events.length, upserted, errors, t0 })
@@ -692,12 +742,7 @@ export async function runPlanoIngest(): Promise<SourceIngestResult> {
   const events = dedupeMerge(plano.events)
   markRecurring(events)
 
-  let upserted = 0
-  if (events.length > 0) {
-    const { error } = await db.from('events').upsert(events, { onConflict: 'id' })
-    if (error) errors.push(`db upsert (plano): ${error.message}`)
-    else upserted = events.length
-  }
+  const { upserted } = await guardedUpsert(db, 'plano-library', events, errors)
 
   await recordRun(db, { plano: plano.events.length, upserted, errors, t0 })
   return { source: 'plano-library', fetched: plano.events.length, upserted, llm_calls: 0, errors }
@@ -717,24 +762,23 @@ export async function runPlayFriscoIngest(): Promise<SourceIngestResult> {
   const events = dedupeMerge(playFrisco.events)
   markRecurring(events)
 
-  let upserted = 0
-  if (events.length > 0) {
-    const { error } = await db.from('events').upsert(events, { onConflict: 'id' })
-    if (error) errors.push(`db upsert (play-frisco): ${error.message}`)
-    else upserted = events.length
-  }
+  const { upserted, aborted } = await guardedUpsert(db, 'play-frisco', events, errors)
 
-  // Remove Play Frisco events matching exclusion keywords (stale records from before the filter)
-  for (const kw of PARKS_REC_EXCLUDE_KEYWORDS) {
-    const { error } = await db.from('events').delete().eq('source', 'play-frisco').ilike('title', `%${kw}%`)
-    if (error) errors.push(`cleanup/${kw}: ${error.message}`)
-  }
+  // Cleanup + purge are skipped when the batch was rejected: deleting "everything not in this
+  // batch" against a batch we refused to trust would wipe good rows.
+  if (!aborted) {
+    // Remove Play Frisco events matching exclusion keywords (stale records from before the filter)
+    for (const kw of PARKS_REC_EXCLUDE_KEYWORDS) {
+      const { error } = await db.from('events').delete().eq('source', 'play-frisco').ilike('title', `%${kw}%`)
+      if (error) errors.push(`cleanup/${kw}: ${error.message}`)
+    }
 
-  // Purge stale Play Frisco records — delete any play-frisco event not in this batch
-  if (playFrisco.events.length > 0) {
-    const currentIds = playFrisco.events.map((e: any) => e.id)
-    const { error } = await db.from('events').delete().eq('source', 'play-frisco').not('id', 'in', `(${currentIds.join(',')})`)
-    if (error) errors.push(`purge-stale-play-frisco: ${error.message}`)
+    // Purge stale Play Frisco records — delete any play-frisco event not in this batch
+    if (playFrisco.events.length > 0) {
+      const currentIds = playFrisco.events.map((e: any) => e.id)
+      const { error } = await db.from('events').delete().eq('source', 'play-frisco').not('id', 'in', `(${currentIds.join(',')})`)
+      if (error) errors.push(`purge-stale-play-frisco: ${error.message}`)
+    }
   }
 
   await recordRun(db, { playFrisco: playFrisco.events.length, upserted, llmCalls, errors, t0 })
@@ -947,15 +991,11 @@ export async function runKaleidoscopeIngest(): Promise<SourceIngestResult> {
   const events = dedupeMerge(kaleidoscope.events)
   markRecurring(events)
 
-  let upserted = 0
-  if (events.length > 0) {
-    const { error } = await db.from('events').upsert(events, { onConflict: 'id' })
-    if (error) errors.push(`db upsert (kaleidoscope): ${error.message}`)
-    else upserted = events.length
-  }
+  const { upserted, aborted } = await guardedUpsert(db, 'kaleidoscope-park', events, errors)
 
-  // Purge stale — delete any kaleidoscope-park event not in this batch (Tribe events can be removed).
-  if (kaleidoscope.events.length > 0) {
+  // Purge stale — delete any kaleidoscope-park event not in this batch (Tribe events can be
+  // removed). Skipped on a rejected batch, which would otherwise delete good rows.
+  if (!aborted && kaleidoscope.events.length > 0) {
     const currentIds = kaleidoscope.events.map((e: any) => e.id)
     const { error } = await db.from('events').delete().eq('source', 'kaleidoscope-park').not('id', 'in', `(${currentIds.join(',')})`)
     if (error) errors.push(`purge-stale-kaleidoscope: ${error.message}`)
