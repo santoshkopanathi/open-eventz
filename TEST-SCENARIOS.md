@@ -1,6 +1,11 @@
 # Open Eventz — Functional Test Scenarios
-Version: consolidated (base + v1.1 + v1.2 + 2026-08 data-quality)
-Last updated: 2026-08-13
+Version: consolidated (base + v1.1 + v1.2 + 2026-08 data-quality + 2026-08 ingest guard)
+Last updated: 2026-08-15
+
+> This file is the **coverage record** — what behaviour is verified, scenario by scenario.
+> For *what stops bad data reaching a user and where each control sits*, see
+> **[`GUARDRAILS.md`](./GUARDRAILS.md)**. Some rows here (§1.5B.11–13) are structural guards
+> that enforce architecture rather than behaviour; they're inventoried there.
 
 Tag key:
 [A] = Automated — a Jest or Playwright test exists
@@ -96,6 +101,7 @@ The layer that would have caught the Frisco age break: it asserts against the **
 | 1.5B.11 | No write path bypasses the guard | Exactly **one** `events.upsert` exists in `ingest.ts` | [A] [R] · no-ambient-timezone.test.ts |
 | 1.5B.12 | Bare `new Date(<arg>)` in ingest | Fails unless allowlisted with a reason — verified by reintroducing the original bug | [A] [R] · no-ambient-timezone.test.ts |
 | 1.5B.13 | Unit suite runs in both timezones | CI runs Jest at `TZ=UTC` (runner) **and** `TZ=America/Chicago`; a one-timezone suite can't catch a timezone bug | [R] |
+| 1.5B.14 | Ingest failure reaches a human | A failed source job or data-quality gate opens/comments a GitHub Issue labelled `ingest-failure` (the `notify` job) → GitHub emails the owner; the issue must be closed | [R] [M] |
 
 ### 1.5A Source timezone handling *(new 2026-08-14 — the "5:00 AM story time" incident)*
 Every source publishes **local wall-clock** times with no usable offset. Parsing them with a bare `new Date(str)` resolves in the **runtime's** timezone — correct on a Central dev machine, **5–6 hours early** on the UTC GitHub Actions runner that does the nightly ingest. All sources now go through `parseCentralWallTime` (`src/lib/datetime.ts`).

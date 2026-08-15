@@ -68,3 +68,80 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+  # Failure alert. Without this, a rejected batch or a failed data-quality check is only a red
+  # tab nobody is watching — the weakest link once the pipeline itself became fail-closed.
+  #
+  # Why a GitHub Issue rather than SMTP/Slack: it needs NO new secrets (the built-in GITHUB_TOKEN
+  # is enough), GitHub emails the repo owner on a new issue by default, and the issue is a
+  # durable record that has to be closed — an email is easy to skim past, an open issue isn't.
+  # Re-uses one open issue instead of opening a new one nightly, so a persistent break doesn't
+  # bury the inbox.
+  notify:
+    name: alert on failure
+    needs: [ingest, data-quality]
+    if: ${{ failure() }}
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const LABEL = 'ingest-failure'
+            const { owner, repo } = context.repo
+            const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`
+            const when = new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC'
+
+            const body = [
+              `**The nightly ingest did not complete cleanly.** [View the run →](${runUrl})`,
+              '',
+              `Detected: ${when} (run #${context.runNumber})`,
+              '',
+              '### What this means',
+              'One of two things happened, and they need different responses:',
+              '',
+              '1. **A batch was REJECTED by the pre-write guard.** This is the system working —',
+              '   suspect data was refused and the previously-stored correct events were kept.',
+              '   The site is showing good (if slightly stale) data. Look for a',
+              '   `guard (<source>): ABORT` line in the failed job log for the reason.',
+              '2. **A source failed to scrape, or the data-quality gate failed.** The site may be',
+              '   stale or, if the gate failed, may be serving something wrong.',
+              '',
+              '### What to check',
+              '- Open the run above and read the failing job.',
+              '- `ABORT: uniform ...min shift` → a clock/timezone bug. Do **not** re-run with',
+              '  `INGEST_ALLOW_TIME_SHIFT=1` unless the shift is an intended correction.',
+              '- `ABORT: partial scrape` / `implausible times` → the source likely changed shape.',
+              '- Then look at the live site and confirm event times still read correctly.',
+              '',
+              'See `GUARDRAILS.md` for the full control list and `INGEST-DESIGN.md` §8.0 for the guard.',
+              '',
+              '_Close this issue once resolved — it is re-used for subsequent failures._',
+            ].join('\n')
+
+            // Make sure the label exists (creating an issue with an unknown label can 422).
+            try {
+              await github.rest.issues.getLabel({ owner, repo, name: LABEL })
+            } catch {
+              await github.rest.issues.createLabel({ owner, repo, name: LABEL, color: 'B4623B',
+                description: 'Nightly ingest failed or a batch was rejected' })
+            }
+
+            const open = await github.rest.issues.listForRepo({
+              owner, repo, state: 'open', labels: LABEL, per_page: 1,
+            })
+
+            if (open.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: open.data[0].number, body,
+              })
+              core.notice(`Commented on existing issue #${open.data[0].number}`)
+            } else {
+              const created = await github.rest.issues.create({
+                owner, repo, labels: [LABEL],
+                title: '🚨 Nightly ingest failed — data may be stale or a batch was rejected',
+                body,
+              })
+              core.notice(`Opened issue #${created.data.number}`)
+            }

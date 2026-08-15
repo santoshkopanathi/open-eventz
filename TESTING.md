@@ -3,6 +3,17 @@
 The canonical **"what to run after any change"** guide. Update *this file in place* as the test
 setup evolves; the versioned scenario docs (in `../02-product`) are point-in-time history.
 
+> **Related, but a different question.** This file = *how do I run the checks?* ·
+> `TEST-SCENARIOS.md` = *what behaviour is covered?* · **[`GUARDRAILS.md`](./GUARDRAILS.md)** =
+> *what stops bad data reaching a user, and where does each control sit?* Tests prove the code
+> does what we intended; guardrails handle reality not matching our intent. The timezone
+> incident is the proof they're distinct — every test passed while production served wrong
+> event times.
+
+> **Timezone note:** CI runs the unit suite **twice**, under `TZ=UTC` (the runner's own) and
+> `TZ=America/Chicago`. Run `TZ=UTC npx jest` locally before touching any date handling — a
+> suite that only runs in your machine's timezone cannot catch a timezone bug.
+
 ## Run everything (before every commit)
 
 ```bash
