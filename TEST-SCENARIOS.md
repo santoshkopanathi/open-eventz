@@ -107,11 +107,13 @@ The layer that would have caught the Frisco age break: it asserts against the **
 | # | Scenario | Expected result | Tag |
 |---|---|---|---|
 | 1.5B.14 | A source job or the data-quality gate fails | Run goes red → **GitHub's workflow-failure email reaches the owner** (primary, verified 2026-08-17) | [R] [M] |
-| 1.5C.1 | Secondary alert delivery | `notify` opens, or comments on, an Issue with triage instructions; dedup matches the fixed **title**, not the label | [R] [M] |
-| 1.5C.2 | `createLabel` fails (drill 1) | Labelling is best-effort — the issue is still delivered, unlabelled | [R] [M] |
-| 1.5C.3 | Issue rejects the label (drill 2) | Falls back to creating the issue with no label | [R] [M] |
-| 1.5C.4 | `createComment` fails (drill 3) | Falls **forward** to opening a new issue — for an alert, a duplicate beats a silence | [R] [M] |
-| 1.5C.5 | Every Issues-API write fails | Logs which calls broke and fails the job; the run is already red so the **primary email still fires** | [R] [M] |
+| 1.5C.1 | Secondary alert delivery | `notify` opens, or comments on, an Issue with triage instructions; dedup matches the fixed **title**, not the label — and finds it even when the issue carries no label | [A] [R] · notify-alert.test.ts |
+| 1.5C.2 | `createLabel` fails (drill 1) | Labelling is best-effort — the issue is still delivered, unlabelled | [A] [R] · notify-alert.test.ts |
+| 1.5C.3 | Issue rejects the label (drill 2) | Falls back to creating the issue with no label | [A] [R] · notify-alert.test.ts |
+| 1.5C.4 | `createComment` fails (drill 3) | Falls **forward** to opening a new issue — for an alert, a duplicate beats a silence | [A] [R] · notify-alert.test.ts |
+| 1.5C.5 | Every Issues-API write fails | Logs which calls broke and fails the job; the run is already red so the **primary email still fires** | [A] [R] · notify-alert.test.ts |
+| 1.5C.8 | Listing issues fails | Opens a new issue rather than staying silent | [A] [R] · notify-alert.test.ts |
+| 1.5C.9 | Alert script cannot drift from what runs | The test extracts the `notify` script from `ingest.yml` itself, never a copy | [A] [R] · notify-alert.test.ts |
 | 1.5C.6 | Fire drill | Actions → Ingest events → Run workflow → `simulate_failure`: one job fails on purpose, **no source is scraped or written**, alert fires under the `ingest-drill` label | [R] [M] |
 | 1.5C.7 | Drill does not disturb the nightly | On a `schedule` event `inputs` is undefined → drill step skipped, real ingest runs normally | [R] [M] |
 
