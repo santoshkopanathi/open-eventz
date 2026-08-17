@@ -7,7 +7,12 @@ name: Ingest events
 on:
   schedule:
     - cron: '0 11 * * *' # 11:00 UTC ≈ 6:00 AM Central — fresh before the daytime browse
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      simulate_failure:
+        description: 'FIRE DRILL — fail one job on purpose to prove the alert chain works. Scrapes nothing, writes nothing.'
+        type: boolean
+        default: false
 
 # Don't let a manual run overlap the nightly one (avoids a double Play Frisco purge race).
 concurrency:
@@ -37,7 +42,19 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # FIRE DRILL. Proves the alert chain end to end without touching data: one job fails on
+      # purpose, and the real ingest step below is skipped for EVERY source, so nothing is
+      # scraped, classified or written. Only reachable via a manual run with the checkbox ticked.
+      # Rationale: `notify` only fires on failure, so until it has actually run it is unproven —
+      # "a guard you have never seen fail is not a guard" (GUARDRAILS.md).
+      - name: FIRE DRILL — fail on purpose
+        if: ${{ inputs.simulate_failure && matrix.source == 'frisco' }}
+        run: |
+          echo "::error::FIRE DRILL — deliberate failure to test the alert chain. Nothing was scraped or written."
+          exit 1
+
       - name: Ingest ${{ matrix.source }}
+        if: ${{ !inputs.simulate_failure }}
         run: npm run ingest -- ${{ matrix.source }}
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -86,14 +103,38 @@ jobs:
       issues: write
     steps:
       - uses: actions/github-script@v7
+        env:
+          IS_DRILL: ${{ inputs.simulate_failure }}
         with:
           script: |
-            const LABEL = 'ingest-failure'
+            // A drill uses its OWN label so a lingering test issue can never absorb a real
+            // alert (the dedupe below comments on an existing open issue of the same label).
+            const drill = process.env.IS_DRILL === 'true'
+            const LABEL = drill ? 'ingest-drill' : 'ingest-failure'
             const { owner, repo } = context.repo
             const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`
             const when = new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC'
 
-            const body = [
+            const drillBody = [
+              '**This is a FIRE DRILL — nothing is wrong.**',
+              '',
+              `A deliberate failure was triggered to prove the alert chain works. [View the run →](${runUrl})`,
+              '',
+              `Triggered: ${when} (run #${context.runNumber})`,
+              '',
+              'No source was scraped, no event was classified, and nothing was written to the',
+              'database — the real ingest step is skipped for every source during a drill.',
+              '',
+              '### What this proves',
+              'If you are reading this **in your email**, the whole chain works: a failed job →',
+              'the `notify` job → a GitHub Issue → a notification that actually reaches you.',
+              'If you only found it by opening GitHub, the job works but the email path does not —',
+              'check https://github.com/settings/notifications and the repo Watch setting.',
+              '',
+              '**Safe to close immediately.**',
+            ].join('\n')
+
+            const realBody = [
               `**The nightly ingest did not complete cleanly.** [View the run →](${runUrl})`,
               '',
               `Detected: ${when} (run #${context.runNumber})`,
@@ -120,12 +161,16 @@ jobs:
               '_Close this issue once resolved — it is re-used for subsequent failures._',
             ].join('\n')
 
+            const body = drill ? drillBody : realBody
+
             // Make sure the label exists (creating an issue with an unknown label can 422).
             try {
               await github.rest.issues.getLabel({ owner, repo, name: LABEL })
             } catch {
-              await github.rest.issues.createLabel({ owner, repo, name: LABEL, color: 'B4623B',
-                description: 'Nightly ingest failed or a batch was rejected' })
+              await github.rest.issues.createLabel({ owner, repo, name: LABEL,
+                color: drill ? '8A8378' : 'B4623B',
+                description: drill ? 'Alert-chain fire drill (not a real failure)'
+                                   : 'Nightly ingest failed or a batch was rejected' })
             }
 
             const open = await github.rest.issues.listForRepo({
@@ -140,7 +185,9 @@ jobs:
             } else {
               const created = await github.rest.issues.create({
                 owner, repo, labels: [LABEL],
-                title: '🚨 Nightly ingest failed — data may be stale or a batch was rejected',
+                title: drill
+                  ? '🧪 FIRE DRILL — ingest alert test (safe to close)'
+                  : '🚨 Nightly ingest failed — data may be stale or a batch was rejected',
                 body,
               })
               core.notice(`Opened issue #${created.data.number}`)
