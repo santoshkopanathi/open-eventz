@@ -231,34 +231,48 @@ jobs:
               core.warning(`Could not list existing issues (${err && err.message}) — will open a new one.`)
             }
 
-            try {
-              if (existing) {
-                await withRetry('createComment', () => github.rest.issues.createComment({
-                  owner, repo, issue_number: existing.number, body,
-                }))
-                core.notice(`Commented on existing issue #${existing.number}`)
-              } else {
-                let created
-                try {
-                  created = await withRetry('createIssue', () => github.rest.issues.create({
-                    owner, repo, title, body, ...(useLabel ? { labels: [LABEL] } : {}),
-                  }))
-                } catch (err) {
-                  // Last resort: the label may be what GitHub is rejecting. Try plain.
-                  core.warning(`Issue creation with label failed (${err && err.message}) — retrying with no label.`)
-                  created = await withRetry('createIssueNoLabel', () => github.rest.issues.create({
-                    owner, repo, title, body,
-                  }))
-                }
-                core.notice(`Opened issue #${created.data.number}`)
+            // Delivery, in descending order of preference. Each rung is tried in turn, because
+            // three fire drills produced three DIFFERENT failures on GitHub's Issues API
+            // (createLabel 503; create-with-label rejected; createComment 503). Treat that API
+            // as flaky and keep falling forward — for an alert, a duplicate beats a silence.
+            const attempts = []
+            if (existing) {
+              attempts.push(['comment on the existing issue', () => github.rest.issues.createComment({
+                owner, repo, issue_number: existing.number, body,
+              }).then(() => `Commented on existing issue #${existing.number}`)])
+            }
+            if (useLabel) {
+              attempts.push(['open a new labelled issue', () => github.rest.issues.create({
+                owner, repo, title, body, labels: [LABEL],
+              }).then(r => `Opened issue #${r.data.number}`)])
+            }
+            attempts.push(['open a new unlabelled issue', () => github.rest.issues.create({
+              owner, repo, title, body,
+            }).then(r => `Opened issue #${r.data.number}`)])
+
+            let delivered = null
+            const failures = []
+            for (const [what, fn] of attempts) {
+              try {
+                delivered = await withRetry(what, fn)
+                break
+              } catch (err) {
+                failures.push(`${what}: ${err && err.message}`)
+                core.warning(`Could not ${what} — falling through to the next option.`)
               }
-            } catch (err) {
-              // The alert itself is broken. Say so as loudly as possible and fail the job —
-              // a red run still triggers GitHub's workflow-failure notification.
+            }
+
+            if (delivered) {
+              core.notice(delivered)
+            } else {
+              // Every rung failed. The run is ALREADY red because ingest failed, so GitHub's own
+              // workflow-failure email — the channel proven to work in drill #1 — has fired
+              // regardless. What is lost here is only the durable, must-be-closed record.
               core.error(
-                `ALERT DELIVERY FAILED: could not open or update the ingest-failure issue ` +
-                `(${err && err.message}). The underlying ingest problem is REAL and unreported — ` +
-                `open the failed jobs in this run manually.`
+                `ALERT DELIVERY FAILED — no issue was created or updated. Tried:\n` +
+                failures.map(f => `  • ${f}`).join('\n') +
+                `\nThe underlying ingest problem is REAL. GitHub's workflow-failure email still ` +
+                `fired for this run; open the failed jobs above and investigate manually.`
               )
-              core.setFailed('notify: could not deliver the failure alert')
+              core.setFailed('notify: could not deliver the failure alert (see the error above for which calls failed)')
             }
