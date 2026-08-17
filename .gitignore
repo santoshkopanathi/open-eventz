@@ -21,6 +21,8 @@
 
 # next.js
 /.next/
+# Gate builds run with NEXT_DIST_DIR so they don't wipe a running dev server's .next
+/.next-check/
 /out/
 
 # production

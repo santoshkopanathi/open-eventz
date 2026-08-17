@@ -22,6 +22,16 @@ npm test             # Jest unit tests (pure logic — fast, no infra)
 npm run test:e2e     # Playwright smoke (UI flows, /api mocked)
 ```
 
+> **Building while a dev server is running — use a separate output dir:**
+> ```bash
+> NEXT_DIST_DIR=.next-check npm run build
+> ```
+> `next build` and `next dev` both write to `./.next`, so a plain `npm run build` wipes the
+> directory underneath a running dev server and kills it. That has cost us a broken local
+> preview *and* a failed push (Playwright then cold-starts its own server and hits the 120s
+> `webServer` timeout). `next.config.ts` reads `NEXT_DIST_DIR`; it is unset on Vercel, so
+> production builds still use `.next` unchanged.
+
 CI runs all three automatically on push / PR — see `.github/workflows/ci.yml`.
 
 **Git hooks** (`core.hooksPath=.githooks`): `pre-commit` runs `typecheck + unit` (fast, browser-free). **`pre-push` runs `typecheck + unit`, then the Playwright E2E smoke suite — but only when a browser is installed.** If no browser is found it prints a warning and *skips* E2E (so a browserless clone/CI-runner isn't blocked and forced onto `--no-verify`); CI runs E2E unconditionally regardless (`ci.yml`, job `e2e`). Install the browser locally with `npx playwright install chromium`. **Discipline for UI changes:** make sure the browser is installed so pre-push actually *runs* E2E rather than skipping it — a green pre-commit is not a green pipeline (this bit us on the Weekend Paper reskin: unit/typecheck green locally, E2E red in CI — see BUILD-LOG).
