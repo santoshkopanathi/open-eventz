@@ -214,17 +214,21 @@ jobs:
               }
             }
 
-            // Find an existing open alert issue. Only possible when the label exists.
+            // Find an existing open alert issue — matched by TITLE, not by label.
+            //
+            // The second drill proved why: the label existed, but GitHub still rejected it on
+            // `issues.create` (propagation lag), so the fallback opened issue #1 with NO label.
+            // Label-based lookup would then miss it and open a fresh issue on every future
+            // failure — exactly the inbox-burying this dedup exists to prevent. The title is
+            // fixed and always present, so it is the reliable key.
             let existing = null
-            if (useLabel) {
-              try {
-                const open = await withRetry('listForRepo', () => github.rest.issues.listForRepo({
-                  owner, repo, state: 'open', labels: LABEL, per_page: 1,
-                }))
-                existing = open.data[0] ?? null
-              } catch (err) {
-                core.warning(`Could not list existing issues (${err && err.message}) — will open a new one.`)
-              }
+            try {
+              const open = await withRetry('listForRepo', () => github.rest.issues.listForRepo({
+                owner, repo, state: 'open', per_page: 100,
+              }))
+              existing = open.data.find(i => i.title === title && !i.pull_request) ?? null
+            } catch (err) {
+              core.warning(`Could not list existing issues (${err && err.message}) — will open a new one.`)
             }
 
             try {
