@@ -1474,3 +1474,65 @@ The uniform-shift rule is the important one. A genuine reschedule moves *one* ev
 The honest failure here isn't the timezone bug — it's that we had already written the principle that would have prevented it and never applied it backwards. When you learn a lesson from one source, **audit every other source for the same shape that day**, or the write-up is just a nicer way of being surprised twice.
 
 And the structural one: a check that runs after a write can only tell you how long you were wrong. If bad data must never reach users, the check has to sit *in front of* the write and be willing to publish nothing at all. Choosing "fewer events" over "wrong events" is a product decision, and it has to be encoded where the writing happens — not in a dashboard someone reads the next morning.
+
+---
+
+## The alert that couldn't alert — three fire drills, three bugs
+
+*Date: 2026-08-15 → 2026-08-17. Control inventory: [`GUARDRAILS.md`](./GUARDRAILS.md). Ops detail: [`INGEST-DESIGN.md` §8.2](./INGEST-DESIGN.md).*
+
+**Initial situation.** After the write path became fail-closed, the weakest link moved: a rejected batch or a failed data-quality gate was only a **red tab nobody was watching**. The pipeline could now refuse bad data correctly and still leave the site quietly stale for days.
+
+**What we built.** A `notify` job in `ingest.yml` that opens (or comments on) a GitHub Issue whenever a source job or the data-quality gate fails. Chosen over SMTP or Slack because it needs **no new secrets** (the built-in `GITHUB_TOKEN` suffices), GitHub emails the repo owner on a new issue, and an issue has to be *closed* — an email is easy to skim past at 6 AM.
+
+**Then the honest problem: `notify` only fires on failure, so it was unproven.** By our own rule — *a guard you have never seen fail is not a guard* — a deployed alert nobody has watched fire is a hope, not a control. So we added a **fire drill**: a manual-only `simulate_failure` input that fails one matrix job on purpose while skipping the real ingest for *every* source (nothing scraped, classified or written). Scheduled runs are untouched, because `inputs` is undefined on a schedule event.
+
+**Three drills produced three different bugs. None was findable by reading the code.**
+
+| Drill | What broke | Fix |
+|---|---|---|
+| 1 | `createLabel` returned 503 and was **unhandled** — the job died *before* ever creating the issue. A cosmetic step took down the whole alert. | Retries on 5xx/429; labelling made best-effort and moved off the critical path; issue creation falls back to no-label |
+| 2 | The issue was delivered but **unlabelled** (GitHub rejected the label it had just created — propagation lag), while dedup looked issues up **by label** → every future failure would have opened a duplicate | Dedup matches on the fixed **title**; labels became purely decorative |
+| 3 | `createComment` 503'd on the existing issue and delivery simply **gave up** — issue #1 still showed 0 comments | Delivery **falls forward**: comment → labelled issue → unlabelled issue, taking the first that works |
+
+**The architecture correction (the real lesson).** Three failures on the same API is not bad luck; it is a flaky dependency being treated as a reliable one. And we had the layering backwards. The **primary** alert is **GitHub's own workflow-failure email** — it needs no code, cannot be broken by our logic, and fired on *every* drill including the ones where our issue logic failed. The **secondary** is the issue: a durable, must-be-closed record layered on top, best-effort by design. Confirmed by the drill-3 email, which arrived listing `alert on failure — Failed`: **the failure of the secondary channel was visible through the primary one.**
+
+For an alert specifically, the tradeoff also inverts from the rest of this project. Everywhere else we prefer *missing* over *wrong* (a wrong event time is worse than a missing event). For alerting, **a duplicate beats a silence** — hence falling forward rather than failing.
+
+**Verification.** After each fix, a mocked-API harness replayed all three real failures plus a total outage — 8/8 scenarios deliver correctly, and the one that cannot deliver fails loudly and names every call that broke.
+
+**The lesson.** We wrote the alert, deployed it, and would have called that "monitoring in place." It was broken in three independent ways. Exercising a guard is not a formality you do after building it — for anything that only runs in the failure case, **the drill is part of building it**, and until it has fired you have written code, not installed a control. The second-order lesson: when a dependency fails three times in three different places, stop patching call sites and change the design so its failure stops mattering.
+
+---
+
+## Gate builds stopped killing the dev server
+
+*Date: 2026-08-17.*
+
+`next build` and `next dev` both write to `./.next`, so running a gate build while a dev server was up wiped the directory underneath it and killed the process. It cost a broken local preview ("the site can't be reached") and later a **failed push** — the pre-push Playwright run found nothing on port 3000, cold-started its own server, and hit the 120s `webServer` timeout (`playwright.config.ts` uses `reuseExistingServer: !CI`).
+
+`next.config.ts` now reads `distDir: process.env.NEXT_DIST_DIR || '.next'`, so a gate build goes elsewhere:
+
+```bash
+NEXT_DIST_DIR=.next-check npm run build
+```
+
+Unset everywhere else — including Vercel — so production builds are unchanged. Verified with the dev server staying up (HTTP 200 before and after) across a full build. Documented in `TESTING.md`. *Gotcha:* the first isolated build makes Next.js rewrite `tsconfig.json` (adding `.next-check/types/**/*.ts` to `include`); harmless, and confirmed green in CI on a fresh clone where that directory does not exist.
+
+**The lesson.** I offered this fix twice and moved on when it wasn't picked up, working around it instead. A defect in your own workflow is still a defect — the second time it bites, fix it rather than route around it again.
+
+---
+
+## Governance coverage — scoring the whole system against a standard model
+
+*Date: 2026-08-17. Full tables: [`GUARDRAILS.md` → Governance framework coverage](./GUARDRAILS.md).*
+
+Mapped Open Eventz onto the standard AI-governance model — three failure categories (content, behavioural, economic) and five instruments (evals at scale, guardrails, observability, fallbacks, audit trail) — scoring each with a definition, what we cover today, and the gap.
+
+**The framing that made the mapping useful:** Open Eventz is a *scraped data pipeline with an LLM classifier in the middle*, **not** a user-facing generative feature. Claude is called from exactly one file (`age-inference.ts`, `claude-sonnet-4-6`) at ingest time, and **no user free-text ever reaches a model**. That deletes most of the behavioural/misuse surface outright rather than mitigating it, and concentrates nearly all risk in output correctness — which is why the guardrail investment went where it did.
+
+**Where we landed.** Strong: the content category, the output classifier (`screenBatch` — broader than the textbook version, since it compares a batch against *prior state* and so catches uniform shifts that land at plausible hours), and the audit trail (per-event `age_reasoning` / `price_reasoning` makes every automated decision explainable months later). Partial: economic, evals, refusal, observability. Open: **no LLM cost cap**, **no written fallback table**.
+
+Two honest notes recorded in the tables: `llm_cost_usd` is `calls × $0.006`, an **estimate, not metered spend** — a dashboard number, not a control; and the real-model eval (`calibrate:price`) runs **manually with no trigger**, the textbook "eval suite that only runs manually is a scaling liability."
+
+**The lesson.** Scoring against an external model is worth doing precisely where it *doesn't* fit. The categories that didn't apply — and why — explained more about this system's real risk shape than the ones that did.

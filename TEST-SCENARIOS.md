@@ -101,7 +101,19 @@ The layer that would have caught the Frisco age break: it asserts against the **
 | 1.5B.11 | No write path bypasses the guard | Exactly **one** `events.upsert` exists in `ingest.ts` | [A] [R] · no-ambient-timezone.test.ts |
 | 1.5B.12 | Bare `new Date(<arg>)` in ingest | Fails unless allowlisted with a reason — verified by reintroducing the original bug | [A] [R] · no-ambient-timezone.test.ts |
 | 1.5B.13 | Unit suite runs in both timezones | CI runs Jest at `TZ=UTC` (runner) **and** `TZ=America/Chicago`; a one-timezone suite can't catch a timezone bug | [R] |
-| 1.5B.14 | Ingest failure reaches a human | A failed source job or data-quality gate opens/comments a GitHub Issue labelled `ingest-failure` (the `notify` job) → GitHub emails the owner; the issue must be closed | [R] [M] |
+
+### 1.5C Failure alerting *(new 2026-08-17 — see INGEST-DESIGN §8.2/§8.3)*
+**Primary channel = GitHub's own workflow-failure email** (no code, verified to fire on every drill). **Secondary = the `notify` job's GitHub Issue**, best-effort: GitHub's Issues API failed in three different ways across three drills, so delivery falls forward.
+| # | Scenario | Expected result | Tag |
+|---|---|---|---|
+| 1.5B.14 | A source job or the data-quality gate fails | Run goes red → **GitHub's workflow-failure email reaches the owner** (primary, verified 2026-08-17) | [R] [M] |
+| 1.5C.1 | Secondary alert delivery | `notify` opens, or comments on, an Issue with triage instructions; dedup matches the fixed **title**, not the label | [R] [M] |
+| 1.5C.2 | `createLabel` fails (drill 1) | Labelling is best-effort — the issue is still delivered, unlabelled | [R] [M] |
+| 1.5C.3 | Issue rejects the label (drill 2) | Falls back to creating the issue with no label | [R] [M] |
+| 1.5C.4 | `createComment` fails (drill 3) | Falls **forward** to opening a new issue — for an alert, a duplicate beats a silence | [R] [M] |
+| 1.5C.5 | Every Issues-API write fails | Logs which calls broke and fails the job; the run is already red so the **primary email still fires** | [R] [M] |
+| 1.5C.6 | Fire drill | Actions → Ingest events → Run workflow → `simulate_failure`: one job fails on purpose, **no source is scraped or written**, alert fires under the `ingest-drill` label | [R] [M] |
+| 1.5C.7 | Drill does not disturb the nightly | On a `schedule` event `inputs` is undefined → drill step skipped, real ingest runs normally | [R] [M] |
 
 ### 1.5A Source timezone handling *(new 2026-08-14 — the "5:00 AM story time" incident)*
 Every source publishes **local wall-clock** times with no usable offset. Parsing them with a bare `new Date(str)` resolves in the **runtime's** timezone — correct on a Central dev machine, **5–6 hours early** on the UTC GitHub Actions runner that does the nightly ingest. All sources now go through `parseCentralWallTime` (`src/lib/datetime.ts`).

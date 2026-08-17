@@ -151,6 +151,27 @@ On abort nothing is written **and the purge/cleanup steps are skipped** — a re
 
 Two structural guards keep it in place: `no-ambient-timezone.test.ts` asserts there is exactly **one** `events.upsert` in the module (no runner can bypass the guard) and that every `new Date(<arg>)` is allowlisted with a reason; CI runs the unit suite under both `TZ=UTC` and `TZ=America/Chicago`.
 
+### 8.2 Failure alerting — how a broken run reaches a human (2026-08-17)
+
+A fail-closed pipeline that nobody watches is still a silent pipeline. Two channels, deliberately layered:
+
+| | Channel | Reliability |
+|---|---|---|
+| **Primary** | **GitHub's own workflow-failure email.** Any failed job turns the run red and GitHub emails the repo owner. | Needs no code, cannot be broken by our logic. Has fired on **every** drill — including ones where the secondary failed. Enabled at `github.com/settings/notifications` → Actions (**personal** settings, not repo settings). |
+| **Secondary** | The **`notify` job**: opens, or comments on, a GitHub Issue with triage instructions. No new secrets — uses the built-in `GITHUB_TOKEN`. | **Best-effort.** GitHub's Issues API proved flaky across three drills, so delivery **falls forward**: comment → labelled issue → unlabelled issue, first that works. Dedup matches on the fixed **title** (not the label). If every rung fails it logs which calls broke and fails the job. |
+
+**Reading the alert.** It distinguishes two situations that need opposite responses:
+1. **A batch was REJECTED by the pre-write guard** (§8.0) — the system working. Suspect data was refused and the previously-correct rows kept; the site is showing good, slightly stale data. Look for `guard (<source>): ABORT` in the failed job log.
+2. **A source failed to scrape, or the data-quality gate failed** — the site may be stale, or serving something wrong.
+
+Do **not** clear an `ABORT: uniform ...min shift` by re-running with `INGEST_ALLOW_TIME_SHIFT=1` unless the shift is a deliberate correction.
+
+### 8.3 Fire drill — proving the alert without breaking anything
+
+`notify` only runs on failure, so it is unproven until it has actually fired. Run **Actions → Ingest events → Run workflow → tick `simulate_failure`**: one matrix job fails on purpose and the real ingest step is **skipped for every source** — nothing scraped, classified or written. The alert fires under the separate `ingest-drill` label so a test issue can never absorb a real one. **Scheduled runs are unaffected** (`inputs` is undefined on a schedule event, so the drill step is skipped and the real ingest runs normally).
+
+**The proof is the email, not the issue** — if the issue only appears on GitHub, the job works but the notification path doesn't. Re-run the drill after any change to the alert. Three drills on 2026-08-17 found three separate bugs in it; see BUILD-LOG "The alert that couldn't alert."
+
 ### 8.1 Source timezones — the ingest runs in UTC (2026-08-14)
 
 Every source publishes **local wall-clock** times with no usable offset:
