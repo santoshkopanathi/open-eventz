@@ -31,6 +31,10 @@ npm run test:e2e     # Playwright smoke (UI flows, /api mocked)
 > preview *and* a failed push (Playwright then cold-starts its own server and hits the 120s
 > `webServer` timeout). `next.config.ts` reads `NEXT_DIST_DIR`; it is unset on Vercel, so
 > production builds still use `.next` unchanged.
+>
+> **If typecheck fails inside `.next/dev/types/`**, that is a *generated* file left half-written
+> by a dev server that died mid-write — not a real error. Clear it and re-run:
+> `rm -rf .next/dev && npm run typecheck`.
 
 CI runs all three automatically on push / PR — see `.github/workflows/ci.yml`.
 
