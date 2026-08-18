@@ -184,3 +184,48 @@ test('per-city filter state persists across tab switches', async ({ page }) => {
   // Haggard still selected after the round trip (scope to the dropdown pill, not a card)
   await expect(page.locator('button.rounded-full', { hasText: 'Haggard' })).toBeVisible()
 })
+
+// --- Failure states ---------------------------------------------------------
+// These two exist to stop the error and empty states from silently collapsing back into one.
+// They were one state until 2026-08-17: a 500 fell through to `data.events ?? []` and rendered
+// "No events match your filters", blaming the user's filters for a backend outage. See the
+// fallback table in GUARDRAILS.md.
+
+test('backend failure says WE could not load — never blames the filters (§1.7)', async ({ page }) => {
+  await page.route('**/api/venues*', r => r.fulfill({ json: { venues: [] } }))
+  await page.route('**/api/branches*', r => r.fulfill({ json: { branches: BRANCHES } }))
+  await page.route('**/api/events*', r => r.fulfill({ status: 500, json: { error: 'boom' } }))
+  await page.goto('/')
+
+  await expect(page.getByText(/couldn.t load events right now/i)).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible()
+  // The filter message must NOT appear — that is the bug this test exists for.
+  await expect(page.getByText('No events match your filters.')).toHaveCount(0)
+  // And the spinner must not survive a failure.
+  await expect(page.getByText(/loading events/i)).toHaveCount(0)
+})
+
+test('a genuine zero-result query still blames the filters, and offers Clear (§1.7)', async ({ page }) => {
+  await page.route('**/api/venues*', r => r.fulfill({ json: { venues: [] } }))
+  await page.route('**/api/branches*', r => r.fulfill({ json: { branches: BRANCHES } }))
+  await page.route('**/api/events*', r => r.fulfill({ json: { events: [] } }))
+  await page.goto('/')
+
+  await expect(page.getByText('No events match your filters.')).toBeVisible()
+  // The error copy must NOT appear for an empty-but-successful request.
+  await expect(page.getByText(/couldn.t load events right now/i)).toHaveCount(0)
+})
+
+test('Try again recovers once the backend comes back (§1.7)', async ({ page }) => {
+  await page.route('**/api/venues*', r => r.fulfill({ json: { venues: [] } }))
+  await page.route('**/api/branches*', r => r.fulfill({ json: { branches: BRANCHES } }))
+  let fail = true
+  await page.route('**/api/events*', r =>
+    fail ? r.fulfill({ status: 500, json: { error: 'boom' } }) : r.fulfill({ json: { events: FRISCO } }))
+  await page.goto('/')
+
+  await expect(page.getByText(/couldn.t load events right now/i)).toBeVisible()
+  fail = false
+  await page.getByRole('button', { name: 'Try again' }).click()
+  await expect(page.getByText('Frisco Kids Program')).toBeVisible()
+})

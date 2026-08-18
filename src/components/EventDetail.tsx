@@ -29,12 +29,17 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
   const [likes, setLikes] = useState<number | null>(null)
   const [liked, setLiked] = useState(false)
   const [descExpanded, setDescExpanded] = useState(false)
+  // Transient inline notes. Replaces both a silent failure (a like that never saved) and a
+  // native alert() popup (share) — every other message in this app is a calm inline callout.
+  const [likeNote, setLikeNote] = useState<string | null>(null)
+  const [shareNote, setShareNote] = useState<string | null>(null)
 
   useEffect(() => {
     setLiked(localStorage.getItem(`attending_${event.id}`) === '1')
     fetch(`/api/likes/${event.id}`)
       .then(r => r.json())
       .then(d => setLikes(d.count))
+      .catch(() => { /* count simply stays hidden — nothing is claimed that is not true */ })
   }, [event.id])
 
   const handleLike = async () => {
@@ -47,9 +52,21 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
     } else {
       localStorage.removeItem(`attending_${event.id}`)
     }
-    const res = await fetch(`/api/likes/${event.id}`, { method: 'POST', body: JSON.stringify({ unlike: !nowLiked }), headers: { 'Content-Type': 'application/json' } })
-    const data = await res.json()
-    setLikes(data.count)
+    setLikeNote(null)
+    try {
+      const res = await fetch(`/api/likes/${event.id}`, { method: 'POST', body: JSON.stringify({ unlike: !nowLiked }), headers: { 'Content-Type': 'application/json' } })
+      if (!res.ok) throw new Error(String(res.status))
+      const data = await res.json()
+      setLikes(data.count)
+    } catch {
+      // REVERT. The optimistic flip already told the user they are attending; if the save
+      // failed, leaving it would be the interface asserting something untrue.
+      setLiked(!nowLiked)
+      if (nowLiked) localStorage.removeItem(`attending_${event.id}`)
+      else localStorage.setItem(`attending_${event.id}`, '1')
+      setLikeNote('Couldn’t save that — try again.')
+      trackEvent('error_shown', { surface: 'likes' })
+    }
   }
 
   const detailAge = detailAgeBadge(event)
@@ -280,8 +297,15 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
             if (navigator.share) {
               await navigator.share(shareData)
             } else {
-              await navigator.clipboard.writeText(shareUrl)
-              alert('Link copied to clipboard!')
+              // Inline note, not alert(). A native modal is an OS-level interruption that has to
+              // be dismissed — every other message in this app is a calm inline callout.
+              try {
+                await navigator.clipboard.writeText(shareUrl)
+                setShareNote('Link copied')
+              } catch {
+                setShareNote('Couldn’t copy the link')
+              }
+              setTimeout(() => setShareNote(null), 2500)
             }
           }}
           className="flex items-center gap-2 text-sm transition-opacity"
@@ -294,6 +318,14 @@ export default function EventDetail({ event, onClose, hideClose, onGetDirections
           <span>Share</span>
         </button>
       </div>
+
+      {/* Transient inline notes for the two actions above — a failed save must not leave the
+          toggle claiming 'Attending', and a copied link should not require dismissing a modal. */}
+      {(likeNote || shareNote) && (
+        <div className="mt-2" style={{ fontSize: '12px', color: 'var(--color-ink-50)' }} role="status">
+          {likeNote ?? shareNote}
+        </div>
+      )}
     </div>
   )
 }

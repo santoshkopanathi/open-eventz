@@ -102,6 +102,21 @@ The layer that would have caught the Frisco age break: it asserts against the **
 | 1.5B.12 | Bare `new Date(<arg>)` in ingest | Fails unless allowlisted with a reason — verified by reintroducing the original bug | [A] [R] · no-ambient-timezone.test.ts |
 | 1.5B.13 | Unit suite runs in both timezones | CI runs Jest at `TZ=UTC` (runner) **and** `TZ=America/Chicago`; a one-timezone suite can't catch a timezone bug | [R] |
 
+### 1.7 User-facing failure states *(new 2026-08-17 — see the fallback table in GUARDRAILS.md)*
+A failed request and a genuine zero-result query were **one state** until now: a 500 fell through
+to `data.events ?? []` and rendered "No events match your filters", blaming the user for a
+backend outage. These keep them distinct.
+| # | Scenario | Expected result | Tag |
+|---|---|---|---|
+| 1.7.1 | `/api/events` returns 500 | "We couldn’t load events right now." + **Try again**; the filter message must **not** appear | [A] [R] · smoke.spec.ts |
+| 1.7.2 | `/api/events` fetch throws | Same error state; the loading spinner must **not** survive | [A] [R] · smoke.spec.ts |
+| 1.7.3 | Query genuinely returns zero events | "No events match your filters." + Clear filters; the error copy must **not** appear | [A] [R] · smoke.spec.ts |
+| 1.7.4 | **Try again** after the backend recovers | Events render; error state clears | [A] [R] · smoke.spec.ts |
+| 1.7.5 | Filters survive an error | Selections are preserved across the failure and the retry | [R] [M] |
+| 1.7.6 | `/api/venues` fails | In-map note "Map locations couldn’t be loaded right now." + Try again; **the event list is unaffected** | [R] [M] |
+| 1.7.7 | Likes POST fails | Optimistic toggle **reverts** (state + localStorage) with "Couldn’t save that — try again." | [R] [M] |
+| 1.7.8 | Share on a browser without `navigator.share` | Inline "Link copied" note — **never** a native `alert()` modal | [R] [M] |
+| 1.7.9 | Any failure state rendered | Fires GA4 `error_shown` with `surface: events | venues | likes` (8th custom event) | [R] [M] |
 ### 1.5C Failure alerting *(new 2026-08-17 — see INGEST-DESIGN §8.2/§8.3)*
 **Primary channel = GitHub's own workflow-failure email** (no code, verified to fire on every drill). **Secondary = the `notify` job's GitHub Issue**, best-effort: GitHub's Issues API failed in three different ways across three drills, so delivery falls forward.
 | # | Scenario | Expected result | Tag |

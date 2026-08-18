@@ -36,10 +36,27 @@ export default function Home() {
   const [venues, setVenues] = useState<Venue[]>([])
   const [directionsTarget, setDirectionsTarget] = useState<Venue | null>(null)
   const [directionsKey, setDirectionsKey] = useState(0)
+  // Distinct from "zero results": a failed request must never be reported as "no events match
+  // your filters", which blames the user for our outage and sends them adjusting filters that
+  // were never the problem. See GUARDRAILS.md fallback table.
+  const [loadError, setLoadError] = useState(false)
+  const [venuesError, setVenuesError] = useState(false)
 
-  useEffect(() => {
-    fetch('/api/venues').then(r => r.json()).then(d => setVenues(d.venues ?? []))
+  const fetchVenues = useCallback(async () => {
+    try {
+      const res = await fetch('/api/venues')
+      if (!res.ok) throw new Error(String(res.status))
+      const d = await res.json()
+      setVenues(d.venues ?? [])
+      setVenuesError(false)
+    } catch {
+      // The map degrades on its own; the event list is untouched.
+      setVenuesError(true)
+      trackEvent('error_shown', { surface: 'venues' })
+    }
   }, [])
+
+  useEffect(() => { fetchVenues() }, [fetchVenues])
 
   // Per-city filter state — each city retains its own selections across tab switches
   const [city, setCity] = useState<City>('frisco')
@@ -75,12 +92,25 @@ export default function Home() {
       if (plano.date_to) params.set('date_to', plano.date_to)
     }
 
-    const res = await fetch(`/api/events?${params.toString()}`)
-    const data = await res.json()
-    const all = data.events ?? []
-    setEvents(all)
-    setDisplayed(all.slice(0, PAGE_SIZE))
-    setLoading(false)
+    try {
+      const res = await fetch(`/api/events?${params.toString()}`)
+      // A 500 must NOT fall through to `data.events ?? []` — an empty list is indistinguishable
+      // from a genuine zero-result query, and the UI would blame the user's filters for it.
+      if (!res.ok) throw new Error(String(res.status))
+      const data = await res.json()
+      const all = data.events ?? []
+      setEvents(all)
+      setDisplayed(all.slice(0, PAGE_SIZE))
+      setLoadError(false)
+    } catch {
+      setEvents([])
+      setDisplayed([])
+      setLoadError(true)
+      trackEvent('error_shown', { surface: 'events' })
+    } finally {
+      // In `finally` so a thrown fetch can never leave the spinner running forever.
+      setLoading(false)
+    }
   }, [city, frisco, plano])
 
   useEffect(() => { fetchEvents() }, [fetchEvents])
@@ -185,6 +215,31 @@ export default function Home() {
             <div className="flex items-center justify-center h-48">
               <p className="font-mono uppercase" style={{ fontSize: '12px', letterSpacing: '0.1em', color: 'var(--color-ink-35)' }}>Loading events…</p>
             </div>
+          ) : loadError ? (
+            /* Failure to LOAD is a different state from a genuine zero-result query, and gets a
+               different message and a different action. Calm accent-tint callout, same treatment
+               as 'Registration required' — instruction, not alarm. Filters are left untouched. */
+            <div className="flex items-center justify-center h-48">
+              <div
+                className="flex gap-2.5 items-start max-w-md"
+                style={{ borderRadius: 'var(--radius-input)', border: '1px solid var(--color-accent-tint-border)', backgroundColor: 'var(--color-accent-tint)', padding: '12px 14px' }}
+                role="alert"
+              >
+                <div style={{ width: 3, alignSelf: 'stretch', borderRadius: 2, backgroundColor: 'var(--color-accent)', flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-accent-text)' }}>
+                    We couldn&rsquo;t load events right now.
+                  </div>
+                  <button
+                    onClick={() => fetchEvents()}
+                    className="mt-2 text-sm font-medium px-3 py-1.5"
+                    style={{ borderRadius: 'var(--radius-button)', border: '1px solid var(--color-border-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-paper)' }}
+                  >
+                    Try again
+                  </button>
+                </div>
+              </div>
+            </div>
           ) : events.length === 0 ? (
             <div className="flex items-center justify-center h-48">
               <div className="text-center">
@@ -277,6 +332,19 @@ export default function Home() {
         {/* Map panel — third column when map is toggled on */}
         {mapOn && (
           <div className="hidden lg:block flex-1 border-l relative min-w-0" style={{ borderColor: 'var(--color-border)' }}>
+            {/* The map degrades on its own — an empty map with no explanation reads as broken.
+               The event list is unaffected, so this never blocks the page. */}
+            {venuesError && (
+              <div
+                className="absolute top-3 left-3 right-3 z-10 flex gap-2.5 items-center"
+                style={{ borderRadius: 'var(--radius-input)', border: '1px solid var(--color-accent-tint-border)', backgroundColor: 'var(--color-accent-tint)', padding: '9px 12px' }}
+                role="alert"
+              >
+                <div style={{ width: 3, alignSelf: 'stretch', borderRadius: 2, backgroundColor: 'var(--color-accent)', flexShrink: 0 }} />
+                <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-accent-text)' }}>Map locations couldn&rsquo;t be loaded right now.</div>
+                <button onClick={() => fetchVenues()} className="ml-auto text-xs font-medium px-2.5 py-1" style={{ borderRadius: 'var(--radius-button)', border: '1px solid var(--color-border-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-paper)' }}>Try again</button>
+              </div>
+            )}
             <MapView
               venues={venues}
               selected={selected}

@@ -278,11 +278,11 @@ signal · **BAD** = the user is actively misled.
 
 | Failure | What the system does | What the user sees | |
 |---|---|---|---|
-| `/api/events` returns 500 (Supabase down) | Client reads `data.events ?? []` → empty list | **"No events match your filters."** — blames the filters for a backend outage | **BAD** |
-| `/api/events` fetch throws (offline, DNS) | Promise rejects; `setLoading(false)` never runs | **Spinner forever** | **BAD** |
-| `/api/venues` fails | No `.catch()`; venues stay `[]` | Map opens with no pins and no explanation | **WEAK** |
-| Likes GET fails | `setLikes` never called | Count is simply absent | OK |
-| Likes POST fails | Unhandled rejection *after* the optimistic UI flip | Shows "Attending" though nothing was recorded | **WEAK** |
+| `/api/events` returns 500 (Supabase down) | Non-OK status throws; a distinct **error state**, never the empty state | "We couldn’t load events right now." + **Try again**. Filters preserved | OK |
+| `/api/events` fetch throws (offline, DNS) | Same error state; `setLoading(false)` moved into `finally` | Same as above — the spinner can no longer hang | OK |
+| `/api/venues` fails | Caught; the event list is untouched | Note inside the map: "Map locations couldn’t be loaded right now." + **Try again** | OK |
+| Likes GET fails | Explicit `.catch()` — no unhandled rejection | Count is simply absent; nothing untrue is claimed | OK |
+| Likes POST fails | Optimistic flip is **reverted** (state + localStorage) | Toggle returns to its true value, with "Couldn’t save that — try again." | OK |
 | Event id not found | `notFound()` | Standard 404 | OK |
 | Event is non-indexable | `noindex` metadata; page still renders | Page works normally, just not in search | OK |
 | BigQuery key absent | `bigquery.ts` catches and returns empty | Dashboard renders without the funnel panel | OK |
@@ -297,23 +297,27 @@ signal · **BAD** = the user is actively misled.
 
 ## What this table found
 
-Six gaps, none of which were visible before writing the rows out. Ranked:
+Six gaps, none visible before the rows were written out. **Four are now fixed (2026-08-17);
+two remain open.**
 
-1. **`/api/events` 500 → "No events match your filters."** The worst one: a parent is told their
-   *filters* are wrong when the truth is our database is unreachable. They will sit there
-   adjusting filters. Fix: distinguish an empty result from a failed request and say
-   "We couldn't load events right now — try again shortly."
-2. **A thrown fetch leaves the spinner running forever.** `setLoading(false)` is only reached on
-   the success path. Fix: `try/finally`.
-3. **All-sources-fail is invisible for up to 48h.** Nothing tells a visitor the list is stale.
-   Fix: surface a quiet "last updated" line, and drop the freshness threshold.
-4. **`/api/venues` failing gives an empty map with no explanation.** Fix: `.catch()` plus an
-   inline note.
-5. **A failed Likes POST leaves the optimistic UI lying** — it says "Attending" when nothing was
-   saved. Fix: revert the toggle on failure.
-6. **A broken image URL leaves an empty box on `/events/[id]`** (server-rendered, so no
-   `onError`). Fix: validate at ingest, or render the image through a client component.
+| | Gap | Status |
+|---|---|---|
+| 1 | `/api/events` 500 rendered as "No events match your filters" — blaming the user for our outage | **Fixed** — distinct error state, "We couldn’t load events right now." + Try again |
+| 2 | A thrown fetch left the spinner running forever | **Fixed** — `setLoading(false)` moved into `finally` |
+| 4 | `/api/venues` failing gave an empty map with no explanation | **Fixed** — caught, with an in-map note and Try again |
+| 5 | A failed Likes POST left the UI claiming "Attending" | **Fixed** — the optimistic flip is reverted, with an inline note |
+| 3 | All-sources-fail is invisible for up to 48h — no staleness signal to the visitor | **Open** |
+| 6 | A broken image URL leaves an empty box on `/events/[id]` (server-rendered, so no `onError`) | **Open** |
 
-None are data-correctness bugs — the guard still guarantees no wrong times are published. They
-are **honesty-of-failure** bugs: cases where the app degrades without telling the truth about
-why. #1 and #2 are worth fixing next; they are the two a real visitor is most likely to hit.
+Fixes 1 and 2 are covered by three Playwright cases (§1.7) that assert the error and empty
+states stay **distinct** — they were one state until now, and that was the bug. The error case
+was verified to fail with the guard removed, then pass with it restored.
+
+A note on what these were. **None were data-correctness bugs** — the pre-write guard still
+guaranteed no wrong event times were published throughout. They were **honesty-of-failure**
+bugs: the app degraded without telling the truth about why. That is its own category of harm,
+and it is invisible to every test that only asks whether the happy path works.
+
+While fixing them, one more of the same kind was folded in: the Share button used a native
+`alert()` popup — an OS-level modal you must dismiss — where every other message in the app is
+a calm inline note. Now inline.

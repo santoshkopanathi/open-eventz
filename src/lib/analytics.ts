@@ -15,6 +15,11 @@ export type AnalyticsEvent =
   | 'calendar_add'     // Converted — Add to Google/Apple Calendar OR ICS download
   | 'attending_tap'    // Converted — Attending tapped (toggle-ON only)
   | 'share_tap'        // Referral  — Share tapped (outside the funnel)
+  // 8th event, added 2026-08-17 (outside the original 7-event spec, deliberately). Health, not
+  // funnel: it is the difference between "we handle errors" and "we know our error rate".
+  // Params: { surface: 'events' | 'venues' | 'likes' }. Keep it low-cardinality — never send
+  // the error message itself.
+  | 'error_shown'      // Health   — a user-visible failure state was rendered
 
 type GtagFn = (command: 'event' | 'config' | 'js' | 'consent', ...args: unknown[]) => void
 
