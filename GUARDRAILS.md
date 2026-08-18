@@ -242,9 +242,11 @@ the risk.
 | **Categories** | Content | Economic | Behavioural (low severity) |
 | **Instruments** | 2b output classifier · 4 fallback table · 5 audit trail | 1 evals · 2c refusal · 3 observability | **2d cost cap** |
 
-**Priority order to close:** the six fallback gaps (#1 and #2 first — they mislead real visitors)
-→ cost cap → eval-on-change trigger → adversarial classifier cases → prompt injection framing →
-Sentry. *Fallback table: done 2026-08-17.*
+**Priority order to close:** **cost cap** (the only fully-missing instrument, and the only open
+economic risk) → eval-on-change trigger → adversarial classifier cases → prompt-injection framing
+→ Sentry → the two remaining fallback gaps (staleness signal, server-page broken image).
+
+*Done 2026-08-17: the fallback table itself, plus four of the six gaps it surfaced.*
 
 ---
 
