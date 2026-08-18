@@ -123,6 +123,8 @@ and it forgives only the shift rule — implausible times stay blocked even with
 This layer is **detection, not prevention** — by the time it fires, data is already stored. It
 exists as a backstop for whatever Layer 3 didn't anticipate.
 
+**What the user sees when any of this trips** is specified in the [Fallback table](#fallback-table--what-the-user-sees-when-something-breaks) at the end of this document.
+
 ## Layer 5 — Pipeline gates
 
 | Gate | Runs | Notes |
@@ -230,7 +232,7 @@ the risk.
 | **2c. Guardrail — refusal layer** | System-prompt instructions stating what the feature is *not* for, so the model itself refuses out-of-scope use. | The behavioural equivalent, **enforced in code rather than prose**: LLM failure or `low` confidence → `kid_relevant = false`; hard override for `adults only / 21+ / 18+`. Applied uniformly across cached and fresh results. | **Not expressed in the prompt** — enforcement is post-hoc. No explicit "you are a kids-event classifier, refuse anything else" framing. |
 | **2d. Guardrail — rate limits & cost cap** | Per-user, per-window generation limits plus a daily spend ceiling, degrading gracefully when hit. | **Structural only**: no user-triggered generation exists, so there is nothing to rate-limit per user, and secret-gating prevents external triggering of the paid endpoints. | **The clearest open risk.** No per-run call ceiling, no daily spend cap, no alert. Spend is observed after the fact, and only as an estimate. |
 | **3. Observability** | Every call traced — input, output, model version, latency, cost, guardrails fired — feeding a dashboard with **alert thresholds**, turning a black box into something manageable. | `ingest_runs` per run: `ran_at`, `duration_ms`, status, per-source counts, `llm_calls`, `llm_cost_usd`, errors → Technical dashboard. **Per-event auditability is unusually strong**: `age_confidence`, `age_reasoning` and `price_reasoning` are stored on every classified event, so any decision can be explained later. GA4 → BigQuery → Functional dashboard. **Failure alert, two layers**: GitHub's own workflow-failure email (primary — no code, verified to fire even when our own alert broke) plus a best-effort GitHub Issue with triage instructions (secondary, falls forward through three delivery options). **Proven, not assumed**: testable on demand via the `simulate_failure` fire drill, and all three real drill failures are permanent regression tests. | **No production application-error tracking** — Sentry planned, blocked on a DSN. **No alert thresholds** on cost spike or guardrail hit-rate; alerting is binary pass/fail. Cost is estimated, not metered. No latency percentiles. |
-| **4. Fallbacks** | A written table: every row a failure scenario, the right column exactly **what the user sees** and what the system does. A design artifact that belongs in the spec, before launch. | The behaviours exist and are consistently fail-safe: LLM failure → event hidden · unparseable time → event skipped · batch rejected → previous correct rows kept and purge skipped · missing or broken image → omitted, never a broken box · unrecognised source → no supervision badge rather than a wrong one · one source down → the others unaffected (per-source jobs, `fail-fast: false`). | **There is no written table.** They live scattered in code comments, so completeness cannot be checked, and **none are expressed as what the user sees**. The cheapest gap on this list to close. |
+| **4. Fallbacks** | A written table: every row a failure scenario, the right column exactly **what the user sees** and what the system does. A design artifact that belongs in the spec, before launch. | The behaviours exist and are consistently fail-safe: LLM failure → event hidden · unparseable time → event skipped · batch rejected → previous correct rows kept and purge skipped · missing image → omitted (a *broken* URL is still an empty box on the server page — found by writing the table) · unrecognised source → no supervision badge rather than a wrong one · one source down → the others unaffected (per-source jobs, `fail-fast: false`). | **Written 2026-08-17** — see [Fallback table](#fallback-table--what-the-user-sees-when-something-breaks). Writing it immediately surfaced **six undefined behaviours** the scattered code comments had hidden, two of them user-facing and actively misleading (a 500 renders as "No events match your filters"; a thrown fetch spins forever). Those six are now the open work — the instrument itself is in place. |
 | **5. Audit trail** | Per-call logging — what went in, what came back, which guardrails fired, what it cost — on a retention schedule, doubling as the **feedback loop** into the eval suite. | **Per-event LLM reasoning stored permanently** (`age_reasoning` / `price_reasoning`) — every automated decision is explainable months later, which is the part most teams skip. `ingest_runs` is a durable per-run record including errors, and guard rejections are written into it. **The feedback loop is real and documented**: every incident becomes a test case *plus* a BUILD-LOG entry *plus* a playbook principle. | No retention or deletion schedule. **Guardrail hit-rate is not aggregated** anywhere. Minimal per-user logging — but that is a deliberate privacy posture (anonymous like counts, RLS-locked tables), so it should be recorded as a **decision** rather than left looking like an oversight. |
 
 ## Scoring summary
@@ -238,7 +240,80 @@ the risk.
 | | Strong | Partial | Open |
 |---|---|---|---|
 | **Categories** | Content | Economic | Behavioural (low severity) |
-| **Instruments** | 2b output classifier · 5 audit trail | 1 evals · 2c refusal · 3 observability | 2d cost cap · 4 fallback table |
+| **Instruments** | 2b output classifier · 4 fallback table · 5 audit trail | 1 evals · 2c refusal · 3 observability | **2d cost cap** |
 
-**Priority order to close:** cost cap → eval-on-change trigger → adversarial classifier cases →
-written fallback table → prompt injection framing → Sentry.
+**Priority order to close:** the six fallback gaps (#1 and #2 first — they mislead real visitors)
+→ cost cap → eval-on-change trigger → adversarial classifier cases → prompt injection framing →
+Sentry. *Fallback table: done 2026-08-17.*
+
+---
+
+# Fallback table — what the user sees when something breaks
+
+Every row is a failure scenario; the right-hand columns are what the system does and **what the
+user actually sees**. Written 2026-08-17 by reading the code, not from memory.
+
+The discipline: *a row you cannot fill is an undefined behaviour you have just found.* Six of
+them turned up on the first pass and are listed at the bottom — that is the table earning its
+keep, not a sign it was written badly.
+
+Status key: **OK** = deliberate and sound · **WEAK** = degrades, but the user gets no useful
+signal · **BAD** = the user is actively misled.
+
+## Ingest and data
+
+| Failure | What the system does | What the user sees | |
+|---|---|---|---|
+| LLM classification errors, or returns `low` confidence | Event marked not kid-relevant (fail-closed) | Event is simply not listed | OK |
+| Event start time unparseable | Event skipped, never stored at a guessed time | Event is not listed | OK |
+| Batch fails the pre-write guard | Nothing written, purge skipped, run goes red, alert fires | Previously-correct events remain — the list is slightly **stale, never wrong** | OK |
+| One source fails to scrape | Other three unaffected (per-source jobs, `fail-fast: false`) | That source's events age; the rest stay current | OK |
+| **All** sources fail | No writes; freshness check only trips at 48h | List silently goes stale for up to two days | **WEAK** |
+| Event has no image | Image omitted entirely | No banner; layout unaffected | OK |
+| Image URL 404s | Client drawer hides it via `onError`; the server page has no such hook | Drawer: clean. `/events/[id]`: **an empty box** | **WEAK** |
+| Source exposes no age data | Falls back to all-ages and counts it; >50% fallback raises a run warning | Event shows without a specific age badge | OK |
+| Unrecognised source | `getSupervisionBadge` returns null | No supervision callout, rather than a wrong one | OK |
+
+## App and runtime
+
+| Failure | What the system does | What the user sees | |
+|---|---|---|---|
+| `/api/events` returns 500 (Supabase down) | Client reads `data.events ?? []` → empty list | **"No events match your filters."** — blames the filters for a backend outage | **BAD** |
+| `/api/events` fetch throws (offline, DNS) | Promise rejects; `setLoading(false)` never runs | **Spinner forever** | **BAD** |
+| `/api/venues` fails | No `.catch()`; venues stay `[]` | Map opens with no pins and no explanation | **WEAK** |
+| Likes GET fails | `setLikes` never called | Count is simply absent | OK |
+| Likes POST fails | Unhandled rejection *after* the optimistic UI flip | Shows "Attending" though nothing was recorded | **WEAK** |
+| Event id not found | `notFound()` | Standard 404 | OK |
+| Event is non-indexable | `noindex` metadata; page still renders | Page works normally, just not in search | OK |
+| BigQuery key absent | `bigquery.ts` catches and returns empty | Dashboard renders without the funnel panel | OK |
+| No ingest runs recorded yet | Graceful empty state | Dashboard shows an empty pipeline panel | OK |
+
+## Alerting
+
+| Failure | What the system does | What the user sees | |
+|---|---|---|---|
+| Secondary alert (the Issue) fails | Falls forward through three delivery options; if all fail, loud error + red job | Still receives the **primary** workflow-failure email | OK |
+| Primary email notification disabled | Nothing else watches | **Nothing reaches anyone** — the whole chain rests on one account setting | **WEAK** |
+
+## What this table found
+
+Six gaps, none of which were visible before writing the rows out. Ranked:
+
+1. **`/api/events` 500 → "No events match your filters."** The worst one: a parent is told their
+   *filters* are wrong when the truth is our database is unreachable. They will sit there
+   adjusting filters. Fix: distinguish an empty result from a failed request and say
+   "We couldn't load events right now — try again shortly."
+2. **A thrown fetch leaves the spinner running forever.** `setLoading(false)` is only reached on
+   the success path. Fix: `try/finally`.
+3. **All-sources-fail is invisible for up to 48h.** Nothing tells a visitor the list is stale.
+   Fix: surface a quiet "last updated" line, and drop the freshness threshold.
+4. **`/api/venues` failing gives an empty map with no explanation.** Fix: `.catch()` plus an
+   inline note.
+5. **A failed Likes POST leaves the optimistic UI lying** — it says "Attending" when nothing was
+   saved. Fix: revert the toggle on failure.
+6. **A broken image URL leaves an empty box on `/events/[id]`** (server-rendered, so no
+   `onError`). Fix: validate at ingest, or render the image through a client component.
+
+None are data-correctness bugs — the guard still guarantees no wrong times are published. They
+are **honesty-of-failure** bugs: cases where the app degrades without telling the truth about
+why. #1 and #2 are worth fixing next; they are the two a real visitor is most likely to hit.
