@@ -2,9 +2,9 @@ import type { EventSource } from './types'
 
 // Canonical production origin. Used for canonical URLs, OpenGraph, JSON-LD, and the
 // sitemap. Override with NEXT_PUBLIC_SITE_URL (e.g. a preview deploy) when needed; the
-// default is the live Vercel production domain. Never a trailing slash.
+// default is the live custom-domain production origin. Never a trailing slash.
 export const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://open-eventz.vercel.app'
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://openeventz.com'
 ).replace(/\/$/, '')
 
 export type CitySlug = 'frisco' | 'plano'

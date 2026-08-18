@@ -1,4 +1,5 @@
 import { buildEventJsonLd } from './event-jsonld'
+import { eventUrl } from './site'
 import type { Event } from './types'
 
 // Minimal Event factory — overrides on top of a free Frisco Library event.
@@ -55,7 +56,7 @@ describe('buildEventJsonLd — core shape', () => {
   })
 
   test('canonical url points at the event page, not the source', () => {
-    expect(jsonLd.url).toBe('https://open-eventz.vercel.app/events/evt-1')
+    expect(jsonLd.url).toBe(eventUrl('evt-1'))
   })
 
   test('location includes place, address and geo', () => {
