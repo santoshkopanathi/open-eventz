@@ -1536,3 +1536,23 @@ Mapped Open Eventz onto the standard AI-governance model — three failure categ
 Two honest notes recorded in the tables: `llm_cost_usd` is `calls × $0.006`, an **estimate, not metered spend** — a dashboard number, not a control; and the real-model eval (`calibrate:price`) runs **manually with no trigger**, the textbook "eval suite that only runs manually is a scaling liability."
 
 **The lesson.** Scoring against an external model is worth doing precisely where it *doesn't* fit. The categories that didn't apply — and why — explained more about this system's real risk shape than the ones that did.
+
+---
+
+## The last governance instrument — a spend ceiling, and the cache it almost poisoned
+
+*Date: 2026-08-19. Module: [`src/lib/llm-budget.ts`](src/lib/llm-budget.ts).*
+
+**Initial situation.** The governance review left exactly one instrument fully missing: a **cost cap**. Nothing bounded paid LLM spend. Normal runs cost pennies — classification is nightly, batched, and cached, so re-running an unchanged source costs **zero** calls — but a source anomaly (a changed API default, a pagination bug, a bad date window returning 10,000 events) would have been classified in full, at our expense, with nothing to stop it.
+
+**What we built.** A hard per-run ceiling, `MAX_LLM_CALLS_PER_RUN`, default **300** (~$1.80 estimated) — set far above normal volume so tripping it means *something is wrong*, not *we are busy*. Raising it is a deliberate act, like `INGEST_ALLOW_TIME_SHIFT`; a malformed value falls back to the default rather than silently disabling the cap. A cap hit records an error and **exits non-zero**, so the run goes red and the failure alert fires — a deliberate coverage loss must reach a human, not sit in a log.
+
+**The defect I nearly shipped.** My first version, on refusing a call, set `kid_relevant = false` — the same fail-closed value used for an LLM error. Writing the integration path exposed why that is wrong in **two** directions:
+- `false` **poisons the cache.** The next run reads `prior.kid_relevant !== null`, treats it as a cached decision, and hides that event **permanently** — even after the cap is raised. The cap would have quietly deleted coverage forever.
+- `null` **fails open.** `kid_relevant IS NULL` *passes* the events API gate (that is how library events, which have no LLM inference, flow through). An unclassified event would have been **shown**.
+
+Neither value is safe *if the row is written at all*. The fix is to **not write budget-skipped events**: they are excluded from the batch entirely, so they are neither displayed nor cached, and get classified normally on the next run. Fail-closed **and** self-healing. The purge id-list still uses the unfiltered array, so an already-stored event is not deleted merely because we could not re-classify it.
+
+**Verification.** 14 unit tests, including a structural guard asserting there is exactly one paid call site and that it is gated — **verified non-vacuously** by deleting the gate and watching two tests fail. Then a live run with `MAX_LLM_CALLS_PER_RUN=0` against the real source: **37 events, 0 paid calls, `capped: false`**, because every event was a cache hit. That is the integration property that mattered most — if the cap had counted cache hits, every nightly would have gone red. Full gates green: typecheck, 323 unit tests in both timezones, build, doc-parity.
+
+**The lesson.** A spend limit sounds like a counter, and the counter was the easy part. The hard part was what a *refused* call leaves behind: the same value that is correct for a transient error (`false` = hidden) is corrosive for a deferred decision, because the cache cannot tell the difference between *we decided to hide this* and *we never got to look*. **When you add a skip path, ask what the next run will believe about the rows it leaves.**

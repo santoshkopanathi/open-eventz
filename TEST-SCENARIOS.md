@@ -117,6 +117,19 @@ backend outage. These keep them distinct.
 | 1.7.7 | Likes POST fails | Optimistic toggle **reverts** (state + localStorage) with "Couldn’t save that — try again." | [R] [M] |
 | 1.7.8 | Share on a browser without `navigator.share` | Inline "Link copied" note — **never** a native `alert()` modal | [R] [M] |
 | 1.7.9 | Any failure state rendered | Fires GA4 `error_shown` with `surface: events | venues | likes` (8th custom event) | [R] [M] |
+### 1.6A LLM spend ceiling *(new 2026-08-19 — the last governance instrument)*
+Classification cost scales with **new events, not users** (batched nightly, cached — a re-run of an unchanged source costs 0 calls). The cap exists for the anomaly: a source that suddenly returns thousands of events. Default 300 calls/run, override `MAX_LLM_CALLS_PER_RUN`. Pure logic in `src/lib/llm-budget.ts`.
+| # | Scenario | Expected result | Tag |
+|---|---|---|---|
+| 1.6A.1 | Normal run (well under the cap) | All events classified; run not flagged | [A] [R] · llm-budget.test.ts |
+| 1.6A.2 | Cap reached mid-run | Further paid calls refused; remaining events **excluded from the write** | [A] [R] · llm-budget.test.ts |
+| 1.6A.3 | A budget-skipped event | Never assigned `kid_relevant` — `false` would poison the cache (hidden forever), `null` would pass the API gate and be **shown** | [A] [R] · llm-budget.test.ts |
+| 1.6A.4 | Run after a cap hit | Skipped events were never stored, so they are classified normally — self-healing | [R] [M] |
+| 1.6A.5 | Malformed `MAX_LLM_CALLS_PER_RUN` | Falls back to the default; a bad value can **never** disable the cap | [A] [R] · llm-budget.test.ts |
+| 1.6A.6 | `MAX_LLM_CALLS_PER_RUN=0` | Respected — an explicit "spend nothing" instruction | [A] [R] · llm-budget.test.ts |
+| 1.6A.7 | Cap hit reaches a human | Run exits non-zero → red job → failure alert; error recorded on the run | [A] [R] · llm-budget.test.ts |
+| 1.6A.8 | The ceiling cannot be bypassed | Exactly one paid call site, and it is gated by `budget.spend()` | [A] [R] · llm-budget.test.ts |
+
 ### 1.5C Failure alerting *(new 2026-08-17 — see INGEST-DESIGN §8.2/§8.3)*
 **Primary channel = GitHub's own workflow-failure email** (no code, verified to fire on every drill). **Secondary = the `notify` job's GitHub Issue**, best-effort: GitHub's Issues API failed in three different ways across three drills, so delivery falls forward.
 | # | Scenario | Expected result | Tag |

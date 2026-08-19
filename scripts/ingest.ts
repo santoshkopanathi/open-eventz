@@ -72,8 +72,13 @@ async function main() {
   const upserted = (result as { upserted: number }).upserted
   const errors = (result as { errors: string[] }).errors ?? []
   if (errors.length > 0) console.error(`[ingest] completed with ${errors.length} error(s)`)
+  // A spend-cap hit means events were HIDDEN to bound cost — a deliberate coverage loss that
+  // must reach a human, not sit in a log. Red run → the notify job → the failure email.
+  const capped = (result as { capped?: boolean }).capped === true
+  if (capped) console.error(`[ingest] LLM budget cap reached — some events were hidden. Raise MAX_LLM_CALLS_PER_RUN only if this is the new normal.`)
+
   // Nothing written = the run failed to accomplish anything → red in Actions.
-  process.exit(upserted === 0 ? 1 : 0)
+  process.exit(upserted === 0 || capped ? 1 : 0)
 }
 
 main().catch(err => {

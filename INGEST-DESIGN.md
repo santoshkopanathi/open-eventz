@@ -172,6 +172,18 @@ Do **not** clear an `ABORT: uniform ...min shift` by re-running with `INGEST_ALL
 
 **The proof is the email, not the issue** — if the issue only appears on GitHub, the job works but the notification path doesn't. Re-run the drill after any change to the alert. Three drills on 2026-08-17 found three separate bugs in it; see BUILD-LOG "The alert that couldn't alert."
 
+### 8.4 LLM spend ceiling — bounding the anomaly (2026-08-19)
+
+Classification cost scales with the number of **new events, not users**: it runs nightly, in batch, and results are cached, so re-running an unchanged source costs **zero** model calls. Normal spend is pennies. What was unbounded was the *anomaly* — a source that suddenly returns 10,000 events (a changed API default, a pagination bug, a bad date window) would have been classified in full.
+
+`src/lib/llm-budget.ts` adds a hard per-run ceiling (`MAX_LLM_CALLS_PER_RUN`, default **300** ≈ $1.80 estimated). Three properties matter:
+
+- **Fail-closed, without poisoning the cache.** A refused call means the event is **excluded from the write entirely**. Writing `kid_relevant = false` would look like a cached decision on the next run and hide the event permanently; writing `null` would *pass* the events API gate (`kid_relevant IS NULL` is how library events flow through) and **show** an unclassified event. Writing nothing is the only option that is both fail-closed and self-healing — the event is simply classified on the next run.
+- **It reaches a human.** A cap hit records an error on the run and **exits non-zero**, so the run goes red and the failure alert fires (§8.2). A deliberate coverage loss must not sit in a log.
+- **Raising it is an explicit act**, like `INGEST_ALLOW_TIME_SHIFT` — a human accepting a new normal, not a limit quietly sliding. A malformed value falls back to the default rather than disabling the cap.
+
+**Still open:** spend is **estimated** (`calls × $0.006`), not metered. Set a hard limit in the Anthropic console as the outer backstop.
+
 ### 8.1 Source timezones — the ingest runs in UTC (2026-08-14)
 
 Every source publishes **local wall-clock** times with no usable offset:

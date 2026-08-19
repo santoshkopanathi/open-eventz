@@ -13,6 +13,7 @@ import { PER_INFERENCE_COST_USD } from './technical-metrics'
 import { markRecurring } from './recurring'
 import { centralWallTimeToUtc, parseCentralWallTime } from './datetime'
 import { screenBatch } from './ingest-guard'
+import { createLlmBudget, type LlmBudget } from './llm-budget'
 
 // Adult programs that BiblioCommons incorrectly includes in children audience feeds
 const FRISCO_ADULT_KEYWORDS = [
@@ -611,6 +612,8 @@ export interface SourceIngestResult {
   upserted: number
   llm_calls: number
   errors: string[]
+  /** True when the run hit its LLM spend ceiling and hid the remaining events. */
+  capped?: boolean
 }
 
 // Merge events sharing an id (same event across audience feeds / branches): widen the age
@@ -757,9 +760,16 @@ export async function runPlayFriscoIngest(): Promise<SourceIngestResult> {
   errors.push(...playFrisco.errors)
 
   // LLM-primary classification (age + price), fail-closed — the shared helper (also used by Kaleidoscope).
-  const llmCalls = await classifyEvents(db, 'play-frisco', playFrisco.events)
+  const classified = await classifyEvents(db, 'play-frisco', playFrisco.events)
+  const llmCalls = classified.llmCalls
+  if (classified.capped) {
+    // Coverage was deliberately sacrificed to bound spend — that must not pass silently.
+    errors.push('llm-budget (play-frisco): per-run LLM call cap reached; remaining events were hidden rather than classified. Raise MAX_LLM_CALLS_PER_RUN only if this volume is the new normal.')
+  }
 
-  const events = dedupeMerge(playFrisco.events)
+  // Budget-skipped events are excluded from the write entirely (see classifyEvents).
+  const classifiable = playFrisco.events.filter((e: any) => { const skip = e._budgetSkipped === true; delete e._budgetSkipped; return !skip })
+  const events = dedupeMerge(classifiable)
   markRecurring(events)
 
   const { upserted, aborted } = await guardedUpsert(db, 'play-frisco', events, errors)
@@ -782,7 +792,7 @@ export async function runPlayFriscoIngest(): Promise<SourceIngestResult> {
   }
 
   await recordRun(db, { playFrisco: playFrisco.events.length, upserted, llmCalls, errors, t0 })
-  return { source: 'play-frisco', fetched: playFrisco.events.length, upserted, llm_calls: llmCalls, errors }
+  return { source: 'play-frisco', fetched: playFrisco.events.length, upserted, llm_calls: llmCalls, errors, capped: classified.capped }
 }
 
 // Combined run — all sources sequentially. Used by the /api/ingest route for local/manual runs;
@@ -816,8 +826,8 @@ export async function runAllIngest(): Promise<{
 // known events makes 0 calls). Low-confidence or explicitly-adult events are hidden
 // (`kid_relevant=false`). Returns the number of Claude calls made. See SOURCE-ONBOARDING.md.
 // ---------------------------------------------------------------------------
-async function classifyEvents(db: ReturnType<typeof supabaseAdmin>, source: EventSource, events: any[]): Promise<number> {
-  if (events.length === 0) return 0
+async function classifyEvents(db: ReturnType<typeof supabaseAdmin>, source: EventSource, events: any[], budget: LlmBudget = createLlmBudget()): Promise<{ llmCalls: number; capped: boolean }> {
+  if (events.length === 0) return { llmCalls: 0, capped: false }
   let llmCalls = 0
   const ids = events.map((e: any) => e.id)
   const { data: priorRows } = await db
@@ -842,6 +852,20 @@ async function classifyEvents(db: ReturnType<typeof supabaseAdmin>, source: Even
       e.price_reasoning = prior.price_reasoning
       e.is_free = prior.is_free
       e.price_text = prior.price_text
+      continue
+    }
+    // Hard spend ceiling. Refusing a call means the event stays unclassified, and an
+    // unclassified event is HIDDEN — the same fail-closed direction as an LLM error. Losing
+    // coverage is the acceptable failure here; unbounded spend is not.
+    if (!budget.spend()) {
+      // Mark for EXCLUSION from the write — do not assign kid_relevant either way.
+      //   false  → the next run reads it as a cache hit and hides the event forever, even
+      //            after the cap is raised (cache poisoning).
+      //   null   → passes the API gate (`kid_relevant IS NULL` is how library events flow
+      //            through), so an unclassified event would be SHOWN — fail-open.
+      // Writing nothing is the only option that is both fail-closed and self-healing: the
+      // event is absent today and gets classified normally on the next run.
+      e._budgetSkipped = true
       continue
     }
     llmCalls++
@@ -880,7 +904,11 @@ async function classifyEvents(db: ReturnType<typeof supabaseAdmin>, source: Even
     if (e.age_confidence === 'low') e.kid_relevant = false
     if (ADULT_OVERRIDE.test(`${e.title} ${e.description ?? ''}`)) e.kid_relevant = false
   }
-  return llmCalls
+
+  if (budget.wasCapped()) {
+    console.error(`[ingest] LLM BUDGET CAP for ${source}: ${budget.describe()}`)
+  }
+  return { llmCalls, capped: budget.wasCapped() }
 }
 
 // ---------------------------------------------------------------------------
@@ -986,9 +1014,16 @@ export async function runKaleidoscopeIngest(): Promise<SourceIngestResult> {
   errors.push(...kaleidoscope.errors)
 
   // LLM-primary classification (age + price), fail-closed — the shared helper.
-  const llmCalls = await classifyEvents(db, 'kaleidoscope-park', kaleidoscope.events)
+  const classified = await classifyEvents(db, 'kaleidoscope-park', kaleidoscope.events)
+  const llmCalls = classified.llmCalls
+  if (classified.capped) {
+    // Coverage was deliberately sacrificed to bound spend — that must not pass silently.
+    errors.push('llm-budget (kaleidoscope-park): per-run LLM call cap reached; remaining events were hidden rather than classified. Raise MAX_LLM_CALLS_PER_RUN only if this volume is the new normal.')
+  }
 
-  const events = dedupeMerge(kaleidoscope.events)
+  // Budget-skipped events are excluded from the write entirely (see classifyEvents).
+  const classifiable = kaleidoscope.events.filter((e: any) => { const skip = e._budgetSkipped === true; delete e._budgetSkipped; return !skip })
+  const events = dedupeMerge(classifiable)
   markRecurring(events)
 
   const { upserted, aborted } = await guardedUpsert(db, 'kaleidoscope-park', events, errors)
@@ -1004,5 +1039,5 @@ export async function runKaleidoscopeIngest(): Promise<SourceIngestResult> {
   // ingest_runs has no kaleidoscope column; log with upserted + llm_calls (per-source counts on the
   // dashboard come from the events table, so this is fine).
   await recordRun(db, { upserted, llmCalls, errors, t0 })
-  return { source: 'kaleidoscope-park', fetched: kaleidoscope.events.length, upserted, llm_calls: llmCalls, errors }
+  return { source: 'kaleidoscope-park', fetched: kaleidoscope.events.length, upserted, llm_calls: llmCalls, errors, capped: classified.capped }
 }
