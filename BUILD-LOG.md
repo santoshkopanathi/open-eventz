@@ -1281,6 +1281,13 @@ Applied in both `src/app/events/[id]/page.tsx` (server page) and `src/components
 
 **The lesson.** One indirection — `SITE_URL` reading a single env var — turned a domain move that *could* have been a find-and-replace across sitemap/robots/metadata/JSON-LD into a **one-value cutover + rebuild**. The only real gotcha is that `NEXT_PUBLIC_*` bakes in at build time, so the redeploy must be a clean build, not a settings-only save.
 
+**Addendum (2026-08-20) — migration completed + hardened.** Three things finished the cutover beyond the 8/10 env-var step above:
+- **The old subdomain now redirects.** `open-eventz.vercel.app` was still *serving* production (HTTP 200) — a duplicate-content exposure. Set it to a **308 → apex** (Vercel → Settings → Domains → *Redirect to primary domain*). Verified live: `open-eventz.vercel.app/frisco` **and** `www.openeventz.com/frisco` both **308 → `openeventz.com/frisco`**; apex serves 200.
+- **Canonical default moved into code too** (`200cb81`). The 8/10 note said "no code change" — true for the *cutover*, but the `SITE_URL` default in `src/lib/site.ts` still fell back to `*.vercel.app` whenever the env var was absent (local, preview, a fresh build). Changed the default to `https://openeventz.com` so canonicals are correct everywhere, env or no env — belt-and-suspenders behind `NEXT_PUBLIC_SITE_URL`. Also made `event-jsonld.test.ts` domain-agnostic (assert against `eventUrl()` instead of a hard-coded origin) so a future domain move can't silently red the suite.
+- **Prod-verified** the whole canonical surface resolves to `openeventz.com`: the `/frisco` canonical tag, the `sitemap.xml` origin, and the `robots.txt` host.
+
+**Still open (SEO), as of 2026-08-20:** (1) create the GSC **Domain property** for `openeventz.com` (DNS-TXT verify in Cloudflare) + resubmit `sitemap.xml`; (2) **test gap** — `src/app/sitemap.ts` and `src/app/robots.ts` ship SEO-critical output with **zero automated coverage** (tracked in TEST-SCENARIOS §19.1.9–.10); (3) **never validated live** in Google's Rich Results Test (§19.1.11).
+
 ---
 
 ## Automated ingest — nightly, per-source, off Vercel

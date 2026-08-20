@@ -445,6 +445,9 @@ Tests that guard shipped work (SEO, calendar, analytics plumbing) but had no PM 
 | 19.1.6 | Canonical URLs / source→org | `eventUrl`/`cityUrl`/`sourceOrg`/`sourceCity` build correct absolute URLs and labels | [A] [R] · site.test.ts |
 | 19.1.7 | `/events/[id]` visual parity *(new 2026-08-14)* | The server page uses the Weekend Paper theme — ink masthead + 3px rust rule, Instrument Serif title, token colours, **no emoji** — and carries the same chip row, callouts, and four action buttons as the in-app detail panel | [R] [M] |
 | 19.1.8 | `/events/[id]` supervision badge *(new 2026-08-14)* | Renders the drop-off callout for every source via the shared component — see §12.10 | [A] [R] · supervision-surfaces.test.ts |
+| 19.1.9 | Sitemap route (`sitemap.ts`) *(gap logged 2026-08-20)* | Lists home + `/frisco` + `/plano` + every indexable event URL, excludes non-indexable, correct priorities, all on the `openeventz.com` origin | ⚠️ **GAP — no automated test yet** |
+| 19.1.10 | Robots route (`robots.ts`) *(gap logged 2026-08-20)* | Allows `/`, disallows `/api/` + `/dashboard`, references `sitemap.xml`, host = `openeventz.com` | ⚠️ **GAP — no automated test yet** |
+| 19.1.11 | Live rich-result validation *(gap logged 2026-08-20)* | A live `openeventz.com/events/[id]` URL passes Google's Rich Results Test as a valid **Event** with no errors | [M] pending — never run |
 
 ### 19.2 Calendar (.ics)
 | # | Scenario | Expected | Tag |
