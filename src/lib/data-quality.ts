@@ -131,3 +131,53 @@ export function friscoAgeChecks(friscoEvents: Event[], t: FriscoAgeThresholds = 
     { name: 'frisco: toddler filter narrows', pass: toddlerShare <= t.maxToddlerShare, detail: `Toddlers(0–5) matches ${(toddlerShare * 100).toFixed(0)}% (max ${(t.maxToddlerShare * 100).toFixed(0)}%)` },
   ]
 }
+
+// ---------------------------------------------------------------------------
+// Per-source write freshness (added 2026-08-22, after the Kaleidoscope Park outage)
+// ---------------------------------------------------------------------------
+
+// The nightly ingest runs every 24h, so 48h tolerates exactly one missed night before it is
+// worth waking someone. Tighter would go red on a single transient source hiccup.
+export const MAX_INGEST_AGE_HOURS = 48
+
+export interface SourceFreshness {
+  source: string
+  /** Newest `ingested_at` for that source, or null when the source has no rows at all. */
+  lastIngestedAt: string | null
+}
+
+/**
+ * Per-source freshness — "did THIS source write anything recently?"
+ *
+ * PER SOURCE is the entire point. The original check took the newest `ingested_at` across the
+ * WHOLE table, which meant it could never fail: Plano writes ~700 rows a night, so the newest
+ * timestamp is always minutes old. Kaleidoscope Park's API returned 404 for three consecutive
+ * nights (the source dropped The Events Calendar plugin) and the gate reported
+ * "last ingest 0.1h ago ✅" every single time.
+ *
+ * This is deliberately NOT the same question as "non-empty". Stale rows still satisfy a minimum
+ * count, so a volume check cannot see a dead source until its events age past their start dates —
+ * four months later, in this case. Freshness measures the WRITE; non-empty measures the STOCK.
+ */
+export function sourceFreshnessChecks(
+  sources: SourceFreshness[],
+  now: Date = new Date(),
+  maxAgeHours: number = MAX_INGEST_AGE_HOURS,
+): QualityCheck[] {
+  return sources.map(({ source, lastIngestedAt }) => {
+    const name = `${source}: freshness`
+    if (!lastIngestedAt) {
+      return { name, pass: false, detail: 'no events stored — the source has never written, or every row was purged' }
+    }
+    const ts = new Date(lastIngestedAt)
+    if (isNaN(ts.getTime())) {
+      return { name, pass: false, detail: `unreadable ingested_at "${lastIngestedAt}"` }
+    }
+    const ageHrs = (now.getTime() - ts.getTime()) / 3.6e6
+    return {
+      name,
+      pass: ageHrs <= maxAgeHours,
+      detail: `last write ${ageHrs.toFixed(1)}h ago (max ${maxAgeHours}h)`,
+    }
+  })
+}

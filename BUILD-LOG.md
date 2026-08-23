@@ -1563,3 +1563,28 @@ Neither value is safe *if the row is written at all*. The fix is to **not write 
 **Verification.** 14 unit tests, including a structural guard asserting there is exactly one paid call site and that it is gated — **verified non-vacuously** by deleting the gate and watching two tests fail. Then a live run with `MAX_LLM_CALLS_PER_RUN=0` against the real source: **37 events, 0 paid calls, `capped: false`**, because every event was a cache hit. That is the integration property that mattered most — if the cap had counted cache hits, every nightly would have gone red. Full gates green: typecheck, 323 unit tests in both timezones, build, doc-parity.
 
 **The lesson.** A spend limit sounds like a counter, and the counter was the easy part. The hard part was what a *refused* call leaves behind: the same value that is correct for a transient error (`false` = hidden) is corrosive for a deferred decision, because the cache cannot tell the difference between *we decided to hide this* and *we never got to look*. **When you add a skip path, ask what the next run will believe about the rows it leaves.**
+
+---
+
+## The check that could never fail — per-source freshness
+
+*Date: 2026-08-22. Modules: [`src/lib/data-quality.ts`](src/lib/data-quality.ts), [`scripts/validate-data.ts`](scripts/validate-data.ts). See INGEST-DESIGN.md §8.5.*
+
+**Initial situation.** A nightly ingest run came back red: `ingest (kaleidoscope)` failed in 29 seconds. The cause was entirely upstream — Kaleidoscope Park dropped **The Events Calendar** plugin from its WordPress site. The `tribe` namespace is gone from `/wp-json/`, `tribe_events` is no longer a registered post type, the REST route returns **404**, `/events/` 404s and individual event permalinks return **500**. Their own public calendar is broken; no header or URL variation recovers it.
+
+**What worked.** Everything fail-closed did. The fetch threw, zero events came back, `upserted = 0` exited non-zero, the job went red, and the alert email landed. The purge is skipped on an empty batch, so all previously-stored Kaleidoscope events survived: the data went **stale, not wrong** — the core rule, holding under a real source outage.
+
+**What didn't.** `ingest_runs` showed `kaleidoscope-park: HTTP 404` on **three consecutive nights**, and the `data-quality` gate reported **green on all three**. Freshness was one query for the newest `ingested_at` across the *whole* events table. Plano writes ~700 rows a night, so that timestamp is always minutes old — **the check was mathematically incapable of failing** unless all four sources died simultaneously. It had been documented as per-source since it was written. Only the *non-empty* half ever was.
+
+Non-empty didn't cover it either, and the reason is the interesting part: **106 stale upcoming events** cleared the `≥ 5` floor comfortably, and would have kept clearing it until they aged past their start dates months later. Two checks that sound like the same question are not:
+
+| Check | Question | Blind to |
+|---|---|---|
+| Non-empty | Is the **stock** still there? | a source that stopped writing but still has rows |
+| Freshness | Did this source **write**? | nothing — provided it is asked *per source* |
+
+**What changed.** `sourceFreshnessChecks` — pure, one check per source, red when that source has not written within 48h (one missed night tolerated, two not), and the failing line **names the source**. The source list in `validate-data.ts` is now a `Record<EventSource, true>`, so adding a fifth source without adding it to the gate is a **type error** rather than a source that silently goes unwatched — the same completeness pattern as the supervision policy map.
+
+**Verification.** 6 new unit tests built from the real incident, including one that asserts the *replaced* global check would still have passed on the same data — the bug encoded as a regression, not just the fix. Then the house rule, against the live DB: the gate went red on `kaleidoscope-park: freshness — last write 77.0h ago (max 48h)` with every other check green, while `kaleidoscope-park: non-empty` sat there passing at 106 events. Full gates green: typecheck, 329 unit tests, doc-parity.
+
+**The lesson.** **A guardrail whose input is an aggregate over healthy and unhealthy subjects cannot see the unhealthy one.** A max, a total, an "any" — each one launders a dead subject into a live number. Ask the question per subject, or don't claim the guardrail. The corollary is worse and worth stating: this check passed every night for months, and its passing meant nothing. **A green check you have never seen fail is indistinguishable from a check that cannot fail** — the same reason the fire drill exists for alerts.

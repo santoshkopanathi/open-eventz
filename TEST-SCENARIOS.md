@@ -78,11 +78,12 @@ The layer that would have caught the Frisco age break: it asserts against the **
 | 1.5.1 | Frisco age variety | No single `(age_min,age_max)` bucket > 85% of events (the incident was ~100% `0–17`); else gate fails | [A] [R] · data-quality.test.ts |
 | 1.5.2 | No adult-title leaks | 0 events whose title targets adults ("for adults"/"21+"/…) stored kid-visible (`age_min < 18`); else fails | [A] [R] · data-quality.test.ts |
 | 1.5.3 | Toddler filter narrows (real data) | `passesAgeFilter(0–5)` matches < 90% of events (near-100% match = filter no-op); else fails | [A] [R] · data-quality.test.ts |
-| 1.5.4 | Per-source non-empty + freshness | `validate-data.ts`: each library source ≥ a min count; newest `ingested_at` ≤ 48h; else red | [R] [M] |
+| 1.5.4 | Per-source non-empty | `validate-data.ts`: each source's stored **stock** ≥ a min count (Plano ≥ 30, Kaleidoscope ≥ 5); else red | [R] [M] |
 | 1.5.5 | Live-source canary | `validate-data.ts` fetches a real event and asserts BiblioCommons still returns resolvable `audience_ids` (the exact contract that broke); else red | [R] [M] |
 | 1.5.6 | Any check fails → pipeline red | Non-zero exit → red `data-quality` job + a `$GITHUB_STEP_SUMMARY` ✓/✗ table | [R] |
 | 1.5.7 | Start times plausible *(new 2026-08-14)* | Per source, ≤ 5% of upcoming events start between **12:01 and 7:00 AM Central**; a whole source shifting (the timezone incident — 5:00 AM story times) fails the gate and names the source | [A] [R] · data-quality.test.ts |
 | 1.5.8 | All-day events not flagged *(new 2026-08-14)* | **Exact midnight** = "all day, no meaningful time" (LIBRARY CLOSED, Unplug Texas Day) and is excluded; 12:30 AM is still flagged. Found when the check first ran on real data and went red on 11 legitimate rows | [A] [R] · data-quality.test.ts |
+| 1.5.9 | **Per-source freshness** *(new 2026-08-22)* | Every source must have **written** within 48h, checked **per source** and named in the failure. Was a single global newest-`ingested_at`, which could never fail — Plano's ~700 nightly rows kept it green while Kaleidoscope Park was dead for three nights. Stale rows still satisfy 1.5.4, so non-empty cannot see it | [A] [R] · data-quality.test.ts |
 
 ### 1.5B Pre-write ingest guard — fail-closed *(new 2026-08-15)*
 **Product rule: a wrong event time is worse than a missing event.** Every runner writes through `guardedUpsert`, which screens the batch via `screenBatch` (`src/lib/ingest-guard.ts`) **before** the upsert. On abort nothing is written and the purge/cleanup steps are skipped, so the previously-stored correct rows survive. Escape hatch `INGEST_ALLOW_TIME_SHIFT=1` for an intended mass correction.

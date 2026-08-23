@@ -9,12 +9,25 @@ import { config } from 'dotenv'
 config({ path: '.env.local' }) // no-op in CI (env comes from job secrets); loads .env.local locally
 
 import { appendFileSync } from 'node:fs'
+import type { EventSource } from '../src/lib/types'
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 const HTML_H = { 'User-Agent': UA }
 const JSON_H = { 'User-Agent': UA, Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
 
 interface Check { name: string; pass: boolean; detail: string }
+
+// Every source the gate watches. Completeness-checked against `EventSource` (same pattern as the
+// supervision policy map), so adding a fifth source without adding it here is a TYPE ERROR rather
+// than a source that silently goes unwatched. `import type` is erased, so this does not pull
+// src/lib in before dotenv runs.
+const SOURCE_SET: Record<EventSource, true> = {
+  'frisco-library': true,
+  'plano-library': true,
+  'play-frisco': true,
+  'kaleidoscope-park': true,
+}
+const SOURCES = Object.keys(SOURCE_SET) as EventSource[]
 
 // Layer 1 — live-source canary. Confirms BiblioCommons still exposes audience_ids we can resolve
 // (the exact contract that broke). Independent of our DB, so it catches a source change directly.
@@ -74,11 +87,18 @@ async function main() {
   checks.push(dq.startTimeChecks(play ?? [], 'play-frisco'))
   checks.push(dq.startTimeChecks(kaleidoscope ?? [], 'kaleidoscope-park'))
 
-  // Freshness — newest ingest within ~48h (catches a pipeline that silently stopped writing)
-  const { data: newest } = await db.from('events').select('ingested_at').order('ingested_at', { ascending: false }).limit(1)
-  const last = newest?.[0]?.ingested_at ? new Date(newest[0].ingested_at) : null
-  const ageHrs = last ? (Date.now() - last.getTime()) / 3.6e6 : Infinity
-  checks.push({ name: 'freshness', pass: ageHrs <= 48, detail: last ? `last ingest ${ageHrs.toFixed(1)}h ago (max 48h)` : 'no ingest recorded' })
+  // Freshness — PER SOURCE (2026-08-22). This was a single global "newest ingested_at ≤ 48h",
+  // which could never fail: Plano writes ~700 rows a night, so one healthy source kept the check
+  // green while Kaleidoscope Park's API 404'd for three consecutive nights. Now every source must
+  // have written recently on its own name, so a red line says WHICH source stopped.
+  const newestPerSource = await Promise.all(
+    SOURCES.map(async source => {
+      const { data } = await db.from('events').select('ingested_at').eq('source', source)
+        .order('ingested_at', { ascending: false, nullsFirst: false }).limit(1)
+      return { source, lastIngestedAt: data?.[0]?.ingested_at ?? null }
+    })
+  )
+  checks.push(...dq.sourceFreshnessChecks(newestPerSource))
 
   // Live-source canary
   checks.push(await friscoCanary())

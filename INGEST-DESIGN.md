@@ -129,7 +129,8 @@ So splitting into per-source jobs needed **no migration and no dashboard change*
 - **Frisco age variety** — no single `(age_min,age_max)` bucket > 85% (the incident was ~100% `0–17`);
 - **No adult-title leaks** — 0 events whose title targets adults but stored `age_min < 18`;
 - **Toddler filter narrows** — `passesAgeFilter(e, [[0,5]])` matches < 90% (a real-data filter regression);
-- **Per-source non-empty** + **freshness** (newest ingest ≤ 48h);
+- **Per-source non-empty** — each source's stored stock still above a floor;
+- **Per-source freshness** *(per-source since 2026-08-22)* — every source must have written within 48h. This was a single **global** `newest ingested_at ≤ 48h`, which could never fail: Plano writes ~700 rows a night, so one healthy source kept it green while Kaleidoscope Park was dead for three nights. Freshness measures the **write**, non-empty measures the **stock** — stale rows satisfy a count long after a source has stopped. See §8.5;
 - **Start times plausible** *(added 2026-08-14)* — per source, ≤ 5% of upcoming events start before **7 AM Central**. See §8.1;
 - **Live-source canary** (layer 1).
 
@@ -184,6 +185,44 @@ Classification cost scales with the number of **new events, not users**: it runs
 
 **Still open:** spend is **estimated** (`calls × $0.006`), not metered. Set a hard limit in the Anthropic console as the outer backstop.
 
+### 8.5 Per-source freshness — the check that could never fail (2026-08-22)
+
+**The incident.** Kaleidoscope Park dropped The Events Calendar plugin from its WordPress site.
+The Tribe REST route (`/wp-json/tribe/events/v1/events`) began returning **404** — the `tribe`
+namespace is gone from `/wp-json/` and `tribe_events` is no longer a registered post type, so no
+header or URL change recovers it. The source ingested nothing on **three consecutive nights**
+(2026-08-20, -21, -22).
+
+**What worked.** Fail-closed did its job end to end: the fetch threw, zero events were returned,
+`upserted = 0` exited non-zero, the job went red, and the failure alert fired. The purge is
+skipped when a batch is empty, so all previously-stored Kaleidoscope events survived — the data
+went **stale, not wrong**, exactly as the core rule requires.
+
+**What did not.** The data-quality gate reported **green all three nights.** Freshness was a
+single query for the newest `ingested_at` across the *whole* events table. Plano writes ~700 rows
+every night, so that timestamp is always minutes old: **the check was mathematically incapable of
+failing** unless all four sources died at once. The per-source *non-empty* check did not cover it
+either — 106 stale upcoming events comfortably cleared the `≥ 5` floor, and would have kept
+clearing it until they aged past their start dates months later.
+
+**The distinction that was missing:**
+
+| Check | Question | Blind to |
+|---|---|---|
+| Non-empty | Is the **stock** still there? | a source that stopped writing but still has rows |
+| Freshness | Did this source **write**? | nothing — provided it is asked *per source* |
+
+**The fix.** `sourceFreshnessChecks` in [`src/lib/data-quality.ts`](src/lib/data-quality.ts) — pure,
+one check per source, red if that source has not written within 48h (one missed night tolerated,
+two not). The source list in `validate-data.ts` is a `Record<EventSource, true>`, so **adding a
+fifth source without adding it to the gate is a type error**, not a source that silently goes
+unwatched. Verified against the real DB the morning it was found: red on
+`kaleidoscope-park: freshness — last write 77.0h ago (max 48h)`, with every other check green.
+
+**The standing lesson:** *a guardrail whose input is an aggregate over healthy and unhealthy
+subjects together cannot see the unhealthy one.* Ask the question per subject, or do not claim
+the guardrail. This one had been documented as per-source since it was written; only the
+non-empty half ever was.
 ### 8.1 Source timezones — the ingest runs in UTC (2026-08-14)
 
 Every source publishes **local wall-clock** times with no usable offset:

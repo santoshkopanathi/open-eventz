@@ -1,5 +1,5 @@
 import type { Event } from './types'
-import { dominantAgeBucketShare, adultTitleLeaks, ageFilterNarrowShare, friscoAgeChecks, implausiblyEarlyEvents, startTimeChecks } from './data-quality'
+import { dominantAgeBucketShare, adultTitleLeaks, ageFilterNarrowShare, friscoAgeChecks, implausiblyEarlyEvents, startTimeChecks, sourceFreshnessChecks, MAX_INGEST_AGE_HOURS } from './data-quality'
 
 function ev(over: Partial<Event>): Event {
   return {
@@ -129,5 +129,76 @@ describe('implausiblyEarlyEvents / startTimeChecks', () => {
 
   test('empty source → passes (non-empty checks own that failure)', () => {
     expect(startTimeChecks([], 'play-frisco').pass).toBe(true)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Per-source freshness. Written from the real incident: Kaleidoscope Park's Tribe REST API
+// began returning 404 on 2026-08-20 (the site dropped The Events Calendar plugin). The ingest
+// job went red every night — fail-closed worked — but the DATA-QUALITY GATE stayed green for
+// three nights, because freshness was a single global "newest ingested_at" and Plano's ~700
+// nightly rows kept it fresh. These tests exist so that can never be true again.
+// ---------------------------------------------------------------------------
+describe('sourceFreshnessChecks', () => {
+  const NOW = new Date('2026-08-22T11:20:00Z') // the morning the outage was found
+  const hoursAgo = (h: number) => new Date(NOW.getTime() - h * 3.6e6).toISOString()
+
+  // A healthy night: every source wrote minutes ago.
+  const HEALTHY_FRESHNESS = [
+    { source: 'frisco-library', lastIngestedAt: hoursAgo(0.1) },
+    { source: 'plano-library', lastIngestedAt: hoursAgo(0.1) },
+    { source: 'play-frisco', lastIngestedAt: hoursAgo(0.2) },
+    { source: 'kaleidoscope-park', lastIngestedAt: hoursAgo(0.2) },
+  ]
+
+  // The incident: three sources healthy, Kaleidoscope Park last written 2026-08-19T11:15Z.
+  const THE_INCIDENT = [
+    { source: 'frisco-library', lastIngestedAt: hoursAgo(0.1) },
+    { source: 'plano-library', lastIngestedAt: hoursAgo(0.1) },
+    { source: 'play-frisco', lastIngestedAt: hoursAgo(0.2) },
+    { source: 'kaleidoscope-park', lastIngestedAt: '2026-08-19T11:15:52.353Z' },
+  ]
+
+  test('healthy — every source wrote recently, all pass', () => {
+    const checks = sourceFreshnessChecks(HEALTHY_FRESHNESS, NOW)
+    expect(checks).toHaveLength(4)
+    expect(checks.every(c => c.pass)).toBe(true)
+  })
+
+  test('the incident — a single dead source fails, and the failure NAMES it', () => {
+    const checks = sourceFreshnessChecks(THE_INCIDENT, NOW)
+    const failed = checks.filter(c => !c.pass)
+    expect(failed).toHaveLength(1)
+    expect(failed[0].name).toBe('kaleidoscope-park: freshness')
+    expect(failed[0].detail).toContain('72.1h ago')
+  })
+
+  test('the incident — the OLD global check would still have passed (this is the bug)', () => {
+    // The replaced check took max(ingested_at) across the whole table. Plano's nightly write
+    // makes that ~0.1h old, so the gate went green on all three nights the source was dead.
+    const newestOverall = THE_INCIDENT
+      .map(s => new Date(s.lastIngestedAt!).getTime())
+      .reduce((a, b) => Math.max(a, b))
+    const globalAgeHrs = (NOW.getTime() - newestOverall) / 3.6e6
+    expect(globalAgeHrs).toBeLessThanOrEqual(MAX_INGEST_AGE_HOURS) // global: green
+    expect(sourceFreshnessChecks(THE_INCIDENT, NOW).some(c => !c.pass)).toBe(true) // per-source: red
+  })
+
+  test('48h exactly passes, just past it fails — one missed night is tolerated, two is not', () => {
+    const at = (h: number) => sourceFreshnessChecks([{ source: 'play-frisco', lastIngestedAt: hoursAgo(h) }], NOW)[0]
+    expect(at(MAX_INGEST_AGE_HOURS).pass).toBe(true)
+    expect(at(MAX_INGEST_AGE_HOURS + 0.1).pass).toBe(false)
+  })
+
+  test('a source with no rows at all fails rather than being skipped', () => {
+    const c = sourceFreshnessChecks([{ source: 'kaleidoscope-park', lastIngestedAt: null }], NOW)[0]
+    expect(c.pass).toBe(false)
+    expect(c.detail).toContain('no events stored')
+  })
+
+  test('an unreadable timestamp fails — never treated as fresh', () => {
+    const c = sourceFreshnessChecks([{ source: 'plano-library', lastIngestedAt: 'not-a-date' }], NOW)[0]
+    expect(c.pass).toBe(false)
+    expect(c.detail).toContain('unreadable')
   })
 })
