@@ -217,9 +217,10 @@ export function priceClassToFields(price_class: PriceClass): { is_free: boolean 
 }
 
 // ---------------------------------------------------------------------------
-// Layer 4 — the price badge (Definition A). On Play Frisco, every price is an LLM
-// read of the description (there is no structured fee field), so ALL Play Frisco
-// price badges are inferred and carry the ✦ — free AND paid. Library sources are
+// Layer 4 — the price badge (Definition A). On Play Frisco a price is EITHER read from
+// the structured `Cost:` field (confirmed → plain chip, no ✦) or inferred by the LLM from
+// the description (→ ✦), for free AND paid alike. The Cost field is sparse — most events
+// carry no price data at all — so the inferred case is the common one. Library sources are
 // free by institutional default → confirmed, no ✦. The estimate DISCLOSURE text is
 // composed separately (see inference-disclosure.ts), combining age + price into one
 // line; this module only decides the badge chip.
