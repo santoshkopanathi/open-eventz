@@ -67,10 +67,10 @@ Items 39-68 are a random 30 of Kaleidoscope Park.
 > Unplug Texas Day is an official statewide observance starting October 21, 2025. Led by the Texas Recreation and Park Society (TRAPS), Unplug Texas Day invites residents across the state to take a break from screens and “unplug and play” by visiting local parks, trails, pools, open spaces, and recreation centers. The initiative highlights the essential role that parks and recreation agencies play in supporting health, wellness, and community life.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE: free
 ALSO-OK:
-NOTE:
+NOTE: This is not a real event as such. It is just an observance request.
 ```
 
 ---
@@ -83,10 +83,10 @@ NOTE:
 > Spend an evening and play with fun activities including: Discover the magic of the holiday season with friends and family at this Frisco tradition! Visit the Merry Main Street website for more info.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE: free
 ALSO-OK:
-NOTE:
+NOTE: There seems to be more bullets in the page but not in the description here. Some are missing.
 ```
 
 ---
@@ -99,10 +99,10 @@ NOTE:
 > (no description)
 
 ```
-KID:
-PRICE:
-ALSO-OK:
-NOTE:
+KID:no
+PRICE: unknown
+ALSO-OK: 
+NOTE: Not an event at all. It is a request for vendors to submit applications.
 ```
 
 ---
@@ -115,10 +115,10 @@ NOTE:
 > The Frosty 5K presented by Texas Health Hospital Frisco is a festive fun run for all ages with a race through Frisco Square and the downtown area. It’s a delightful Frisco tradition and the perfect kickoff to our annual Merry Main Street event! Visit the Frosty 5K website to sign up.
 
 ```
-KID:
-PRICE:
+KID: yes
+PRICE: unknown
 ALSO-OK:
-NOTE:
+NOTE: I could not determine the price from the description itself if it is a paid event. The last sentence in the description is a sign up link. However, when I visit this link in the description and go through it I realize its a paid event. There is no 'Cost' field either
 ```
 
 ---
@@ -131,10 +131,10 @@ NOTE:
 > 10 to 11 a.m., Weekly, June 17 through August 5 In The Depot at Frisco Heritage Center Your weekly dose of hands-on fun! With engaging activities and playful learning, families can drop by, explore, and make new memories every week this summer.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE: unknown
 ALSO-OK:
-NOTE:
+NOTE: There is no 'Cost' field either
 ```
 
 ---
@@ -147,10 +147,10 @@ NOTE:
 > Step into a world of sparkle, sweetness, and royal fun at our Princess Tea! Spend the afternoon enjoying an English - inspired tea service with your favorite princesses! Light refreshments will be provided. Guests are encouraged to dress in their favorite royal attire as they sip tea, make new friends, and create unforgettable memories fit for royalty! Each person attending must purchase a ticket. Recommended for ages 3 and up. BUY TICKETS HERE
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:paid
 ALSO-OK:
-NOTE:
+NOTE: The description itself informed that is a paid event. ('Cost' field is also available)
 ```
 
 ---
@@ -163,10 +163,10 @@ NOTE:
 > Soar into the weekend at Saturday Sparks: Raptor Experience! The Blackland Prairie Raptor Center is bringing their awe-inspiring birds of prey for an unforgettable encounter. Discover how these majestic hunters rule the skies, their vital role in the ecosystem and their incredible adaptations.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:unknown
 ALSO-OK:
-NOTE:
+NOTE:The description does not have any free-event or paid-event signal. However there is a 'Cost' field that have a value 'free'
 ```
 
 ---
@@ -179,10 +179,10 @@ NOTE:
 > A public reception will be held Thursday, August 27, from 4 to 6 p.m. Meet the artists featured in this show and enjoy light refreshments!
 
 ```
-KID:
-PRICE:
+KID:no
+PRICE:uknown
 ALSO-OK:
-NOTE:
+NOTE:The description does not have any free-event or paid-event signal.
 ```
 
 ---
@@ -195,10 +195,10 @@ NOTE:
 > 🎣 Ready to try fishing for the first time? Cast your first line with confidence with Play Frisco!Registration Opens: July 17 This beginner-friendly workshop is a great place to start. Learn the essentials, including rods and reels, basic knot tying, fish habitats, identification, safe handling, and fishing rules and ethics. Open to ages 5 and up with an accompanying adult. All equipment is provided, but you’re welcome to bring your own. The class will be held indoors at the Frisco Heritage Center. 🗓 Upcoming Dates:August 7 from 1-3 p.m. Registration is required. Sign up using the link below! Questions? Email [email protected]
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:unknown
 ALSO-OK:
-NOTE:
+NOTE:There is no price signal. But it feels like a paid event as it says registration is required and equpiemnt etc. will be provided for free.
 ```
 
 ---
@@ -211,10 +211,10 @@ NOTE:
 > Take a bike ride at a conversational pace with City of Frisco elected officials and staff from Frisco Fire, Frisco Police, and Play Frisco. Routes are a combination of on-street and hike & bike trails with distances ranging from 5 to 10 miles. Each ride last between 2 to 3 hours. Cycle the city, learn about Frisco, enjoy our beautiful parks and discover public art and more! See the full schedule for 2026 Cycle the City rides.
 
 ```
-KID:
-PRICE:
+KID: yes
+PRICE:unkown
 ALSO-OK:
-NOTE:
+NOTE: There is no explicit price signal. But it feels like a free event. (Side bar - Note that some of the description from the original page is not available here in this description. Looks like the missing part may be coming from a different field which is not labeled in the UI. It feels like it is in the description itself))
 ```
 
 ---
@@ -227,10 +227,10 @@ NOTE:
 > Take a bike ride at a conversational pace with City of Frisco elected officials and staff from Frisco Fire, Frisco Police, and Play Frisco. Routes are a combination of on-street and hike & bike trails with distances ranging from 5 to 10 miles. Each ride last between 2 to 3 hours. Cycle the city, learn about Frisco, enjoy our beautiful parks and discover public art and more! See the full schedule for 2026 Cycle the City rides.
 
 ```
-KID:
-PRICE:
+KID: yes
+PRICE:unkown
 ALSO-OK:
-NOTE:
+NOTE: There is no explicit price signal. But it feels like a free event.(Side bar - Note that some of the description from the original page is not available here in this description. Looks like the missing part may be coming from a different field which is not labeled in the UI. It feels like it is in the description itself))
 ```
 
 ---
@@ -243,8 +243,8 @@ NOTE:
 > Sound the (quiet) alarms… Sensory-Friendly Swim is officially back! 👏🌊 As part of our Play For All initiative, the Frisco Water Park will open early with a limited capacity of 250 guests and no background music, creating a more sensory-friendly atmosphere. This calmer environment is designed to be inclusive for individuals with sensory sensitivities, giving everyone the opportunity to enjoy the water at their own pace. We’ll also have saddles available for Lazy River tubes and sensory kits for anyone who may need them. We’re excited to welcome you back for a relaxing, sun-filled day of play! Ticket available now!
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:paid
 ALSO-OK:
 NOTE:
 ```
@@ -259,8 +259,8 @@ NOTE:
 > Say goodbye to summer with one last splash! Hang out with us for a fun-filled evening to wrap up the summer season at the Frisco Water Park. Float with crazy cool inflatables (feel free to bring your own!), enjoy snacks and live music from our DJ, and cannonball into activities for all ages and abilities. Cost: Free for FAC Members and Splash Pass holders. Event pass: $7 youth, $9 adults. Only gives you access to the water park during the event.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:paid
 ALSO-OK:
 NOTE:
 ```
@@ -275,10 +275,10 @@ NOTE:
 > Unleash your creative self in this two-hour workshop combining art, breathwork, and mindfulness led by artist & certified yoga instructor, Gaurii S Kumaar. Explore watercolor painting as a mindfulness technique, enhanced by breathwork to help your creative energy flow. Learn to release control, let your intuition guide the painting process, and connect with your artwork through affirmations. The workshop culminates in a ritual to reinforce positive intentions. This two-hour workshop includes:
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:unknown
 ALSO-OK:
-NOTE:
+NOTE:It says it is a workshop. So there is a chance this may be paid.(Note that some of the description (bullets) from the original page is not available here in this description.)
 ```
 
 ---
@@ -291,10 +291,10 @@ NOTE:
 > Experience outdoor exploration and fun at Frisco Commons Park! Immerse yourself in the beauty of nature while hiking scenic trails, observing wildlife, and learning about local flora and fauna. Perfect for all ages, this event offers a chance to connect with nature and create lasting memories with friends and family whether you're a seasoned nature enthusiast or just looking for a fresh adventure. See you there!
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:unknown
 ALSO-OK:
-NOTE:
+NOTE:Feels like a free event though. There is no explicit paid signal. But there is a 'Cost' field that says it is free. (Note that some of the description (bullets) from the original page is not available here in this description.)
 ```
 
 ---
@@ -307,10 +307,10 @@ NOTE:
 > Experience outdoor exploration and fun at Frisco Commons Park! Immerse yourself in the beauty of nature while hiking scenic trails, observing wildlife, and learning about local flora and fauna. Perfect for all ages, this event offers a chance to connect with nature and create lasting memories with friends and family whether you're a seasoned nature enthusiast or just looking for a fresh adventure. See you there!
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:unknown
 ALSO-OK:
-NOTE:
+NOTE:Feels like a free event though. There is no explicit paid signal. But there is a 'Cost' field that says it is free. (Note that some of the description (bullets) from the original page is not available here in this description.)
 ```
 
 ---
@@ -323,10 +323,10 @@ NOTE:
 > Experience outdoor exploration and fun at Frisco Commons Park! Immerse yourself in the beauty of nature while hiking scenic trails, observing wildlife, and learning about local flora and fauna. Perfect for all ages, this event offers a chance to connect with nature and create lasting memories with friends and family whether you're a seasoned nature enthusiast or just looking for a fresh adventure. See you there!
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:unknown
 ALSO-OK:
-NOTE:
+NOTE:Feels like a free event though. There is no explicit paid signal. But there is a 'Cost' field that says it is free. (Note that some of the description (bullets) from the original page is not available here in this description.)
 ```
 
 ---
@@ -339,10 +339,10 @@ NOTE:
 > In this workshop, you will paint one of this artist's most notable works: The Texas Wildflowers, a colorful variety of native wildflowers enveloping an invisible outline of Texas. You'll practice simple watercolor techniques like wet-on-dry vs wet-on-wet as well as how to blend colors by mastering the water-to-pigment ratio. Maya Modi is a local artist specializing in Watercolor Kits for calming our busy minds.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:unknown
 ALSO-OK:
-NOTE:
+NOTE:It may be paid as it says it is a workshop. But registration required is 'No'. Although there is no 'Cost' field. There is a Link field that reads 'Buy tickets' which is a hyperlink.
 ```
 
 ---
@@ -355,10 +355,10 @@ NOTE:
 > Join us as we roll up our sleeves, clean up our shared space, and plant a beautiful, water-wise spring bloom.How the Cleanup Works Supplies Provided: We will have grabber tools, safety vests, gloves, black trash bags, and clear recycling bags ready for you at the check-in table.Sorting Matters: We will be strictly separating trash into the black bags and plastics/aluminum into the clear bags.Bag Drop: Once your bag is full, you will leave it tied up at our designated trail-edge drop zones. The City of Frisco Environmental Services team will swing by to collect them after the event.What to Wear: Please wear closed-toe shoes, comfortable clothes you don't mind getting dirty, and bug spray.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
-NOTE:
+NOTE:no explicit free or paid signal. But this is a community clean up event and normally those would not be paid events. 
 ```
 
 ---
@@ -371,10 +371,10 @@ NOTE:
 > September 5 from 1 to 3 p.m. at Frisco Heritage Center, The Depot In this workshop, you will paint one of this artist's most notable works: The Texas Wildflowers, a colorful variety of native wildflowers enveloping an invisible outline of Texas. You'll practice simple watercolor techniques like wet-on-dry vs wet-on-wet as well as how to blend colors by mastering the water-to-pigment ratio. Maya Modi is a local artist specializing in Watercolor Kits for calming our busy minds. Check out her website.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:unknown
 ALSO-OK:
-NOTE:
+NOTE:It may be paid as it says it is a workshop.But registration required is 'No'. Although there is no 'Cost' field. There is a Link field that reads 'Buy tickets' which is a hyperlink. (Note that there is 'GET TICKETS' link in the page that I cant see in the description here.)
 ```
 
 ---
@@ -387,10 +387,10 @@ NOTE:
 > Discover the timeless art of beautiful writing in this beginner-friendly calligraphy workshop! Learn the fundamentals of modern calligraphy, including proper pen techniques, basic strokes, letter formation, and how to connect letters into elegant words and phrases. With step-by-step guidance, you'll build confidence as you create your own handwritten designs perfect for greeting cards, journals, gift tags, place cards, and other personalized projects. Whether you're looking to develop a new creative hobby or refine your lettering skills, this relaxing, hands-on workshop is the perfect place to get started. All supplies are provided, and you'll take home your practice materials and finished creations to continue your calligraphy journey.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:unknown
 ALSO-OK:
-NOTE:
+NOTE: It may be paid as it says it is a workshop. But registration required is 'no'. (This registration requirement may have been inferred from description) Although there is no 'Cost' field. There is a Link field that reads 'Register here' which is a hyperlink with pricing details.
 ```
 
 ---
@@ -403,10 +403,10 @@ NOTE:
 > Join us for the 8th annual NRPA’s Parks for Pollinators event! Every Wednesday morning in September we will explore the remaining prairies of Frisco as we search for bees, beetles, butterflies, and more! Will Frisco be number one this year? September 2: Cottonwood Creek Greenbelt3925 Bear Creek Ln September 9: Boyd Park355 Stonebrook Pkwy September 16: Oakbrook Park8001 Woodstream Dr September 23: Bacchus Community Park13995 E. Main St September 30: Northwest Community Park8575 Blue Mound Rd
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:unknown
 ALSO-OK:
-NOTE:
+NOTE:It is an outdoor event with no explicit free/paid signal in the description. So leaning towards free.
 ```
 
 ---
@@ -419,10 +419,10 @@ NOTE:
 > Visit the event website for tickets and more details.
 
 ```
-KID:
-PRICE:
+KID:unknown
+PRICE:paid
 ALSO-OK:
-NOTE:
+NOTE: This is very sparse on description. But on other general feedback is that there are more details on the page in the description area (Once the Frisco Water Park closes to humans for the summer, we invite our dog friends to come play!) than captured here in the description . I wonder if that is coming from some other field. 
 ```
 
 ---
@@ -435,10 +435,10 @@ NOTE:
 > Join us for the 8th annual NRPA’s Parks for Pollinators event! Every Wednesday morning in September we will explore the remaining prairies of Frisco as we search for bees, beetles, butterflies, and more! Will Frisco be number one this year? September 2: Cottonwood Creek Greenbelt3925 Bear Creek Ln September 9: Boyd Park355 Stonebrook Pkwy September 16: Oakbrook Park8001 Woodstream Dr September 23: Bacchus Community Park13995 E. Main St September 30: Northwest Community Park8575 Blue Mound Rd
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE: unknown
 ALSO-OK:
-NOTE:
+NOTE:Leaning towards free.
 ```
 
 ---
@@ -451,10 +451,10 @@ NOTE:
 > Join us for the 8th annual NRPA’s Parks for Pollinators event! Every Wednesday morning in September we will explore the remaining prairies of Frisco as we search for bees, beetles, butterflies, and more! Will Frisco be number one this year? September 2: Cottonwood Creek Greenbelt3925 Bear Creek Ln September 9: Boyd Park355 Stonebrook Pkwy September 16: Oakbrook Park8001 Woodstream Dr September 23: Bacchus Community Park13995 E. Main St September 30: Northwest Community Park8575 Blue Mound Rd
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE: unknown
 ALSO-OK:
-NOTE:
+NOTE:Leaning towards free.
 ```
 
 ---
@@ -467,10 +467,11 @@ NOTE:
 > Art in the Atrium is back at the George A. Purefoy Municipal Center in Frisco, TX! The City of Frisco seeks original, 2-Dimensional artworks by artists from Frisco and the surrounding area for the 26th installment of Art in the Atrium. Submission deadline: Wednesday, September 6, 2026
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:unknown.
 ALSO-OK:
-NOTE:
+NOTE:I may not have the knowledge to categorize this although it is asking for submissions and not really mentioning you have to pay to register/submit. So I will lean towards free. There is a field 'Link' that has the value as a 'Register here' hyperlink. However this event says 'registration required: no' here. So, this is a discrepancy that needs to be looked into. BTW, when I access teh 'Register here' link, there it says there is no entry fee. 
+
 ```
 
 ---
@@ -483,10 +484,10 @@ NOTE:
 > Join us for the 8th annual NRPA’s Parks for Pollinators event! Every Wednesday morning in September we will explore the remaining prairies of Frisco as we search for bees, beetles, butterflies, and more! Will Frisco be number one this year? September 2: Cottonwood Creek Greenbelt3925 Bear Creek Ln September 9: Boyd Park355 Stonebrook Pkwy September 16: Oakbrook Park8001 Woodstream Dr September 23: Bacchus Community Park13995 E. Main St September 30: Northwest Community Park8575 Blue Mound Rd
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE: unknown
 ALSO-OK:
-NOTE:
+NOTE:Leaning towards free.
 ```
 
 ---
@@ -499,10 +500,10 @@ NOTE:
 > Spend a night under the stars with camping activities, including movies, s'mores by the campfire, and more. Plus, we've got dinner and a light breakfast covered! Participants will also receive Camp Out swag. Play in the great outdoors on October 3 and 4 at Frisco Commons Park! Visit the event website.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:paid
 ALSO-OK:
-NOTE:
+NOTE:As dinner and breakfast will be provided, feels like too much for a free event. So leaning towards paid.
 ```
 
 ---
@@ -515,10 +516,10 @@ NOTE:
 > Join us for the 8th annual NRPA’s Parks for Pollinators event! Every Wednesday morning in September we will explore the remaining prairies of Frisco as we search for bees, beetles, butterflies, and more! Will Frisco be number one this year? September 2: Cottonwood Creek Greenbelt3925 Bear Creek Ln September 9: Boyd Park355 Stonebrook Pkwy September 16: Oakbrook Park8001 Woodstream Dr September 23: Bacchus Community Park13995 E. Main St September 30: Northwest Community Park8575 Blue Mound Rd
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE: unknown
 ALSO-OK:
-NOTE:
+NOTE:Leaning towards free.
 ```
 
 ---
@@ -531,10 +532,10 @@ NOTE:
 > Community Gallery, August 7 through September 18 The Shape of Now is a juried contemporary art exhibition presented by Bahar Legacy Art that invites the community to explore memory, identity, and human connection through art. Featuring artists from diverse cultural backgrounds and artistic disciplines, the exhibition celebrates the power of creativity to bring people together and foster meaningful conversations. A public reception will be held Saturday, September 18, from 6:30 to 8:30 p.m. The opening reception is a community celebration where art brings people together through visual art, live performances, interactive art activities, music, and light refreshments. Guests will have the opportunity to meet the artists, connect with one another, and experience an evening that celebrates creativity, cultural exchange, and the power of art to build meaningful human connections. Meet the artists featured in this show and enjoy light refreshments!
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
-NOTE:
+NOTE:leaning towards free
 ```
 
 ---
@@ -547,10 +548,10 @@ NOTE:
 > Play historically at the Frisco Heritage Center every second Saturday of the month! With new themes and activities each month, you'll find new ways to play every time! Explore the museum, tour historic homes, watch a live blacksmith demonstration, have fun with a hands-on activity, and more. For more details, visit Playfrisco.org/HeritageEvents.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
-NOTE:
+NOTE:leaning towards free
 ```
 
 ---
@@ -563,10 +564,10 @@ NOTE:
 > Play historically at the Frisco Heritage Center every second Saturday of the month! With new themes and activities each month, you'll find new ways to play every time! Explore the museum, tour historic homes, watch a live blacksmith demonstration, have fun with a hands-on activity, and more. For more details, visit Playfrisco.org/HeritageEvents.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
-NOTE:
+NOTE:leaning towards free
 ```
 
 ---
@@ -579,10 +580,10 @@ NOTE:
 > Play historically at the Frisco Heritage Center every second Saturday of the month! With new themes and activities each month, you'll find new ways to play every time! Explore the museum, tour historic homes, watch a live blacksmith demonstration, have fun with a hands-on activity, and more. For more details, visit Playfrisco.org/HeritageEvents.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
-NOTE:
+NOTE:leaning towards free
 ```
 
 ---
@@ -595,10 +596,10 @@ NOTE:
 > Play historically at the Frisco Heritage Center every second Saturday of the month! With new themes and activities each month, you'll find new ways to play every time! Explore the museum, tour historic homes, watch a live blacksmith demonstration, have fun with a hands-on activity, and more. For more details, visit Playfrisco.org/HeritageEvents.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
-NOTE:
+NOTE:leaning towards free
 ```
 
 ---
@@ -611,10 +612,10 @@ NOTE:
 > Play historically at the Frisco Heritage Center every second Saturday of the month! With new themes and activities each month, you'll find new ways to play every time! Explore the museum, tour historic homes, watch a live blacksmith demonstration, have fun with a hands-on activity, and more. For more details, visit Playfrisco.org/HeritageEvents.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
-NOTE:
+NOTE:leaning towards free
 ```
 
 ---
@@ -627,10 +628,10 @@ NOTE:
 > Play historically at the Frisco Heritage Center every second Saturday of the month! With new themes and activities each month, you'll find new ways to play every time! Explore the museum, tour historic homes, watch a live blacksmith demonstration, have fun with a hands-on activity, and more. For more details, visit Playfrisco.org/HeritageEvents.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
-NOTE:
+NOTE:leaning towards free
 ```
 
 ---
@@ -643,8 +644,8 @@ NOTE:
 > Let Your Creativity Shine and Your Well-being Thrive! Mark your calendars for Saturday, October 24 at The Grove, where art meets well-being at the Craft and Care Fair, a one-of-a-kind event full of handmade treasures and helpful health resources. Browse colorful crochet, festive wreaths, soaps, and unique jewelry. There will also be children’s books and toys, plus goodies for your pets, all crafted with care. While you shop, take a moment to check in on your health with local experts, including chiropractors, dentists, Medicare pros, and more, ready to share tips and services. This event is for all ages and open to the public (not exclusive to Grove members). Bring the whole family and spend a day exploring creativity and community!
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -659,10 +660,10 @@ NOTE:
 > In this hands-on class led by artist Lavanya Challa, you'll design and create your own one-of-a-kind greeting cards using a variety of artistic techniques and materials. Whether you're an experienced crafter or trying something new, this class offers a fun and relaxing opportunity to express your creativity while making beautiful handmade cards for birthdays, holidays, thank-you notes, or just because. Your personalized creations are sure to become keepsakes that friends and family will treasure. All supplies are provided, and you'll leave with several handcrafted cards ready to share.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:unknown
 ALSO-OK:
-NOTE:
+NOTE:leaning towards paid because it says class. There is a link field on the page that says sign up hyperlink. Also the description has SIGN UP HERE hyperlink (which leads to a different page with payment related details)
 ```
 
 ---
@@ -739,8 +740,8 @@ NOTE:
 > Make your evening plans easy with our FREE community music series built for unwinding, connecting, and enjoying local talent. It’s BYOB, so bring your favorite beverage, settle in for live performances from Melody of Hope artists, and enjoy interactive lawn games with friends and family. This is presented by New York Life North Dallas. September 3: Bryan Mayberry September 10: Jade Nikol September 17: David Archibald September 24: Kendall Shaw October 1: Jordan Stoltz October 8: Becca Hayes October 15: Brady Solomon October 22: Rebekah Prim October 29: Lorynn the Redhead November 5: Brandi Page November 12: Aristide Garofalo November 19: Courtney Istre *Friends of the Park members receive complimentary wine pour the first Thursday of each month. Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet is  [...full text at the link above]
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -755,8 +756,8 @@ NOTE:
 > Kick off your weekend with our SaturYAY program, where family-friendly fun meets hands-on learning! Each Saturday brings an exciting lineup of interactive activities like a petting zoo (every Saturday), arts and crafts, story time, a music + movement activity, lawn games and more! Presented by: Petting Zoo Sponsor: Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet parking is available at Hall Park Hotel.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -771,8 +772,8 @@ NOTE:
 > Kick off your weekend with our SaturYAY program, where family-friendly fun meets hands-on learning! Each Saturday brings an exciting lineup of interactive activities like a petting zoo (every Saturday), arts and crafts, story time, a music + movement activity, lawn games and more! Presented by: Petting Zoo Sponsor: Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet parking is available at Hall Park Hotel.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -787,8 +788,8 @@ NOTE:
 > Kick off your weekend with our SaturYAY program, where family-friendly fun meets hands-on learning! Each Saturday brings an exciting lineup of interactive activities like a petting zoo (every Saturday), arts and crafts, story time, a music + movement activity, lawn games and more! Presented by: Petting Zoo Sponsor: Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet parking is available at Hall Park Hotel.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -803,8 +804,8 @@ NOTE:
 > Kick off your weekend with our SaturYAY program, where family-friendly fun meets hands-on learning! Each Saturday brings an exciting lineup of interactive activities like a petting zoo (every Saturday), arts and crafts, story time, a music + movement activity, lawn games and more! Presented by: Petting Zoo Sponsor: Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet parking is available at Hall Park Hotel.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -819,8 +820,8 @@ NOTE:
 > Kick off your weekend with our SaturYAY program, where family-friendly fun meets hands-on learning! Each Saturday brings an exciting lineup of interactive activities like a petting zoo (every Saturday), arts and crafts, story time, a music + movement activity, lawn games and more! Presented by: Petting Zoo Sponsor: Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet parking is available at Hall Park Hotel.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -835,8 +836,8 @@ NOTE:
 > Kick off your weekend with our SaturYAY program, where family-friendly fun meets hands-on learning! Each Saturday brings an exciting lineup of interactive activities like a petting zoo (every Saturday), arts and crafts, story time, a music + movement activity, lawn games and more! Presented by: Petting Zoo Sponsor: Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet parking is available at Hall Park Hotel.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -851,8 +852,8 @@ NOTE:
 > Make your evening plans easy with our FREE community music series built for unwinding, connecting, and enjoying local talent. It’s BYOB, so bring your favorite beverage, settle in for live performances from Melody of Hope artists, and enjoy interactive lawn games with friends and family. This is presented by New York Life North Dallas. September 3: Bryan Mayberry September 10: Jade Nikol September 17: David Archibald September 24: Kendall Shaw October 1: Jordan Stoltz October 8: Becca Hayes October 15: Brady Solomon October 22: Rebekah Prim October 29: Lorynn the Redhead November 5: Brandi Page November 12: Aristide Garofalo November 19: Courtney Istre *Friends of the Park members receive complimentary wine pour the first Thursday of each month. Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet is  [...full text at the link above]
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -867,8 +868,8 @@ NOTE:
 > Make your evening plans easy with our FREE community music series built for unwinding, connecting, and enjoying local talent. It’s BYOB, so bring your favorite beverage, settle in for live performances from Melody of Hope artists, and enjoy interactive lawn games with friends and family. This is presented by New York Life North Dallas. September 3: Bryan Mayberry September 10: Jade Nikol September 17: David Archibald September 24: Kendall Shaw October 1: Jordan Stoltz October 8: Becca Hayes October 15: Brady Solomon October 22: Rebekah Prim October 29: Lorynn the Redhead November 5: Brandi Page November 12: Aristide Garofalo November 19: Courtney Istre *Friends of the Park members receive complimentary wine pour the first Thursday of each month. Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet is  [...full text at the link above]
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -883,8 +884,8 @@ NOTE:
 > Kick off your weekend with our SaturYAY program, where family-friendly fun meets hands-on learning! Each Saturday brings an exciting lineup of interactive activities like a petting zoo (every Saturday), arts and crafts, story time, a music + movement activity, lawn games and more! Presented by: Petting Zoo Sponsor: Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet parking is available at Hall Park Hotel.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -899,8 +900,8 @@ NOTE:
 > Kick off your weekend with our SaturYAY program, where family-friendly fun meets hands-on learning! Each Saturday brings an exciting lineup of interactive activities like a petting zoo (every Saturday), arts and crafts, story time, a music + movement activity, lawn games and more! Presented by: Petting Zoo Sponsor: Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet parking is available at Hall Park Hotel.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -915,8 +916,8 @@ NOTE:
 > Kick off your weekend with our SaturYAY program, where family-friendly fun meets hands-on learning! Each Saturday brings an exciting lineup of interactive activities like a petting zoo (every Saturday), arts and crafts, story time, a music + movement activity, lawn games and more! Presented by: Petting Zoo Sponsor: Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet parking is available at Hall Park Hotel.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -931,8 +932,8 @@ NOTE:
 > Kick off your weekend with our SaturYAY program, where family-friendly fun meets hands-on learning! Each Saturday brings an exciting lineup of interactive activities like a petting zoo (every Saturday), arts and crafts, story time, a music + movement activity, lawn games and more! Presented by: Petting Zoo Sponsor: Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet parking is available at Hall Park Hotel.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -947,8 +948,8 @@ NOTE:
 > Kick off your weekend with our SaturYAY program, where family-friendly fun meets hands-on learning! Each Saturday brings an exciting lineup of interactive activities like a petting zoo (every Saturday), arts and crafts, story time, a music + movement activity, lawn games and more! Presented by: Petting Zoo Sponsor: Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet parking is available at Hall Park Hotel.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -963,8 +964,8 @@ NOTE:
 > Kick off your weekend with our SaturYAY program, where family-friendly fun meets hands-on learning! Each Saturday brings an exciting lineup of interactive activities like a petting zoo (every Saturday), arts and crafts, story time, a music + movement activity, lawn games and more! Presented by: Petting Zoo Sponsor: Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet parking is available at Hall Park Hotel.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -979,8 +980,8 @@ NOTE:
 > Make your evening plans easy with our FREE community music series built for unwinding, connecting, and enjoying local talent. It’s BYOB, so bring your favorite beverage, settle in for live performances from Melody of Hope artists, and enjoy interactive lawn games with friends and family. This is presented by New York Life North Dallas. September 3: Bryan Mayberry September 10: Jade Nikol September 17: David Archibald September 24: Kendall Shaw October 1: Jordan Stoltz October 8: Becca Hayes October 15: Brady Solomon October 22: Rebekah Prim October 29: Lorynn the Redhead November 5: Brandi Page November 12: Aristide Garofalo November 19: Courtney Istre *Friends of the Park members receive complimentary wine pour the first Thursday of each month. Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet is  [...full text at the link above]
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -995,8 +996,8 @@ NOTE:
 > Make your evening plans easy with our FREE community music series built for unwinding, connecting, and enjoying local talent. It’s BYOB, so bring your favorite beverage, settle in for live performances from Melody of Hope artists, and enjoy interactive lawn games with friends and family. This is presented by New York Life North Dallas. September 3: Bryan Mayberry September 10: Jade Nikol September 17: David Archibald September 24: Kendall Shaw October 1: Jordan Stoltz October 8: Becca Hayes October 15: Brady Solomon October 22: Rebekah Prim October 29: Lorynn the Redhead November 5: Brandi Page November 12: Aristide Garofalo November 19: Courtney Istre *Friends of the Park members receive complimentary wine pour the first Thursday of each month. Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet is  [...full text at the link above]
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -1011,8 +1012,8 @@ NOTE:
 > Kick off your weekend with our SaturYAY program, where family-friendly fun meets hands-on learning! Each Saturday brings an exciting lineup of interactive activities like a petting zoo (every Saturday), arts and crafts, story time, a music + movement activity, lawn games and more! Presented by: Petting Zoo Sponsor: Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet parking is available at Hall Park Hotel.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -1027,8 +1028,8 @@ NOTE:
 > Kick off your weekend with our SaturYAY program, where family-friendly fun meets hands-on learning! Each Saturday brings an exciting lineup of interactive activities like a petting zoo (every Saturday), arts and crafts, story time, a music + movement activity, lawn games and more! Presented by: Petting Zoo Sponsor: Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet parking is available at Hall Park Hotel.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -1043,8 +1044,8 @@ NOTE:
 > Monthly | 10 AM – 2 PM Discover one-of-a-kind finds at our Shop Local Vendor Markets, presented by Comerica Bank. With a curated lineup of local artisans, handmade goods and unique finds, it’s the perfect way to support small! Remaining 2026 Market Dates: September 19 October 17 November 28 Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park Vendors interested in participating can find more information and sign up here .
 
 ```
-KID:
-PRICE:
+KID:no
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -1059,8 +1060,8 @@ NOTE:
 > Kick off your weekend with our SaturYAY program, where family-friendly fun meets hands-on learning! Each Saturday brings an exciting lineup of interactive activities like a petting zoo (every Saturday), arts and crafts, story time, a music + movement activity, lawn games and more! Presented by: Petting Zoo Sponsor: Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet parking is available at Hall Park Hotel.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -1075,8 +1076,8 @@ NOTE:
 > Kick off your weekend with our SaturYAY program, where family-friendly fun meets hands-on learning! Each Saturday brings an exciting lineup of interactive activities like a petting zoo (every Saturday), arts and crafts, story time, a music + movement activity, lawn games and more! Presented by: Petting Zoo Sponsor: Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet parking is available at Hall Park Hotel.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -1091,8 +1092,8 @@ NOTE:
 > Kick off your weekend with our SaturYAY program, where family-friendly fun meets hands-on learning! Each Saturday brings an exciting lineup of interactive activities like a petting zoo (every Saturday), arts and crafts, story time, a music + movement activity, lawn games and more! Presented by: Petting Zoo Sponsor: Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet parking is available at Hall Park Hotel.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -1107,8 +1108,8 @@ NOTE:
 > First Saturday | 7 PM – 9 PM Dance the night away at Kaleidoscope Live, our First Saturday Concert Series! Each month, a different cover band takes the stage for an unforgettable performance under the stars. 2026 LINEUP: March 2 | The British Are Coming April 4 | Jukebox Heroes May 2 | Super Troupers ABBA Tribute, Presented by The Webb Impact Foundation June 6 | Kraig Parker Elvis Tribute September 5 | Havana NRG October 3 | Emerald City All-Stars, Presented by Sandy Nachman November 7 | Division 80’s December 5 | Plano Symphony Orchestra Holiday Classics, Presented by Capital One Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet is available at HALL Park Hotel.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -1123,8 +1124,8 @@ NOTE:
 > Kick off your weekend with our SaturYAY program, where family-friendly fun meets hands-on learning! Each Saturday brings an exciting lineup of interactive activities like a petting zoo (every Saturday), arts and crafts, story time, a music + movement activity, lawn games and more! Presented by: Petting Zoo Sponsor: Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet parking is available at Hall Park Hotel.
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
@@ -1139,8 +1140,8 @@ NOTE:
 > Make your evening plans easy with our FREE community music series built for unwinding, connecting, and enjoying local talent. It’s BYOB, so bring your favorite beverage, settle in for live performances from Melody of Hope artists, and enjoy interactive lawn games with friends and family. This is presented by New York Life North Dallas. September 3: Bryan Mayberry September 10: Jade Nikol September 17: David Archibald September 24: Kendall Shaw October 1: Jordan Stoltz October 8: Becca Hayes October 15: Brady Solomon October 22: Rebekah Prim October 29: Lorynn the Redhead November 5: Brandi Page November 12: Aristide Garofalo November 19: Courtney Istre *Friends of the Park members receive complimentary wine pour the first Thursday of each month. Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park. Valet is  [...full text at the link above]
 
 ```
-KID:
-PRICE:
+KID:yes
+PRICE:free
 ALSO-OK:
 NOTE:
 ```
