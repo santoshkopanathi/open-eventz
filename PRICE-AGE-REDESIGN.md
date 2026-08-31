@@ -1,6 +1,7 @@
 # Price & age classification — the agreed redesign
 
-*Status: **designed, not built**. Date: 2026-08-23.*
+*Status: **designed, not built**. Design dated 2026-08-23; first eval run 2026-08-31.*
+*Run 1 did NOT pass — the prompt is being iterated. See `eval/RUN-LOG.md` before acting on anything below.*
 *Companion to `EVALS.md` (how we measured) and `GUARDRAILS.md` (the runtime controls).*
 
 **Read this if:** you are picking this work up cold, or coming back to it in three months.

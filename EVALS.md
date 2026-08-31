@@ -4,6 +4,8 @@
 
 *Written to be read start to finish by someone with no background in evaluation. Every claim is backed by the 64 hand-labelled events in `eval/`.*
 
+*Per-run results live in `eval/RUN-LOG.md` — this document is the method, that one is the record.*
+
 ---
 
 # Part 1 — General

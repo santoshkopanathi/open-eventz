@@ -1,0 +1,2111 @@
+[
+  {
+    "n": 1,
+    "id": "play-frisco-6777",
+    "title": "Unplug Texas Day",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "This is not a real event as such. It is just an observance request.",
+    "v1": {
+      "n": 1,
+      "id": "play-frisco-6777",
+      "source": "play-frisco",
+      "title": "Unplug Texas Day",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The 'unplug and play' initiative at parks and recreation spaces is broadly family-friendly with no explicit child age group stated, and no price or fee is mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "medium"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "medium",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "free",
+      "price_basis": "assumed",
+      "price_confidence": "medium",
+      "reasoning": "A statewide initiative encouraging all residents to visit parks and outdoor spaces is a classic family outing that parents would plausibly choose with children of any age; visiting public parks and trails is generally free, though this is not explicitly stated."
+    },
+    "error": null
+  },
+  {
+    "n": 2,
+    "id": "play-frisco-6714",
+    "title": "Merry Main Street",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "There seems to be more bullets in the page but not in the description here. Some are missing.",
+    "v1": {
+      "n": 2,
+      "id": "play-frisco-6714",
+      "source": "play-frisco",
+      "title": "Merry Main Street",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event uses family-oriented language ('friends and family', 'fun activities') and is a community holiday tradition with no price mentioned, defaulting to free.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "A holiday community street event explicitly inviting friends and family with fun activities is clearly family-oriented and all-ages, but no price information is provided in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 3,
+    "id": "play-frisco-6710",
+    "title": "Merry Main Street Vendor Applications Open",
+    "label_kid": "no",
+    "label_price": "unknown",
+    "note": "Not an event at all. It is a request for vendors to submit applications.",
+    "v1": {
+      "n": 3,
+      "id": "play-frisco-6710",
+      "source": "play-frisco",
+      "title": "Merry Main Street Vendor Applications Open",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "This appears to be an administrative/business event for vendors to apply for a market or festival, not a child-focused activity, and no price information is mentioned so it defaults to free.",
+      "registration_required": false,
+      "kid_relevant": false,
+      "age_confidence": "low"
+    },
+    "v2": {
+      "kid_relevant": false,
+      "kid_confidence": "high",
+      "age_buckets": [],
+      "age_basis": "stated",
+      "age_confidence": "high",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "This is a vendor application call, not an event families attend, so it is not kid-relevant and no price information is available."
+    },
+    "error": null
+  },
+  {
+    "n": 4,
+    "id": "play-frisco-6719",
+    "title": "Frosty 5K",
+    "label_kid": "yes",
+    "label_price": "unknown",
+    "note": "I could not determine the price from the description itself if it is a paid event. The last sentence in the description is a sign up link. However, when I visit this link in the description and go through it I realize its a paid event. There is no 'Cost' field either",
+    "v1": {
+      "n": 4,
+      "id": "play-frisco-6719",
+      "source": "play-frisco",
+      "title": "Frosty 5K",
+      "price_class": "paid",
+      "price_confidence": "confirmed",
+      "price_reasoning": "The event is explicitly 'for all ages' making it family-relevant, and the instruction to 'visit the website to sign up' combined with the context of a formal 5K race with a presenting sponsor strongly implies registration with a fee.",
+      "registration_required": true,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "stated",
+      "age_confidence": "high",
+      "price": "paid",
+      "price_basis": "assumed",
+      "reasoning": "A festive fun run explicitly described as 'for all ages' makes this a clear family event; sign-up implies registration which typically involves a fee."
+    },
+    "error": null
+  },
+  {
+    "n": 5,
+    "id": "play-frisco-7405",
+    "title": "Walnut Wednesdays",
+    "label_kid": "yes",
+    "label_price": "unknown",
+    "note": "There is no 'Cost' field either",
+    "v1": {
+      "n": 5,
+      "id": "play-frisco-7405",
+      "source": "play-frisco",
+      "title": "Walnut Wednesdays",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "Explicitly uses family language with drop-in summer activities at a heritage center, no price mentioned so defaults to free for this community event.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "free",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "Explicitly framed as a family drop-in activity with hands-on fun and playful learning, suitable for all ages; no price is mentioned but the casual drop-in format at a heritage center suggests free or low-cost admission."
+    },
+    "error": null
+  },
+  {
+    "n": 6,
+    "id": "play-frisco-7414",
+    "title": "Princess Tea 2026",
+    "label_kid": "yes",
+    "label_price": "paid",
+    "note": "The description itself informed that is a paid event. ('Cost' field is also available)",
+    "v1": {
+      "n": 6,
+      "id": "play-frisco-7414",
+      "source": "play-frisco",
+      "title": "Princess Tea 2026",
+      "price_class": "paid",
+      "price_confidence": "confirmed",
+      "price_reasoning": "Cost field: \"$25\"",
+      "registration_required": true,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "toddler",
+        "kids",
+        "teen",
+        "family"
+      ],
+      "age_basis": "stated",
+      "age_confidence": "high",
+      "price": "paid",
+      "price_basis": "stated",
+      "price_confidence": "high",
+      "reasoning": "A princess tea party explicitly recommended for ages 3 and up, requiring ticket purchase for each attendee, making it a paid family event spanning toddlers through teens and accompanying adults."
+    },
+    "error": null
+  },
+  {
+    "n": 7,
+    "id": "play-frisco-7498",
+    "title": "Saturday Sparks: Raptor Experience",
+    "label_kid": "yes",
+    "label_price": "unknown",
+    "note": "The description does not have any free-event or paid-event signal. However there is a 'Cost' field that have a value 'free'",
+    "v1": {
+      "n": 7,
+      "id": "play-frisco-7498",
+      "source": "play-frisco",
+      "title": "Saturday Sparks: Raptor Experience",
+      "price_class": "free",
+      "price_confidence": "confirmed",
+      "price_reasoning": "Cost field: \"Free\"",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "A live raptor encounter at a community event is a classic family outing with broad all-ages appeal, but no age group or price is mentioned in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 8,
+    "id": "play-frisco-7427",
+    "title": "Reception, \"Stories from the Archives\"",
+    "label_kid": "no",
+    "label_price": "unknown",
+    "note": "The description does not have any free-event or paid-event signal.",
+    "v1": {
+      "n": 8,
+      "id": "play-frisco-7427",
+      "source": "play-frisco",
+      "title": "Reception, \"Stories from the Archives\"",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "This is an adult-oriented art reception with no child or family language, and no price is mentioned so it defaults to free.",
+      "registration_required": false,
+      "kid_relevant": false,
+      "age_confidence": "medium"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "low",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "low",
+      "price": "free",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "A public art reception is a general-audience event a family could plausibly attend together, though there is no explicit child or family framing; price is not stated but public receptions with light refreshments are commonly free, giving a low-confidence lean toward free."
+    },
+    "error": null
+  },
+  {
+    "n": 9,
+    "id": "play-frisco-7343",
+    "title": "Learn to Fish",
+    "label_kid": "yes",
+    "label_price": "unknown",
+    "note": "There is no price signal. But it feels like a paid event as it says registration is required and equpiemnt etc. will be provided for free.",
+    "v1": {
+      "n": 9,
+      "id": "play-frisco-7343",
+      "source": "play-frisco",
+      "title": "Learn to Fish",
+      "price_class": "free",
+      "price_confidence": "confirmed",
+      "price_reasoning": "Cost field: \"Free\"",
+      "registration_required": true,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "toddler",
+        "kids",
+        "teen",
+        "family"
+      ],
+      "age_basis": "stated",
+      "age_confidence": "high",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "The event is explicitly open to ages 5 and up with an accompanying adult, making it a clear family activity; no price information is mentioned in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 10,
+    "id": "play-frisco-7310",
+    "title": "Cycle the City - Cottonwood Creek Greenbelt",
+    "label_kid": "yes",
+    "label_price": "unknown",
+    "note": "There is no explicit price signal. But it feels like a free event. (Side bar - Note that some of the description from the original page is not available here in this description. Looks like the missing part may be coming from a different field which is not labeled in the UI. It feels like it is in the description itself))",
+    "v1": {
+      "n": 10,
+      "id": "play-frisco-7310",
+      "source": "play-frisco",
+      "title": "Cycle the City - Cottonwood Creek Greenbelt",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event is a community bike ride open to all participants with no explicit age restrictions, making it family-friendly by default, and no price or fee is mentioned, so it defaults to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "medium"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "medium",
+      "age_buckets": [
+        "kids",
+        "teen",
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "low",
+      "price": "free",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "A community bike ride open to the public at a conversational pace is a general-audience event a family could plausibly attend together, though the 5–10 mile distance and 2–3 hour duration suits older children and teens more than toddlers; no price information is stated but community civic rides of this type are typically free."
+    },
+    "error": null
+  },
+  {
+    "n": 11,
+    "id": "play-frisco-7311",
+    "title": "Cycle the City - Northwest Frisco",
+    "label_kid": "yes",
+    "label_price": "unknown",
+    "note": "There is no explicit price signal. But it feels like a free event.(Side bar - Note that some of the description from the original page is not available here in this description. Looks like the missing part may be coming from a different field which is not labeled in the UI. It feels like it is in the description itself))",
+    "v1": {
+      "n": 11,
+      "id": "play-frisco-7311",
+      "source": "play-frisco",
+      "title": "Cycle the City - Dominion Trail",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event is framed around civic engagement with elected officials and city staff, with 5–10 mile rides lasting 2–3 hours, suggesting an adult-oriented audience rather than children or families; no price is mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": false,
+      "age_confidence": "medium"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "medium",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "free",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "A community bike ride at a conversational pace through parks and trails is a general-audience event a family could plausibly attend together; no age is stated so 'family' is inferred, and no price information is given though community city-run rides of this type are often free."
+    },
+    "error": null
+  },
+  {
+    "n": 12,
+    "id": "play-frisco-7349",
+    "title": "Play For All Sensory Swim",
+    "label_kid": "yes",
+    "label_price": "paid",
+    "note": "",
+    "v1": {
+      "n": 12,
+      "id": "play-frisco-7349",
+      "source": "play-frisco",
+      "title": "Play For All Sensory Swim",
+      "price_class": "paid",
+      "price_confidence": "confirmed",
+      "price_reasoning": "The event is family-oriented and inclusive for all ages with sensory sensitivities, and 'Ticket available now!' is an explicit paid signal.",
+      "registration_required": true,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "paid",
+      "price_basis": "stated",
+      "price_confidence": "high",
+      "reasoning": "A sensory-friendly water park event open to all ages under a family-inclusive initiative; tickets are explicitly required, indicating a paid admission."
+    },
+    "error": null
+  },
+  {
+    "n": 13,
+    "id": "play-frisco-7360",
+    "title": "So Long Sweet Summer",
+    "label_kid": "yes",
+    "label_price": "paid",
+    "note": "",
+    "v1": {
+      "n": 13,
+      "id": "play-frisco-7360",
+      "source": "play-frisco",
+      "title": "So Long Sweet Summer",
+      "price_class": "paid",
+      "price_confidence": "confirmed",
+      "price_reasoning": "The event is family-oriented with 'all ages and abilities' language, and the description explicitly states a $7 youth / $9 adult event pass cost, confirming a paid entry for non-members.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "paid",
+      "price_basis": "stated",
+      "price_confidence": "high",
+      "reasoning": "A water park summer send-off event explicitly welcoming 'all ages and abilities' is clearly family-friendly; pricing is explicitly stated as free for members/pass holders but $7–$9 for others, making it paid overall."
+    },
+    "error": null
+  },
+  {
+    "n": 14,
+    "id": "play-frisco-7240",
+    "title": "Artist-led Workshop: Watercolor and Mindful Self-",
+    "label_kid": "yes",
+    "label_price": "unknown",
+    "note": "It says it is a workshop. So there is a chance this may be paid.(Note that some of the description (bullets) from the original page is not available here in this description.)",
+    "v1": {
+      "n": 14,
+      "id": "play-frisco-7240",
+      "source": "play-frisco",
+      "title": "Artist-led Workshop: Watercolor and Mindful Self-",
+      "price_class": "unknown",
+      "price_confidence": "inferred",
+      "price_reasoning": "This workshop is adult-focused, combining breathwork, mindfulness, affirmations, and ritual in a format clearly designed for adults, with no mention of children or families; no price or fee is mentioned, so it defaults to free.",
+      "registration_required": false,
+      "kid_relevant": false,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": false,
+      "kid_confidence": "medium",
+      "age_buckets": [],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "This workshop is framed around adult concepts like breathwork, mindfulness, affirmations, and ritual intention-setting, making it unlikely a parent would bring a child; no price information is provided in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 15,
+    "id": "play-frisco-7130",
+    "title": "Nature Adventure at Frisco Commons Park",
+    "label_kid": "yes",
+    "label_price": "unknown",
+    "note": "Feels like a free event though. There is no explicit paid signal. But there is a 'Cost' field that says it is free. (Note that some of the description (bullets) from the original page is not available here in this description.)",
+    "v1": {
+      "n": 15,
+      "id": "play-frisco-7130",
+      "source": "play-frisco",
+      "title": "Nature Adventure at Frisco Commons Park",
+      "price_class": "free",
+      "price_confidence": "confirmed",
+      "price_reasoning": "Cost field: \"FREE\"",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "stated",
+      "age_confidence": "high",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "The event is explicitly described as 'perfect for all ages' and framed as a family-friendly outdoor nature activity, with no mention of price or admission."
+    },
+    "error": null
+  },
+  {
+    "n": 16,
+    "id": "play-frisco-7131",
+    "title": "Nature Adventure at Frisco Commons Park",
+    "label_kid": "yes",
+    "label_price": "unknown",
+    "note": "Feels like a free event though. There is no explicit paid signal. But there is a 'Cost' field that says it is free. (Note that some of the description (bullets) from the original page is not available here in this description.)",
+    "v1": {
+      "n": 16,
+      "id": "play-frisco-7131",
+      "source": "play-frisco",
+      "title": "Nature Adventure at Frisco Commons Park",
+      "price_class": "free",
+      "price_confidence": "confirmed",
+      "price_reasoning": "Cost field: \"FREE\"",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "stated",
+      "age_confidence": "high",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "The event explicitly welcomes 'all ages' and is framed as a family-friendly outdoor nature adventure; no pricing information is mentioned."
+    },
+    "error": null
+  },
+  {
+    "n": 17,
+    "id": "play-frisco-7132",
+    "title": "Nature Adventure at Frisco Commons Park",
+    "label_kid": "yes",
+    "label_price": "unknown",
+    "note": "Feels like a free event though. There is no explicit paid signal. But there is a 'Cost' field that says it is free. (Note that some of the description (bullets) from the original page is not available here in this description.)",
+    "v1": {
+      "n": 17,
+      "id": "play-frisco-7132",
+      "source": "play-frisco",
+      "title": "Nature Adventure at Frisco Commons Park",
+      "price_class": "free",
+      "price_confidence": "confirmed",
+      "price_reasoning": "Cost field: \"FREE\"",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "stated",
+      "age_confidence": "high",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "The event explicitly welcomes 'all ages' and frames itself as a family-friendly outdoor activity at a park, with no mention of price or admission cost."
+    },
+    "error": null
+  },
+  {
+    "n": 18,
+    "id": "play-frisco-7669",
+    "title": "Artist-led Workshop: Watercolor with Maya Modi",
+    "label_kid": "yes",
+    "label_price": "unknown",
+    "note": "It may be paid as it says it is a workshop. But registration required is 'No'. Although there is no 'Cost' field. There is a Link field that reads 'Buy tickets' which is a hyperlink.",
+    "v1": {
+      "n": 18,
+      "id": "play-frisco-7669",
+      "source": "play-frisco",
+      "title": "Artist-led Workshop: Watercolor with Maya Modi",
+      "price_class": "unknown",
+      "price_confidence": "inferred",
+      "price_reasoning": "The workshop is framed around calming busy minds and practicing technical watercolor techniques, suggesting an adult-focused audience with no child or family language present, and no price is mentioned so the community-event default of free applies.",
+      "registration_required": false,
+      "kid_relevant": false,
+      "age_confidence": "medium"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "medium",
+      "age_buckets": [
+        "kids",
+        "teen"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "paid",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "A watercolor workshop open to general audiences that a parent might attend with an older child; the techniques described (wet-on-wet, water-to-pigment ratio) suggest sustained attention suited to kids 6+ and teens, and artist-led workshops typically charge a fee though none is stated."
+    },
+    "error": null
+  },
+  {
+    "n": 19,
+    "id": "play-frisco-7686",
+    "title": "Community Clean-Up & Bluebonnet Planting",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "no explicit free or paid signal. But this is a community clean up event and normally those would not be paid events.",
+    "v1": {
+      "n": 19,
+      "id": "play-frisco-7686",
+      "source": "play-frisco",
+      "title": "Community Clean-Up & Bluebonnet Planting",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "A community clean-up and planting event with no age restrictions or explicit child focus, making it suitable for families of all ages; no price or fee is mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "medium"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "medium",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "free",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "A community clean-up and planting event is a general-audience outdoor activity a family would plausibly attend together with children of various ages; no price is mentioned but community volunteer events of this type are typically free, and no age restrictions are stated."
+    },
+    "error": null
+  },
+  {
+    "n": 20,
+    "id": "play-frisco-7667",
+    "title": "Artist-led Workshop: Watercolor with Maya Modi",
+    "label_kid": "yes",
+    "label_price": "unknown",
+    "note": "It may be paid as it says it is a workshop.But registration required is 'No'. Although there is no 'Cost' field. There is a Link field that reads 'Buy tickets' which is a hyperlink. (Note that there is 'GET TICKETS' link in the page that I cant see in the description here.)",
+    "v1": {
+      "n": 20,
+      "id": "play-frisco-7667",
+      "source": "play-frisco",
+      "title": "Artist-led Workshop: Watercolor with Maya Modi",
+      "price_class": "unknown",
+      "price_confidence": "inferred",
+      "price_reasoning": "The workshop focuses on specific watercolor techniques and references calming the mind, suggesting an adult-oriented audience with no child or family language present; no price is mentioned so it defaults to free.",
+      "registration_required": false,
+      "kid_relevant": false,
+      "age_confidence": "medium"
+    },
+    "v2": {
+      "kid_relevant": false,
+      "kid_confidence": "medium",
+      "age_buckets": [],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "The workshop involves technical watercolor instruction (water-to-pigment ratios, wet-on-dry vs wet-on-wet) and is framed around 'calming our busy minds,' implying an adult audience, though no explicit age restriction is stated; no price information is given."
+    },
+    "error": null
+  },
+  {
+    "n": 21,
+    "id": "play-frisco-7676",
+    "title": "Heritage How-To: Calligraphy with Gaurii S Kumaar",
+    "label_kid": "yes",
+    "label_price": "unknown",
+    "note": "It may be paid as it says it is a workshop. But registration required is 'no'. (This registration requirement may have been inferred from description) Although there is no 'Cost' field. There is a Link field that reads 'Register here' which is a hyperlink with pricing details.",
+    "v1": {
+      "n": 21,
+      "id": "play-frisco-7676",
+      "source": "play-frisco",
+      "title": "Heritage How-To: Calligraphy with Gaurii S Kumaar",
+      "price_class": "unknown",
+      "price_confidence": "inferred",
+      "price_reasoning": "The workshop is framed as a beginner hobby/creative skill session with no family, youth, or child-specific language, making it adult-oriented; no price or fee is mentioned, so it defaults to free per community-event convention.",
+      "registration_required": false,
+      "kid_relevant": false,
+      "age_confidence": "medium"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "medium",
+      "age_buckets": [
+        "kids",
+        "teen"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "A beginner calligraphy workshop open to all skill levels could plausibly be attended by older children or teens alongside adults, though no age group is specified and no price information is given."
+    },
+    "error": null
+  },
+  {
+    "n": 22,
+    "id": "play-frisco-7684",
+    "title": "Parks For Pollinators: What Remains",
+    "label_kid": "yes",
+    "label_price": "unknown",
+    "note": "It is an outdoor event with no explicit free/paid signal in the description. So leaning towards free.",
+    "v1": {
+      "n": 22,
+      "id": "play-frisco-7684",
+      "source": "play-frisco",
+      "title": "Parks For Pollinators: What Remains",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "This is a community nature exploration event in city parks with no age restriction stated and no price or fee mentioned, making it a free family-friendly activity by default.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "medium",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "free",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "A nature exploration series in community parks searching for pollinators is a family-friendly outdoor activity that parents would plausibly attend with children of various ages; no age is stated so 'family' is inferred, and no price information is given though community park events like this are often free."
+    },
+    "error": null
+  },
+  {
+    "n": 23,
+    "id": "play-frisco-7685",
+    "title": "Paws in the Pool 2026",
+    "label_kid": "unknown",
+    "label_price": "paid",
+    "note": "This is very sparse on description. But on other general feedback is that there are more details on the page in the description area (Once the Frisco Water Park closes to humans for the summer, we invite our dog friends to come play!) than captured here in the description . I wonder if that is coming from some other field.",
+    "v1": {
+      "n": 23,
+      "id": "play-frisco-7685",
+      "source": "play-frisco",
+      "title": "Paws in the Pool 2026",
+      "price_class": "paid",
+      "price_confidence": "confirmed",
+      "price_reasoning": "The event is about pets/dogs swimming in a pool (a common end-of-season dog swim event), making it primarily adult/pet-owner focused rather than child-focused, and the explicit mention of 'tickets' indicates a paid event.",
+      "registration_required": true,
+      "kid_relevant": false,
+      "age_confidence": "low"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "medium",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "low",
+      "price": "paid",
+      "price_basis": "stated",
+      "price_confidence": "medium",
+      "reasoning": "A pet-swimming event at a pool is a family-friendly outing families with children would plausibly attend together; the mention of tickets implies a paid entry, though no age guidance is given in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 24,
+    "id": "play-frisco-7682",
+    "title": "Parks For Pollinators: What Remains",
+    "label_kid": "yes",
+    "label_price": "unknown",
+    "note": "Leaning towards free.",
+    "v1": {
+      "n": 24,
+      "id": "play-frisco-7682",
+      "source": "play-frisco",
+      "title": "Parks For Pollinators: What Remains",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "A nature exploration series in public parks searching for pollinators is family-friendly and community-oriented with no age group explicitly stated and no price or fee mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "medium"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "medium",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "free",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "A nature exploration series in public parks searching for pollinators is a family-friendly outdoor activity a parent would plausibly attend with children of mixed ages; no age is stated so 'family' is inferred, and no price is mentioned though community park events of this type are typically free."
+    },
+    "error": null
+  },
+  {
+    "n": 25,
+    "id": "play-frisco-7683",
+    "title": "Parks For Pollinators: What Remains",
+    "label_kid": "yes",
+    "label_price": "unknown",
+    "note": "Leaning towards free.",
+    "v1": {
+      "n": 25,
+      "id": "play-frisco-7683",
+      "source": "play-frisco",
+      "title": "Parks For Pollinators: What Remains",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "This outdoor nature exploration series uses inclusive community language with no age restrictions, making it suitable for all ages as a family event, and no price or fee is mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "medium",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "free",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "An outdoor nature exploration series in public parks searching for pollinators suits families of all ages; no age restriction or admission cost is mentioned, though the free assumption is based on its being a community parks event."
+    },
+    "error": null
+  },
+  {
+    "n": 26,
+    "id": "play-frisco-7672",
+    "title": "Art in the Atrium 26 - Call for Art",
+    "label_kid": "yes",
+    "label_price": "unknown",
+    "note": "I may not have the knowledge to categorize this although it is asking for submissions and not really mentioning you have to pay to register/submit. So I will lean towards free. There is a field 'Link' that has the value as a 'Register here' hyperlink. However this event says 'registration required: no' here. So, this is a discrepancy that needs to be looked into. BTW, when I access teh 'Register here' link, there it says there is no entry fee.",
+    "v1": {
+      "n": 26,
+      "id": "play-frisco-7672",
+      "source": "play-frisco",
+      "title": "Art in the Atrium 26 - Call for Art",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "This is a call for art submissions targeting adult artists, not a child-focused event or activity, and no price or fee is mentioned.",
+      "registration_required": false,
+      "kid_relevant": false,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": false,
+      "kid_confidence": "high",
+      "age_buckets": [],
+      "age_basis": "stated",
+      "age_confidence": "high",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "This is a call for art submissions, not an event a family attends together, so it is not kid-relevant, no age range applies, and no price information is given."
+    },
+    "error": null
+  },
+  {
+    "n": 27,
+    "id": "play-frisco-7680",
+    "title": "Parks For Pollinators: What Remains",
+    "label_kid": "yes",
+    "label_price": "unknown",
+    "note": "Leaning towards free.",
+    "v1": {
+      "n": 27,
+      "id": "play-frisco-7680",
+      "source": "play-frisco",
+      "title": "Parks For Pollinators: What Remains",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "This is a community nature exploration event with no age restrictions stated and no price mentioned, making it a free family-friendly activity by default.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "medium",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "free",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "A nature-exploration walk in parks searching for insects is a family-friendly community event that parents would plausibly attend with children of various ages; no explicit age group is stated, no admission price is mentioned, and as a public parks programme it likely costs nothing."
+    },
+    "error": null
+  },
+  {
+    "n": 28,
+    "id": "play-frisco-7671",
+    "title": "Frisco Camp Out 2026",
+    "label_kid": "yes",
+    "label_price": "paid",
+    "note": "As dinner and breakfast will be provided, feels like too much for a free event. So leaning towards paid.",
+    "v1": {
+      "n": 28,
+      "id": "play-frisco-7671",
+      "source": "play-frisco",
+      "title": "Frisco Camp Out 2026",
+      "price_class": "unknown",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event uses family-friendly camping language with no explicit age group stated, making 'family' the appropriate tag; price is unknown because the event requires registration/participation sign-up ('Participants will also receive...') and includes provided meals, suggesting it may not be free, but no explicit price or free statement is given.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "A community campout with s'mores, movies, and outdoor activities is a quintessential family event suitable for all ages, though no price information is mentioned in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 29,
+    "id": "play-frisco-7681",
+    "title": "Parks For Pollinators: What Remains",
+    "label_kid": "yes",
+    "label_price": "unknown",
+    "note": "Leaning towards free.",
+    "v1": {
+      "n": 29,
+      "id": "play-frisco-7681",
+      "source": "play-frisco",
+      "title": "Parks For Pollinators: What Remains",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "This outdoor nature exploration series has no explicit age group stated but is a community parks event that appeals to families and children; no price or fee is mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "medium"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "medium",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "free",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "An outdoor nature exploration series in public parks searching for insects is a family-friendly activity parents would plausibly attend with children of various ages; no age restriction or admission cost is mentioned."
+    },
+    "error": null
+  },
+  {
+    "n": 30,
+    "id": "play-frisco-7670",
+    "title": "Reception \"The Shape of Now\"",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "leaning towards free",
+    "v1": {
+      "n": 30,
+      "id": "play-frisco-7670",
+      "source": "play-frisco",
+      "title": "Reception \"The Shape of Now\"",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "This is a general public art reception with no explicit child or family language, making it adult-focused; no price is mentioned, so the community-event default of free applies.",
+      "registration_required": false,
+      "kid_relevant": false,
+      "age_confidence": "medium"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "medium",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "free",
+      "price_basis": "assumed",
+      "reasoning": "A public art reception with interactive activities, live music, and community celebration is a general-audience event a family would plausibly attend together; no age restrictions are stated, no admission price is mentioned, and the event is framed as open to the community."
+    },
+    "error": null
+  },
+  {
+    "n": 31,
+    "id": "play-frisco-7440",
+    "title": "Second Saturday at Heritage",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "leaning towards free",
+    "v1": {
+      "n": 31,
+      "id": "play-frisco-7440",
+      "source": "play-frisco",
+      "title": "Second Saturday at Heritage",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event uses family-oriented language ('play', 'hands-on activity', museum exploration) with no explicit age group stated, making it a family event by default, and no price or fee is mentioned, so the community-event default of free applies.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "A family-oriented museum event with hands-on activities and historic tours suits all ages together, with no age restrictions stated and no mention of cost."
+    },
+    "error": null
+  },
+  {
+    "n": 32,
+    "id": "play-frisco-7441",
+    "title": "Second Saturday at Heritage",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "leaning towards free",
+    "v1": {
+      "n": 32,
+      "id": "play-frisco-7441",
+      "source": "play-frisco",
+      "title": "Second Saturday at Heritage",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event uses family-oriented language ('play', 'hands-on activity', museum exploration) with no explicit age range stated, making it a family event for all ages, and no price or ticket information is mentioned so it defaults to free.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "This is a family-oriented museum and heritage event with hands-on activities suited to all ages, but no age range is stated and no price or admission information is given."
+    },
+    "error": null
+  },
+  {
+    "n": 33,
+    "id": "play-frisco-7439",
+    "title": "Second Saturday at Heritage",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "leaning towards free",
+    "v1": {
+      "n": 33,
+      "id": "play-frisco-7439",
+      "source": "play-frisco",
+      "title": "Second Saturday at Heritage",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event uses family-oriented language ('play', 'hands-on activity') with no explicit age group stated, making it a general family event; no price or fee is mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "A family-oriented museum event with hands-on activities and historic home tours clearly suits all ages, but no age range or price information is stated in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 34,
+    "id": "play-frisco-7442",
+    "title": "Second Saturday at Heritage",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "leaning towards free",
+    "v1": {
+      "n": 34,
+      "id": "play-frisco-7442",
+      "source": "play-frisco",
+      "title": "Second Saturday at Heritage",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event uses family-oriented language ('play', 'hands-on activity') with no explicit age range stated, making it a family event for all ages, and no price or fee is mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "A family-oriented museum event with hands-on activities and rotating themes clearly suits children of all ages alongside parents, but no age range or price information is stated in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 35,
+    "id": "play-frisco-7438",
+    "title": "Second Saturday at Heritage",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "leaning towards free",
+    "v1": {
+      "n": 35,
+      "id": "play-frisco-7438",
+      "source": "play-frisco",
+      "title": "Second Saturday at Heritage",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event uses family-friendly language ('play', 'hands-on activity') with no explicit age group stated, making it a general family event; no price or fee is mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "A family-oriented museum and heritage event with hands-on activities and demonstrations clearly suited for children of all ages alongside parents, with no age restriction stated and no price information given."
+    },
+    "error": null
+  },
+  {
+    "n": 36,
+    "id": "play-frisco-7437",
+    "title": "Second Saturday at Heritage",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "leaning towards free",
+    "v1": {
+      "n": 36,
+      "id": "play-frisco-7437",
+      "source": "play-frisco",
+      "title": "Second Saturday at Heritage",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event uses family-friendly language ('play', 'hands-on activity') with no explicit age group stated, making it suitable for all ages; no price or fee is mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "A family-oriented museum and heritage centre event with hands-on activities and themed play sessions clearly suits children of mixed ages alongside parents, but no price information is given in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 37,
+    "id": "play-frisco-7436",
+    "title": "Craft and Care Fair",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 37,
+      "id": "play-frisco-7436",
+      "source": "play-frisco",
+      "title": "Craft and Care Fair",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event explicitly welcomes all ages and encourages bringing the whole family, making it family-classified; no price or fee is mentioned, so free is the default for this community event.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "stated",
+      "age_confidence": "high",
+      "price": "free",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "The event explicitly welcomes all ages and families, includes children's books and toys, and while no admission price is stated, a community fair of this nature leans free though this is not confirmed in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 38,
+    "id": "play-frisco-7432",
+    "title": "Heritage How-To: Artistic Greeting Cards with Lav",
+    "label_kid": "yes",
+    "label_price": "unknown",
+    "note": "leaning towards paid because it says class. There is a link field on the page that says sign up hyperlink. Also the description has SIGN UP HERE hyperlink (which leads to a different page with payment related details)",
+    "v1": {
+      "n": 38,
+      "id": "play-frisco-7432",
+      "source": "play-frisco",
+      "title": "Heritage How-To: Artistic Greeting Cards with Lav",
+      "price_class": "unknown",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event is framed as a class for general adult crafters with no mention of children, families, or youth; no price is mentioned, so it defaults to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": false,
+      "age_confidence": "medium"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "medium",
+      "age_buckets": [
+        "kids",
+        "teen"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "low",
+      "price": "paid",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "A craft class open to all skill levels is plausibly family-friendly, though the instructor-led format and need for sustained attention suits older children and teens rather than toddlers; no age is stated, no price is mentioned but it is framed as a class which typically carries a fee."
+    },
+    "error": null
+  },
+  {
+    "n": 43,
+    "id": "kaleidoscope-park-10000032",
+    "title": "Live After 5 Presented by New York Life North Dallas",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 43,
+      "id": "kaleidoscope-park-10000032",
+      "source": "kaleidoscope-park",
+      "title": "Live After 5 Presented by New York Life North Dallas",
+      "price_class": "free",
+      "price_confidence": "confirmed",
+      "price_reasoning": "The event is explicitly described as 'FREE' and includes lawn games for friends and family, making it family-relevant, though no specific child age group is mentioned; the BYOB and adult-oriented music focus means family is the appropriate tag rather than a child-specific bucket.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "medium"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "medium",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "free",
+      "price_basis": "stated",
+      "price_confidence": "high",
+      "reasoning": "This is a free outdoor community music series with lawn games explicitly welcoming friends and family, making it a plausible family outing despite the BYOB framing; no age restrictions are stated."
+    },
+    "error": null
+  },
+  {
+    "n": 44,
+    "id": "kaleidoscope-park-10000052",
+    "title": "SaturYAY!",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 44,
+      "id": "kaleidoscope-park-10000052",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event explicitly uses 'family-friendly' language with hands-on children's activities like a petting zoo, arts and crafts, and movement activities, and no price or fee is mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "Explicitly described as 'family-friendly' with child-oriented activities like a petting zoo, arts and crafts, and partners such as Girl Scouts and The Little Gym, suggesting all-ages family participation; no price information is mentioned in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 45,
+    "id": "kaleidoscope-park-10000048",
+    "title": "SaturYAY!",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 45,
+      "id": "kaleidoscope-park-10000048",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event explicitly uses 'family-friendly' language with child-focused activities (petting zoo, arts and crafts, The Little Gym, Girl Scouts), and no price or fee is mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "Explicitly described as 'family-friendly' with child-oriented activities (petting zoo, arts and crafts, Girl Scouts, The Little Gym), no age range stated so 'family' is inferred, and no pricing information is mentioned anywhere in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 46,
+    "id": "kaleidoscope-park-10000083",
+    "title": "SaturYAY!",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 46,
+      "id": "kaleidoscope-park-10000083",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event explicitly uses 'family-friendly' language with child-focused activities (petting zoo, arts and crafts, The Little Gym, Girl Scouts), and no price or fee is mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "Explicitly described as 'family-friendly' with child-oriented activities like a petting zoo, arts and crafts, and partners such as Girl Scouts and The Little Gym, suggesting all ages; no price information is provided."
+    },
+    "error": null
+  },
+  {
+    "n": 47,
+    "id": "kaleidoscope-park-10000053",
+    "title": "SaturYAY!",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 47,
+      "id": "kaleidoscope-park-10000053",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event explicitly uses 'family-friendly' language with child-focused activities like petting zoo, arts and crafts, and The Little Gym, and no price or fee is mentioned, defaulting to free per community event standards.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "Explicitly described as family-friendly with child-oriented activities like a petting zoo, arts and crafts, and Girl Scouts participation, making it clearly relevant for families with children of mixed ages; no price information is mentioned in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 48,
+    "id": "kaleidoscope-park-10000098",
+    "title": "SaturYAY!",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 48,
+      "id": "kaleidoscope-park-10000098",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event explicitly uses 'family-friendly' language with child-focused activities like a petting zoo, arts and crafts, and The Little Gym, and no price or fee is mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "Explicitly described as 'family-friendly' with child-oriented activities like petting zoo, arts and crafts, and partnered organizations such as Girl Scouts and The Little Gym, suggesting all-ages participation; no price information is provided in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 49,
+    "id": "kaleidoscope-park-10000082",
+    "title": "SaturYAY!",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 49,
+      "id": "kaleidoscope-park-10000082",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event explicitly uses 'family-friendly' language with child-focused activities (petting zoo, arts and crafts, kids organizations), and no price or fee is mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "Explicitly described as 'family-friendly' with child-oriented activities like a petting zoo, arts and crafts, and partners such as The Little Gym and Girl Scouts, making it clearly kid-relevant for all ages; no price information is provided in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 50,
+    "id": "kaleidoscope-park-10000034",
+    "title": "Live After 5 Presented by New York Life North Dallas",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 50,
+      "id": "kaleidoscope-park-10000034",
+      "source": "kaleidoscope-park",
+      "title": "Live After 5 Presented by New York Life North Dallas",
+      "price_class": "free",
+      "price_confidence": "confirmed",
+      "price_reasoning": "The event is explicitly described as a 'FREE community music series' with lawn games for friends and family, making it family-relevant and confirmed free, though no specific child age group is mentioned.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "medium"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "medium",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "free",
+      "price_basis": "stated",
+      "price_confidence": "high",
+      "reasoning": "This is a free outdoor community music series with lawn games explicitly mentioning friends and family, making it a plausible family outing, though BYOB and wine perks signal an adult-leaning audience; price is explicitly stated as FREE."
+    },
+    "error": null
+  },
+  {
+    "n": 51,
+    "id": "kaleidoscope-park-10000022",
+    "title": "Live After 5 Presented by New York Life North Dallas",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 51,
+      "id": "kaleidoscope-park-10000022",
+      "source": "kaleidoscope-park",
+      "title": "Live After 5 Presented by New York Life North Dallas",
+      "price_class": "free",
+      "price_confidence": "confirmed",
+      "price_reasoning": "The event is explicitly described as a FREE community music series with lawn games for friends and family, making it family-relevant with no cost to attend; the BYOB and Friends of the Park wine perk are adult-oriented but do not override the family-inclusive framing.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "medium"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "medium",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "free",
+      "price_basis": "stated",
+      "price_confidence": "high",
+      "reasoning": "This is a free outdoor community music series with lawn games explicitly welcoming friends and family, making it a plausible family outing; BYOB and wine perks are incidental adult features, not an adults-only restriction."
+    },
+    "error": null
+  },
+  {
+    "n": 52,
+    "id": "kaleidoscope-park-10000050",
+    "title": "SaturYAY!",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 52,
+      "id": "kaleidoscope-park-10000050",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event explicitly uses 'family-friendly' language with child-focused activities like a petting zoo, arts and crafts, and youth organizations (Girl Scouts, The Little Gym), and no price or fee is mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "Explicitly described as 'family-friendly' with child-oriented activities (petting zoo, arts and crafts, Girl Scouts, The Little Gym) suggesting all-ages participation, but no pricing information is provided in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 53,
+    "id": "kaleidoscope-park-10000099",
+    "title": "SaturYAY!",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 53,
+      "id": "kaleidoscope-park-10000099",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event explicitly uses 'family-friendly' language with child-focused activities like a petting zoo, arts and crafts, and The Little Gym, and no price or fee is mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "stated",
+      "age_confidence": "high",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "Explicitly described as 'family-friendly' with child-oriented activities like a petting zoo, arts and crafts, and partners such as Girl Scouts and The Little Gym; no price information is mentioned in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 54,
+    "id": "kaleidoscope-park-10000085",
+    "title": "SaturYAY!",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 54,
+      "id": "kaleidoscope-park-10000085",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event is explicitly described as 'family-friendly' with child-focused activities (petting zoo, arts and crafts, kids organizations), and no price or fee is mentioned, defaulting to free for this community event.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "Explicitly described as 'family-friendly' with child-oriented activities (petting zoo, arts and crafts, kids organisations), making it clearly kid-relevant for mixed ages, but no price information is provided in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 55,
+    "id": "kaleidoscope-park-10000051",
+    "title": "SaturYAY!",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 55,
+      "id": "kaleidoscope-park-10000051",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event explicitly uses 'family-friendly' language with child-focused activities like a petting zoo, arts and crafts, and movement activities, and no price or fee is mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "Explicitly family-friendly with child-focused activities (petting zoo, arts and crafts, Girl Scouts, The Little Gym) suggesting all-ages participation; no price information is provided in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 56,
+    "id": "kaleidoscope-park-10000045",
+    "title": "SaturYAY!",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 56,
+      "id": "kaleidoscope-park-10000045",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event explicitly uses 'family-friendly' language with child-focused activities like a petting zoo, arts and crafts, and youth organizations (Girl Scouts, The Little Gym), and no price or fee is mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "Explicitly described as 'family-friendly' with child-oriented activities like a petting zoo, arts and crafts, and partners such as The Little Gym and Girl Scouts, making it clearly kid-relevant for mixed ages; no price information is provided in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 57,
+    "id": "kaleidoscope-park-10000084",
+    "title": "SaturYAY!",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 57,
+      "id": "kaleidoscope-park-10000084",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event explicitly uses 'family-friendly' language with child-focused activities (petting zoo, arts and crafts, The Little Gym, Girl Scouts), and no price or fee is mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "Explicitly described as 'family-friendly' with child-oriented activities like a petting zoo, arts and crafts, and partners such as Girl Scouts and The Little Gym, suggesting all-ages participation; no price information is mentioned in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 58,
+    "id": "kaleidoscope-park-10000036",
+    "title": "Live After 5 Presented by New York Life North Dallas",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 58,
+      "id": "kaleidoscope-park-10000036",
+      "source": "kaleidoscope-park",
+      "title": "Live After 5 Presented by New York Life North Dallas",
+      "price_class": "free",
+      "price_confidence": "confirmed",
+      "price_reasoning": "The event is explicitly described as a 'FREE community music series' with lawn games for 'friends and family,' making it family-relevant and confirmed free, though no specific child age group is mentioned.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "medium"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "medium",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "free",
+      "price_basis": "stated",
+      "price_confidence": "high",
+      "reasoning": "This is a free outdoor community music series explicitly welcoming friends and family with lawn games, making it a plausible family outing; BYOB and a wine perk for members are incidental adult features that don't restrict children, and the event is explicitly described as FREE."
+    },
+    "error": null
+  },
+  {
+    "n": 59,
+    "id": "kaleidoscope-park-10000020",
+    "title": "Live After 5 Presented by New York Life North Dallas",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 59,
+      "id": "kaleidoscope-park-10000020",
+      "source": "kaleidoscope-park",
+      "title": "Live After 5 Presented by New York Life North Dallas",
+      "price_class": "free",
+      "price_confidence": "confirmed",
+      "price_reasoning": "The event is explicitly FREE and welcomes friends and family with lawn games, making it family-relevant, though children are not the primary audience; no paid signals are present.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "medium"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "medium",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "free",
+      "price_basis": "stated",
+      "price_confidence": "high",
+      "reasoning": "This is a free outdoor community music series explicitly mentioning friends, family, and lawn games, making it a plausible family outing for all ages; it is BYOB but not restricted to adults, and the text explicitly states it is FREE."
+    },
+    "error": null
+  },
+  {
+    "n": 60,
+    "id": "kaleidoscope-park-10000056",
+    "title": "SaturYAY!",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 60,
+      "id": "kaleidoscope-park-10000056",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event explicitly uses 'family-friendly' language with child-focused activities like a petting zoo, arts and crafts, and The Little Gym, and no price or fee is mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "stated",
+      "age_confidence": "high",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "Explicitly described as 'family-friendly' with child-focused activities (petting zoo, arts and crafts, Girl Scouts, The Little Gym) suitable for all ages, but the text contains no mention of price or admission cost."
+    },
+    "error": null
+  },
+  {
+    "n": 61,
+    "id": "kaleidoscope-park-10000044",
+    "title": "SaturYAY!",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 61,
+      "id": "kaleidoscope-park-10000044",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event explicitly uses 'family-friendly' language with child-focused activities (petting zoo, arts and crafts, The Little Gym, Girl Scouts), and no price or fee is mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "Explicitly described as family-friendly with child-oriented activities like a petting zoo, arts and crafts, and partners such as The Little Gym and Girl Scouts, making it clearly kid-relevant for mixed ages; no price information is provided in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 63,
+    "id": "kaleidoscope-park-10000087",
+    "title": "SaturYAY!",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 63,
+      "id": "kaleidoscope-park-10000087",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "Explicitly described as 'family-friendly' with child-focused activities (petting zoo, arts and crafts, The Little Gym, Girl Scouts), and no price or fee is mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "Explicitly described as 'family-friendly' with child-oriented activities like a petting zoo, arts and crafts, and youth organizations (Girl Scouts, The Little Gym), but no price information is provided in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 64,
+    "id": "kaleidoscope-park-10000057",
+    "title": "SaturYAY!",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 64,
+      "id": "kaleidoscope-park-10000057",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event explicitly uses 'family-friendly' language with child-focused activities (petting zoo, arts and crafts, The Little Gym, Girl Scouts), and no price or fee is mentioned, making free the default for a community event.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "Explicitly described as 'family-friendly' with child-focused activities like a petting zoo, arts and crafts, and partners such as Girl Scouts and The Little Gym, suggesting all-ages participation; no price information is provided in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 65,
+    "id": "kaleidoscope-park-10000047",
+    "title": "SaturYAY!",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 65,
+      "id": "kaleidoscope-park-10000047",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event explicitly uses 'family-friendly' language with child-focused activities (petting zoo, arts and crafts, The Little Gym, Girl Scouts), and no price or fee is mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "Explicitly described as 'family-friendly' with child-oriented activities like a petting zoo, arts and crafts, and partners such as Girl Scouts and The Little Gym, suggesting all-ages participation; no price information is provided in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 67,
+    "id": "kaleidoscope-park-10000086",
+    "title": "SaturYAY!",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 67,
+      "id": "kaleidoscope-park-10000086",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "price_class": "free",
+      "price_confidence": "inferred",
+      "price_reasoning": "The event is explicitly described as 'family-friendly' with child-focused activities (petting zoo, arts and crafts, The Little Gym, Girl Scouts), and no price or fee is mentioned, defaulting to free per community event norms.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "high"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "high",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "unknown",
+      "price_basis": "assumed",
+      "price_confidence": "low",
+      "reasoning": "Explicitly described as 'family-friendly' with child-oriented activities like a petting zoo, arts and crafts, and partners such as Girl Scouts and The Little Gym, suggesting all-ages participation; no pricing information is provided in the text."
+    },
+    "error": null
+  },
+  {
+    "n": 68,
+    "id": "kaleidoscope-park-10000026",
+    "title": "Live After 5 Presented by New York Life North Dallas",
+    "label_kid": "yes",
+    "label_price": "free",
+    "note": "",
+    "v1": {
+      "n": 68,
+      "id": "kaleidoscope-park-10000026",
+      "source": "kaleidoscope-park",
+      "title": "Live After 5 Presented by New York Life North Dallas",
+      "price_class": "free",
+      "price_confidence": "confirmed",
+      "price_reasoning": "The event is explicitly described as FREE and welcomes friends and family with lawn games, making it family-relevant; no paid signals are present though BYOB and Friends of the Park perks are incidental adult elements.",
+      "registration_required": false,
+      "kid_relevant": true,
+      "age_confidence": "medium"
+    },
+    "v2": {
+      "kid_relevant": true,
+      "kid_confidence": "medium",
+      "age_buckets": [
+        "family"
+      ],
+      "age_basis": "assumed",
+      "age_confidence": "medium",
+      "price": "free",
+      "price_basis": "stated",
+      "price_confidence": "high",
+      "reasoning": "This is a free outdoor community music series with lawn games explicitly mentioning friends and family, making it a plausible family outing, though the BYOB nature introduces an adult element; the event is stated as FREE though a complimentary wine perk exists for members."
+    },
+    "error": null
+  }
+]
