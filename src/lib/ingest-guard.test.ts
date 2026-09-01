@@ -9,7 +9,7 @@ function ev(over: Partial<Event>): Event {
     is_free: true, price_text: 'Free', age_min: 0, age_max: 5, age_label: null,
     is_recurring: false, recurrence_label: null, thumbnail_url: null, event_url: 'https://x',
     category: 'library', registration_required: false,
-    kid_relevant: null, age_buckets: null, age_confidence: null, age_reasoning: null,
+    kid_relevant: null, kid_confidence: null, age_buckets: null, age_basis: null, age_confidence: null, age_reasoning: null,
     price_class: null, price_confidence: null, price_reasoning: null,
     ingested_at: '', created_at: '',
     ...over,

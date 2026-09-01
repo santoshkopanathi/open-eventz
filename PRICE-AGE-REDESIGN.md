@@ -167,13 +167,13 @@ exactly why that configuration produced a wrongly-free where the current system 
 
 | Change | Status |
 |---|---|
-| Split kid-relevance and age confidence | ✅ **ship** — fixes events deleted because their *age* was vague |
-| Broaden kid-relevance ("would a parent plausibly choose this…") | ✅ **ship** — recovers 5 of 8 wrongly-hidden events |
-| `age_basis` — stop marking a stated age as estimated | ✅ **ship** — small and correct |
-| No age badge in the list view; family fallback; `Family` vs `Family ✦` | ✅ **ship** |
+| Split kid-relevance and age confidence | ✅ **SHIPPED 2026-08-23** — fixes events deleted because their *age* was vague |
+| Broaden kid-relevance ("would a parent plausibly choose this…") | ✅ **SHIPPED 2026-08-23** — recovers 5 of 8 wrongly-hidden events |
+| `age_basis` — stop marking a stated age as estimated | ✅ **SHIPPED 2026-08-23** — small and correct |
+| No age badge in the list view; family fallback; `Family` vs `Family ✦` | ✅ **SHIPPED 2026-08-23** |
 | Capture the `Link:` field label | ✅ **ship** — resolves 3 events outright, one regex, no crawl |
 | Delete `price_text` and the keyword placeholder | ✅ **ship** — dead code either way |
-| Fix the cache-poisoning bug (§2.4) | ✅ **ship** — unrelated, real |
+| Fix the cache-poisoning bug (§2.4) | ✅ **SHIPPED 2026-08-23** — unrelated, real |
 | **Remove "community events default to free" from the prompt** | ❌ **STRUCK** — decision 12 reversed |
 | **Add price confidence and delete the 12-word rule** | ❌ **STRUCK** — decision 10 reversed |
 | Delete the `21+` word check | ⏸️ still held — untestable without an adult sample |

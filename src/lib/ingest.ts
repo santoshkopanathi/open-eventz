@@ -577,7 +577,9 @@ async function ingestPlayFrisco() {
         age_label: null,
         // Populated by the LLM inference pass in POST (new events only)
         kid_relevant: null,
+        kid_confidence: null,
         age_buckets: null,
+        age_basis: null,
         age_confidence: null,
         age_reasoning: null,
         is_recurring: false,
@@ -833,7 +835,7 @@ async function classifyEvents(db: ReturnType<typeof supabaseAdmin>, source: Even
   const ids = events.map((e: any) => e.id)
   const { data: priorRows } = await db
     .from('events')
-    .select('id, kid_relevant, age_buckets, age_confidence, age_reasoning, is_free, price_text, price_class, price_confidence, price_reasoning')
+    .select('id, kid_relevant, kid_confidence, age_buckets, age_basis, age_confidence, age_reasoning, is_free, price_text, price_class, price_confidence, price_reasoning')
     .eq('source', source)
     .in('id', ids)
   const priorMap = new Map<string, any>((priorRows ?? []).map((r: any) => [r.id, r]))
@@ -845,7 +847,9 @@ async function classifyEvents(db: ReturnType<typeof supabaseAdmin>, source: Even
     if (prior && prior.kid_relevant !== null) {
       // Cache hit — carry forward the stored inference + price (no repeat Claude call).
       e.kid_relevant = prior.kid_relevant
+      e.kid_confidence = prior.kid_confidence
       e.age_buckets = prior.age_buckets
+      e.age_basis = prior.age_basis
       e.age_confidence = prior.age_confidence
       e.age_reasoning = prior.age_reasoning
       e.price_class = prior.price_class
@@ -876,7 +880,9 @@ async function classifyEvents(db: ReturnType<typeof supabaseAdmin>, source: Even
     const result = await inferPlayFriscoEvent({ title: e.title, description: e.description ?? '' })
     if (result) {
       e.kid_relevant = result.kid_relevant
+      e.kid_confidence = result.kid_confidence
       e.age_buckets = result.age_buckets
+      e.age_basis = result.age_basis
       e.age_confidence = result.confidence
       e.age_reasoning = result.reasoning
       if (!priceLocked) {
@@ -911,7 +917,14 @@ async function classifyEvents(db: ReturnType<typeof supabaseAdmin>, source: Even
   // per the prompt) or explicitly adults-only — belt-and-suspenders on top of the LLM.
   const ADULT_OVERRIDE = /\badults?\s*only\b|\b21\s*\+|\b18\s*\+|\bmust be 21\b/i
   for (const e of events) {
-    if (e.age_confidence === 'low') e.kid_relevant = false
+    // Visibility gates on KID-relevance confidence, not age confidence (v1.3). The old rule
+    // hid an event whenever the AGE was uncertain — so a listing plainly fit for a family but
+    // vague about which ages was deleted for the wrong reason. Age uncertainty now costs the
+    // age badge only; see age-badge.ts.
+    //
+    // Pre-migration-007 rows have kid_confidence = null and are left alone: null is not 'low',
+    // so nothing that is currently visible disappears on deploy.
+    if (e.kid_confidence === 'low') e.kid_relevant = false
     if (ADULT_OVERRIDE.test(`${e.title} ${e.description ?? ''}`)) e.kid_relevant = false
   }
 
@@ -993,7 +1006,9 @@ async function ingestKaleidoscope() {
           age_max: null,
           age_label: null,
           kid_relevant: null, // set by classifyEvents (LLM pass) in runKaleidoscopeIngest
+          kid_confidence: null,
           age_buckets: null,
+          age_basis: null,
           age_confidence: null,
           age_reasoning: null,
           is_recurring: false,

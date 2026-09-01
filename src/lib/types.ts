@@ -28,7 +28,12 @@ export interface Event {
   registration_required: boolean
   // Play Frisco LLM age inference (null for structured library sources)
   kid_relevant: boolean | null
+  // Null on rows classified before migration 007 — treated as "not low", so the visibility
+  // gate does not fire. See supabase/migrations/007_kid_confidence_and_age_basis.sql.
+  kid_confidence: AgeConfidence | null
   age_buckets: AgeBucket[] | null
+  // Null on pre-007 rows — treated as 'assumed', which is the previous behaviour.
+  age_basis: AgeBasis | null
   age_confidence: AgeConfidence | null
   age_reasoning: string | null
   // Play Frisco price inference (v1.2). Raw source of truth for the free-by-default policy;
@@ -43,6 +48,11 @@ export interface Event {
 
 export type AgeBucket = 'toddler' | 'kids' | 'teen' | 'family'
 export type AgeConfidence = 'high' | 'medium' | 'low'
+
+// Did the source STATE an age, or did the model work it out? Drives the estimated ✦ marker.
+// Previously inferred from the source (every Play Frisco age was assumed inferred), which
+// wrongly marked "Open to ages 5 and up" as an estimate.
+export type AgeBasis = 'stated' | 'assumed'
 export type PriceClass = 'free' | 'paid' | 'unknown'
 // 'confirmed' = an explicit price signal was found in the text (paid, or an explicit
 // free statement). 'inferred' = free-by-default (no signal) — rendered as "Free ✦".
@@ -50,7 +60,11 @@ export type PriceConfidence = 'confirmed' | 'inferred'
 
 export interface AgeInference {
   kid_relevant: boolean
+  // How sure the model is that a parent would choose this for their child. GATES VISIBILITY.
+  kid_confidence: AgeConfidence
   age_buckets: AgeBucket[]
+  age_basis: AgeBasis
+  // How precisely the age is known. Decides the age badge ONLY — never whether the event exists.
   confidence: AgeConfidence
   reasoning: string
 }

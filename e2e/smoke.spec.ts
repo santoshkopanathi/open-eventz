@@ -22,9 +22,9 @@ const BRANCHES = ['Davis Library', 'Haggard Library', 'Harrington Library', 'Par
 
 const FRISCO = [
   ev({ id: 'f1', source: 'frisco-library', title: 'Frisco Kids Program', age_min: 6, age_max: 12 }),         // structured → NO card badge
-  ev({ id: 'p1', source: 'play-frisco', title: 'Play Family Day', kid_relevant: true, age_confidence: 'high', age_buckets: ['family'] }), // ~ Family ✦
-  ev({ id: 'p2', source: 'play-frisco', title: 'Teen Art Workshop', kid_relevant: true, age_confidence: 'high', age_buckets: ['teen'] }), // ✦
-  // Inferred free (family + free) → "~ Family ✦" + "Free ✦"; ONE combined disclosure in detail
+  ev({ id: 'p1', source: 'play-frisco', title: 'Play Family Day', kid_relevant: true, age_confidence: 'high', age_buckets: ['family'] }), // Family ✦
+  ev({ id: 'p2', source: 'play-frisco', title: 'Teen Art Workshop', kid_relevant: true, age_confidence: 'high', age_buckets: ['teen'] }), // detail-only, no card chip
+  // Inferred free (family + free) → "Family ✦" + "Free ✦"; ONE combined disclosure in detail
   ev({ id: 'p3', source: 'play-frisco', title: 'Inferred Free Playtime', kid_relevant: true, age_confidence: 'high', age_buckets: ['family'], price_class: 'free', price_confidence: 'inferred', is_free: true, price_text: 'Free' }),
   // Inferred paid (family + paid, no Cost field) → "Paid ✦" + combined paid disclosure
   ev({ id: 'p4', source: 'play-frisco', title: 'Ticketed Family Outing', kid_relevant: true, age_confidence: 'high', age_buckets: ['family'], price_class: 'paid', price_confidence: 'inferred', is_free: false, price_text: 'Paid' }),
@@ -60,14 +60,16 @@ test.beforeEach(async ({ page }) => {
 
 // --- §1 / §2  card + detail badge rendering ---------------------------------
 
-test('cards omit structured age ranges but keep Family / inferred markers (§1.1–1.5)', async ({ page }) => {
+test('cards show ONLY a Family chip — every specific age range is detail-only (§1.1–1.5)', async ({ page }) => {
   const main = page.locator('main')
   await expect(main.getByText('Frisco Kids Program')).toBeVisible()
   // structured age ranges are gone from cards
   await expect(main.getByText(/^Ages \d/)).toHaveCount(0)
-  // inferred family + bare inferred marker present
-  await expect(main.getByText('~ Family ✦').first()).toBeVisible()
-  await expect(main.getByText('✦', { exact: true }).first()).toBeVisible()
+  // v1.3: no tilde — the star already carries "estimated", and price never had one
+  await expect(main.getByText('Family ✦').first()).toBeVisible()
+  // v1.3: the bare "✦" that stood in for an inferred specific range is GONE. A lone star
+  // with no text told a parent nothing.
+  await expect(main.getByText('✦', { exact: true })).toHaveCount(0)
   // recurring badge shows full text on desktop (mobile collapses to an icon — see next test)
   await expect(main.getByText('Recurring').first()).toBeVisible()
 })
@@ -117,10 +119,10 @@ test('Cost-field CONFIRMED free → plain "Free" (no ✦), price omitted from di
   await expect(detail.getByText(/admission status/)).toHaveCount(0)
 })
 
-test('detail shows ~ Family ✦ + disclosure, no "Family event"/"Suitable for" (§2.4)', async ({ page }) => {
+test('detail shows Family ✦ + disclosure, no "Family event"/"Suitable for" (§2.4)', async ({ page }) => {
   await page.locator('main').getByText('Play Family Day').click()
   const detail = page.locator('aside')
-  await expect(detail.getByText('~ Family ✦')).toBeVisible()
+  await expect(detail.getByText('Family ✦')).toBeVisible()
   await expect(detail.getByText('Family suitability estimated from event description')).toBeVisible()
   await expect(detail.getByText('Family event')).toHaveCount(0)
   await expect(detail.getByText(/Suitable for/)).toHaveCount(0)

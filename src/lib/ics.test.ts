@@ -25,6 +25,8 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
     category: 'sports',
     registration_required: true,
     kid_relevant: true,
+    kid_confidence: null,
+    age_basis: null,
     age_buckets: ['family'],
     age_confidence: 'high',
     age_reasoning: null,

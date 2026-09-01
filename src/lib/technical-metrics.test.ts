@@ -17,7 +17,7 @@ function ev(p: Partial<Event>): Event {
     location_lat: null, location_lng: null, is_free: null, price_text: null,
     age_min: null, age_max: null, age_label: null, is_recurring: false, recurrence_label: null,
     thumbnail_url: null, event_url: '', category: null, registration_required: false,
-    kid_relevant: null, age_buckets: null, age_confidence: null, age_reasoning: null,
+    kid_relevant: null, kid_confidence: null, age_buckets: null, age_basis: null, age_confidence: null, age_reasoning: null,
     price_class: null, price_confidence: null, price_reasoning: null,
     ingested_at: '', created_at: '',
     ...p,
@@ -50,7 +50,10 @@ describe('perSourceCounts', () => {
 describe('inferredAgeVisibility', () => {
   test('4 buckets sum to the Play Frisco total', () => {
     const v = inferredAgeVisibility(EVENTS)
-    expect(v).toEqual({ family: 1, specific: 1, nothing: 1, hidden: 1, total: 4 })
+    // v1.3: the event that used to land in "nothing" (low confidence / no bucket) now falls
+    // back to Family, so it counts as family. "nothing" should sit near zero from here — a
+    // rising value means something upstream stopped returning buckets at all.
+    expect(v).toEqual({ family: 2, specific: 1, nothing: 0, hidden: 1, total: 4 })
     expect(v.family + v.specific + v.nothing + v.hidden).toBe(v.total)
   })
 })

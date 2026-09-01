@@ -133,6 +133,24 @@ defect had already been reasoned through and avoided for the spend cap next door
 | 1.6B.4 | Every LLM-classified runner | Filters the flag before the write; a new source that forgets would publish undecided events | [A] [R] · classify-skip.test.ts |
 | 1.6B.5 | Guard verified non-vacuously | Reintroducing the bug fails 4 of the 5 assertions | [M] |
 
+### 1.6C Age inference — visibility, fallback and the estimated marker *(new 2026-08-23, v1.3)*
+One confidence score used to do two unrelated jobs: show the age badge, AND decide whether the event
+existed. Because the prompt defines that score in AGE terms, a listing plainly fit for a family but
+vague about *which* ages was deleted for the wrong reason. Split into `kid_confidence` (visibility)
+and `age_confidence` (the badge). Separately, the estimated ✦ was decided by SOURCE rather than by
+evidence — now driven by `age_basis`.
+| # | Scenario | Expected result | Tag |
+|---|---|---|---|
+| 1.6C.1 | Low **kid-relevance** confidence | Event hidden — this is the visibility gate | [A] [R] · classify-skip.test.ts |
+| 1.6C.2 | Low **age** confidence | Event still SHOWN, falls back to `Family ✦`, appears under every age chip | [A] [R] · age-badge.test.ts, age-filter.test.ts |
+| 1.6C.3 | No age bucket returned | Same family fallback rather than vanishing | [A] [R] · age-badge.test.ts, age-filter.test.ts |
+| 1.6C.4 | `age_basis = 'stated'` | Plain badge, **no ✦** — the source said so. "Open to ages 5 and up" no longer reads as a guess | [A] [R] · age-badge.test.ts |
+| 1.6C.5 | Kaleidoscope routing | Treated as LLM-classified, **not** structured. It has no `age_min`, so the old routing showed its guessed `family` as source-confirmed | [A] [R] · age-badge.test.ts |
+| 1.6C.6 | Kaleidoscope + any age chip | Passes the filter. The old routing returned false for every Kaleidoscope event whenever a chip was active | [A] [R] · age-filter.test.ts |
+| 1.6C.7 | Card rendering | **Only** a Family chip. Every specific range is detail-only; the bare "✦" is gone | [A] [R] · age-badge.test.ts, e2e/smoke.spec.ts |
+| 1.6C.8 | Tilde removed | `Family ✦` not `~ Family ✦` — price never had a tilde | [A] [R] · age-badge.test.ts, e2e/smoke.spec.ts |
+| 1.6C.9 | Badge and filter share one fallback | `effectiveAgeBuckets` is imported by both, so a card reading "Family" always matches the toddler chip | [A] [R] · age-filter.test.ts |
+
 ### 1.6A LLM spend ceiling *(new 2026-08-19 — the last governance instrument)*
 Classification cost scales with **new events, not users** (batched nightly, cached — a re-run of an unchanged source costs 0 calls). The cap exists for the anomaly: a source that suddenly returns thousands of events. Default 300 calls/run, override `MAX_LLM_CALLS_PER_RUN`. Pure logic in `src/lib/llm-budget.ts`.
 | # | Scenario | Expected result | Tag |

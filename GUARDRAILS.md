@@ -49,7 +49,7 @@ Choices in the code that make the safe outcome the automatic one.
 
 | Guardrail | Catches | Behaviour when unsure |
 |---|---|---|
-| LLM classification fail-closed (`classifyEvents`) | a `low`-confidence kid/adult call | `kid_relevant = false` — event hidden |
+| LLM classification fail-closed (`classifyEvents`) | a `low`-confidence **kid-relevance** call | `kid_relevant = false` — event hidden. Was gated on *age* confidence until v1.3, which deleted events whose age was merely vague |
 | Hard adults-only override | "21+", "18+", "adults only" slipping past the model | hidden regardless of the LLM's view |
 | Unparseable start time (`parseCentralWallTime` → `null`) | malformed or unexpected date formats | event **skipped**, never stored at a guessed time |
 | Explicit venue timezone, never the machine's | the runtime deciding what "10:00 AM" means | conversion is always America/Chicago, DST-aware |

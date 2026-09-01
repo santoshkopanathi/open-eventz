@@ -1,26 +1,26 @@
 import type { Event, AgeBucket } from './types'
+import { LLM_CLASSIFIED_SOURCES, effectiveAgeBuckets } from './age-filter'
 
-// The five badge "kinds" drive what the card vs. the detail view renders (spec §2 / §6).
+// The badge "kinds" drive what the card vs. the detail view renders (spec §2 / §6).
 export type AgeBadgeKind =
-  | 'structured-specific'  // Frisco/Plano single age group — DETAIL only ("Ages 0–5")
-  | 'structured-multi'     // Frisco/Plano multi-group, not family — DETAIL only (range "Ages 6–17")
-  | 'confirmed-family'     // Plano explicit "Families (All Ages)" — CARD + detail ("Family", gold)
-  | 'inferred-family'      // Play Frisco inferred family — CARD + detail ("~ Family ✦", indigo)
-  | 'inferred-specific'    // Play Frisco inferred specific age — CARD ("✦") + detail ("~ Ages … ✦")
+  | 'structured-specific'  // library single age group — DETAIL only ("Ages 0–5")
+  | 'structured-multi'     // library multi-group, not family — DETAIL only ("Ages 6–17")
+  | 'confirmed-family'     // the source stated all-ages — CARD + detail ("Family")
+  | 'inferred-family'      // we worked out family — CARD + detail ("Family ✦")
+  | 'inferred-specific'    // we worked out a range — DETAIL only ("Ages 13–17 ✦")
 
 export interface AgeBadge {
   kind: AgeBadgeKind
   label: string       // canonical text: "Family" | "Ages 0–5" | "Ages 6–17" | "Teens"
-  inferred: boolean   // true for inferred-* kinds → indigo + estimated marker
+  inferred: boolean   // true → wears the ✦ and contributes to the estimate disclosure
   bg: string
   text: string
 }
 
-// Single simplified hover tooltip shown on the ✦ marker on CARDS (list view, desktop). The
-// full, scenario-specific disclosure lives only in the DETAIL view and is composed by
+// Single simplified hover tooltip shown on the ✦ on CARDS (list view, desktop). The full,
+// scenario-specific disclosure lives only in the DETAIL view and is composed by
 // inference-disclosure.ts (it combines age + price into one line). On mobile the ✦ has no
-// tooltip — the HTML `title` attribute is hover-only, so this shows on desktop and nothing on
-// mobile, where tapping the card opens the detail view instead.
+// tooltip — `title` is hover-only — and tapping the card opens the detail view instead.
 export const ESTIMATED_TOOLTIP = 'Estimated from description'
 
 // Structured / confirmed palette: neutral fill-subtle chip (Weekend Paper)
@@ -46,23 +46,47 @@ const GROUPS: { min: number; max: number }[] = [
 
 const rangeLabel = (min: number, max: number) => `Ages ${min}–${max}`
 
+/**
+ * Badge for an LLM-classified source (Play Frisco, Kaleidoscope Park).
+ *
+ * Two things changed here in v1.3, both because the marker used to be decided by SOURCE
+ * rather than by evidence:
+ *
+ * 1. **`age_basis` drives the ✦, not the source.** Every Play Frisco age was treated as
+ *    inferred, so a description reading "Open to ages 5 and up" still told the parent we had
+ *    guessed. And Kaleidoscope was routed to the *structured* path entirely, so its
+ *    LLM-guessed `family` showed as source-confirmed — the same error in the other direction,
+ *    on every visible event from that source.
+ *
+ * 2. **Low age confidence no longer returns null.** It used to hide the badge, but the event
+ *    had usually already been deleted upstream by the same score. Now the event stays, falls
+ *    back to `family`, and says so with a ✦. Uncertainty about WHICH ages costs precision,
+ *    never the event.
+ */
 function inferredBadge(event: Event): AgeBadge | null {
   if (event.kid_relevant !== true) return null
-  // Low confidence → omit entirely (spec §2 / §4 response handling)
-  if (event.age_confidence !== 'high' && event.age_confidence !== 'medium') return null
 
-  const buckets = event.age_buckets ?? []
-  if (buckets.length === 0) return null
+  // Same fallback the filter uses, imported rather than duplicated — a card reading "Family"
+  // must appear under the toddler chip, and the two rules drifting apart is how that breaks.
+  const buckets = effectiveAgeBuckets(event)
+
+  // `age_basis` is null on rows classified before migration 007 → treat as assumed, which is
+  // the previous behaviour. Over-disclosing an estimate is the safe direction.
+  const stated = event.age_basis === 'stated'
 
   if (buckets.includes('family')) {
-    return { kind: 'inferred-family', label: 'Family', inferred: true, bg: INFERRED_BG, text: INFERRED_TEXT }
+    return stated
+      ? { kind: 'confirmed-family', label: 'Family', inferred: false, bg: STRUCTURED_BG, text: STRUCTURED_TEXT }
+      : { kind: 'inferred-family', label: 'Family', inferred: true, bg: INFERRED_BG, text: INFERRED_TEXT }
   }
 
   const ranges = buckets.map(b => BUCKET_RANGE[b]).filter(Boolean)
   if (ranges.length === 0) return null
   const min = Math.min(...ranges.map(r => r[0]))
   const max = Math.max(...ranges.map(r => r[1]))
-  return { kind: 'inferred-specific', label: rangeLabel(min, max), inferred: true, bg: INFERRED_BG, text: INFERRED_TEXT }
+  return stated
+    ? { kind: 'structured-specific', label: rangeLabel(min, max), inferred: false, bg: STRUCTURED_BG, text: STRUCTURED_TEXT }
+    : { kind: 'inferred-specific', label: rangeLabel(min, max), inferred: true, bg: INFERRED_BG, text: INFERRED_TEXT }
 }
 
 function structuredBadge(event: Event): AgeBadge | null {
@@ -90,46 +114,45 @@ function structuredBadge(event: Event): AgeBadge | null {
 }
 
 /**
- * Computes the age badge for an event, or null when there's no age badge to show.
- * The `kind` tells the card and detail views what to render (they render different subsets):
- * cards show only confirmed-family / inferred-family / inferred-specific; the detail view
- * shows all kinds. See spec §2 (cards) and §6 (detail).
+ * Computes the age badge for an event, or null when there is no age badge to show.
+ * Routing is by whether the source is LLM-classified — NOT by a single source name, which is
+ * what left Kaleidoscope on the structured path with no age_min to read.
  */
 export function getAgeBadge(event: Event): AgeBadge | null {
-  if (event.source === 'play-frisco') return inferredBadge(event)
-  return structuredBadge(event)
+  return LLM_CLASSIFIED_SOURCES.includes(event.source) ? inferredBadge(event) : structuredBadge(event)
 }
 
 export interface RenderedBadge {
-  content: string    // the exact text to render, e.g. "Family", "~ Family ✦", "✦", "Ages 0–5"
+  content: string    // the exact text to render, e.g. "Family", "Family ✦", "Ages 0–5"
   tooltip?: string
   bg: string
   color: string
 }
 
 /**
- * What the LIST CARD renders (spec §2): only Family (confirmed or inferred) and the bare
- * inferred marker. Structured age ranges are detail-only → null here. Pure so it's unit-testable.
+ * What the LIST CARD renders (spec §2): **only Family**, confirmed or inferred.
+ *
+ * Specific age ranges are detail-only, and in v1.3 the bare "✦" that used to stand in for them
+ * is gone too — a lone star with no text told a parent nothing. Net effect: a card shows an age
+ * chip only when the answer is "Family". Every specific range, stated or inferred, is
+ * detail-view only.
  */
 export function cardAgeBadge(event: Event): RenderedBadge | null {
   const b = getAgeBadge(event)
   if (!b) return null
   if (b.kind === 'confirmed-family') return { content: 'Family', bg: b.bg, color: b.text }
-  // Inferred badges get the single simplified card tooltip; the full scenario-specific
-  // disclosure is detail-only (composed in inference-disclosure.ts).
-  if (b.kind === 'inferred-family') return { content: '~ Family ✦', tooltip: ESTIMATED_TOOLTIP, bg: b.bg, color: b.text }
-  if (b.kind === 'inferred-specific') return { content: '✦', tooltip: ESTIMATED_TOOLTIP, bg: b.bg, color: b.text }
-  return null // structured-specific / structured-multi
+  if (b.kind === 'inferred-family') return { content: 'Family ✦', tooltip: ESTIMATED_TOOLTIP, bg: b.bg, color: b.text }
+  return null // specific ranges — detail only
 }
 
 /**
- * What the DETAIL view renders (spec §6): every kind, with the "~ … ✦" wrapper for inferred
- * badges. The estimate DISCLOSURE line is no longer per-badge — it is composed once for the
- * whole event (age + price) by inference-disclosure.ts. Pure so it's unit-testable.
+ * What the DETAIL view renders (spec §6): every kind, with a trailing ✦ on inferred badges.
+ * The tilde prefix ("~ Family ✦") is gone as of v1.3 — price never had one, and the star
+ * already carries the meaning. The estimate DISCLOSURE line is composed once for the whole
+ * event (age + price) by inference-disclosure.ts.
  */
 export function detailAgeBadge(event: Event): RenderedBadge | null {
   const b = getAgeBadge(event)
   if (!b) return null
-  const content = b.inferred ? `~ ${b.label} ✦` : b.label
-  return { content, bg: b.bg, color: b.text }
+  return { content: b.inferred ? `${b.label} ✦` : b.label, bg: b.bg, color: b.text }
 }

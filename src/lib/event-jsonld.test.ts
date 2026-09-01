@@ -27,6 +27,8 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
     category: 'library',
     registration_required: false,
     kid_relevant: null,
+    kid_confidence: null,
+    age_basis: null,
     age_buckets: null,
     age_confidence: null,
     age_reasoning: null,

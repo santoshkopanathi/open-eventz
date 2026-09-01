@@ -62,7 +62,9 @@ export function inferredAgeVisibility(events: EventRow[]): AgeVisibility {
   let family = 0, specific = 0, nothing = 0, hidden = 0
   for (const e of pf) {
     if (e.kid_relevant === false) { hidden++; continue }
-    // getAgeBadge returns null for low-confidence / no-bucket inferred events.
+    // As of v1.3 a low-confidence or bucket-less inference falls back to Family rather than
+    // producing no badge, so "nothing" should now be near zero for LLM-classified sources.
+    // If it starts climbing, something upstream stopped returning buckets at all.
     const badge = getAgeBadge(e as Event)
     if (badge?.kind === 'inferred-family') family++
     else if (badge?.kind === 'inferred-specific') specific++
