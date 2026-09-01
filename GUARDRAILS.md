@@ -120,6 +120,7 @@ and it forgives only the shift rule — implausible times stay blocked even with
 | Zero adult-title leaks | adult events stored kid-visible |
 | Toddler filter narrows (< 90% match) | an age filter that has become a no-op |
 | Start times plausible, per source | a timezone shift that somehow reached the DB |
+| **No unclassified LLM events stored** | an event from a source we classify sitting with `kid_relevant = null` — never classified, and kept hidden only by the API gate. Names the events rather than a bare count |
 | Per-source non-empty | a source whose stored *stock* has collapsed |
 | **Per-source freshness (≤ 48h)** *(per-source since 2026-08-22)* | a single source that has stopped *writing*, while the others stay healthy — the check names which one |
 | Live-source canary | BiblioCommons changing its audience API contract |

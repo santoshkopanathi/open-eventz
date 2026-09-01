@@ -181,3 +181,50 @@ export function sourceFreshnessChecks(
     }
   })
 }
+
+// ---------------------------------------------------------------------------
+// Unclassified-but-published (added 2026-09-01, after it happened in production)
+// ---------------------------------------------------------------------------
+
+/**
+ * Finds LLM-classified events left with `kid_relevant = null` — never successfully classified.
+ *
+ * `null` means two different things depending on the source. A library event has no LLM
+ * inference at all, so null is expected and correct. An event from a source we *do* classify
+ * has null only because the classification never completed — a failed model call, a cleared
+ * row, an interrupted run. Those are unclassified, not exempt.
+ *
+ * **Why this is a data check and not a unit test.** The visibility gate lives in a PostgREST
+ * filter, not in JavaScript. Re-implementing it as a JS predicate would create a second copy
+ * that can silently disagree with the real one — which is the class of bug this whole check
+ * exists to catch. So the gate is asserted against the actual database instead.
+ *
+ * **What happened.** On 2026-09-01 a re-classification cleared these columns, then one Play
+ * Frisco event's model call returned malformed JSON. The ingest correctly excluded it from the
+ * write — but the row already existed, so "write nothing" left the null in place, and the old
+ * gate served it. The event reached parents unclassified. The gate is now source-aware; this
+ * check is the second line, and it names the events rather than only failing.
+ *
+ * Defence in depth: the gate stops exposure, this reports that it happened at all.
+ */
+export function unclassifiedLlmEvents(
+  events: Pick<Event, 'id' | 'title' | 'source' | 'kid_relevant'>[],
+  llmSources: readonly string[],
+): Pick<Event, 'id' | 'title' | 'source' | 'kid_relevant'>[] {
+  return events.filter(e => llmSources.includes(e.source) && e.kid_relevant === null)
+}
+
+export function unclassifiedCheck(
+  events: Pick<Event, 'id' | 'title' | 'source' | 'kid_relevant'>[],
+  llmSources: readonly string[],
+): QualityCheck {
+  const bad = unclassifiedLlmEvents(events, llmSources)
+  const names = bad.slice(0, 3).map(e => e.title).join('; ')
+  return {
+    name: 'no unclassified LLM events stored',
+    pass: bad.length === 0,
+    detail: bad.length === 0
+      ? 'none'
+      : `${bad.length} event(s) with kid_relevant = null from an LLM-classified source — never classified, and only the API gate is keeping them hidden: ${names}${bad.length > 3 ? ' …' : ''}`,
+  }
+}

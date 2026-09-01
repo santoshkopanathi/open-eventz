@@ -145,6 +145,9 @@ an excluded event whose row had been cleared kept its NULL, and NULL was served.
 | 1.6D.3 | Both queries (upcoming + ongoing) | Use one shared gate constant so they cannot drift | [A] [R] · kid-visibility-gate.test.ts |
 | 1.6D.4 | A new LLM-classified source | Must be added to the gate's source list or its unclassified rows leak | [A] [R] · kid-visibility-gate.test.ts |
 | 1.6D.5 | Guard verified non-vacuously | Restoring the old gate fails 2 of the 4; and against live PostgREST, one row set to NULL was served by the old gate and not by the new | [M] |
+| 1.6D.6 | **Second line: the nightly gate names it** | `unclassifiedCheck` fails the data-quality job if ANY LLM-source row carries `kid_relevant = null`, naming the events. The API gate stops exposure; this reports that it happened at all | [A] [R] · data-quality.test.ts |
+| 1.6D.7 | Library nulls are not flagged | A library event has no LLM inference by design — null is correct and must not fail the gate | [A] [R] · data-quality.test.ts |
+| 1.6D.8 | Verified against the real database | One row set to null → gate went red naming it; restored → green. Not a mocked assertion | [M] |
 
 ### 1.6C Age inference — visibility, fallback and the estimated marker *(new 2026-08-23, v1.3)*
 One confidence score used to do two unrelated jobs: show the age badge, AND decide whether the event

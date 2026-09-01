@@ -29,6 +29,10 @@ const SOURCE_SET: Record<EventSource, true> = {
 }
 const SOURCES = Object.keys(SOURCE_SET) as EventSource[]
 
+// Sources the LLM classifies. For these, kid_relevant = null means "never classified" rather
+// than "not applicable" — see the unclassified check below.
+const LLM_CLASSIFIED_SOURCES: EventSource[] = ['play-frisco', 'kaleidoscope-park']
+
 // Layer 1 — live-source canary. Confirms BiblioCommons still exposes audience_ids we can resolve
 // (the exact contract that broke). Independent of our DB, so it catches a source change directly.
 async function friscoCanary(): Promise<Check> {
@@ -99,6 +103,17 @@ async function main() {
     })
   )
   checks.push(...dq.sourceFreshnessChecks(newestPerSource))
+
+  // Unclassified-but-stored — an LLM-classified event left with kid_relevant = null was never
+  // successfully classified. Only the API gate is keeping it hidden, and on 2026-09-01 an older
+  // gate did not. Queried across ALL rows, not just upcoming, because a stale unclassified row is
+  // still a row the gate has to keep hidden.
+  const { data: unclassifiedRows } = await db
+    .from('events')
+    .select('id, title, source, kid_relevant')
+    .in('source', LLM_CLASSIFIED_SOURCES)
+    .is('kid_relevant', null)
+  checks.push(dq.unclassifiedCheck(unclassifiedRows ?? [], LLM_CLASSIFIED_SOURCES))
 
   // Live-source canary
   checks.push(await friscoCanary())

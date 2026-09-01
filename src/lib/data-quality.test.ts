@@ -1,5 +1,5 @@
 import type { Event } from './types'
-import { dominantAgeBucketShare, adultTitleLeaks, ageFilterNarrowShare, friscoAgeChecks, implausiblyEarlyEvents, startTimeChecks, sourceFreshnessChecks, MAX_INGEST_AGE_HOURS } from './data-quality'
+import { unclassifiedCheck, dominantAgeBucketShare, adultTitleLeaks, ageFilterNarrowShare, friscoAgeChecks, implausiblyEarlyEvents, startTimeChecks, sourceFreshnessChecks, MAX_INGEST_AGE_HOURS } from './data-quality'
 
 function ev(over: Partial<Event>): Event {
   return {
@@ -200,5 +200,64 @@ describe('sourceFreshnessChecks', () => {
     const c = sourceFreshnessChecks([{ source: 'plano-library', lastIngestedAt: 'not-a-date' }], NOW)[0]
     expect(c.pass).toBe(false)
     expect(c.detail).toContain('unreadable')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// The 2026-09-01 incident, encoded. A re-classification cleared these columns, one model call
+// returned malformed JSON, the ingest correctly excluded that event from the write — but the row
+// already existed, so "write nothing" left kid_relevant = null, and the old API gate served it.
+// The event reached parents unclassified.
+//
+// Written as a DATA check rather than a unit test on the gate: the gate is a PostgREST filter,
+// and re-implementing it in JS would create a second copy that can silently disagree with the
+// real one — which is precisely the failure class being guarded against.
+// ---------------------------------------------------------------------------
+describe('unclassifiedCheck — an LLM event with no classification must never sit in the table', () => {
+  const LLM = ['play-frisco', 'kaleidoscope-park'] as const
+  const row = (over: Partial<Event>) => ev(over) as Pick<Event, 'id' | 'title' | 'source' | 'kid_relevant'>
+
+  const HEALTHY = [
+    row({ id: 'a', source: 'play-frisco', kid_relevant: true }),
+    row({ id: 'b', source: 'kaleidoscope-park', kid_relevant: false }),
+    // library events legitimately carry null — they have no LLM inference at all
+    row({ id: 'c', source: 'frisco-library', kid_relevant: null }),
+    row({ id: 'd', source: 'plano-library', kid_relevant: null }),
+  ]
+
+  test('healthy data passes, and library nulls are NOT flagged', () => {
+    const c = unclassifiedCheck(HEALTHY, LLM)
+    expect(c.pass).toBe(true)
+    expect(c.detail).toBe('none')
+  })
+
+  test('the incident: one Play Frisco row left null after a failed classification', () => {
+    const incident = [...HEALTHY, row({ id: 'x', source: 'play-frisco', title: 'Illuminate: Christmas Movie Classics', kid_relevant: null })]
+    const c = unclassifiedCheck(incident, LLM)
+    expect(c.pass).toBe(false)
+    expect(c.detail).toContain('Illuminate: Christmas Movie Classics')
+  })
+
+  test('Kaleidoscope counts too — the check is not Play-Frisco-specific', () => {
+    const incident = [...HEALTHY, row({ id: 'y', source: 'kaleidoscope-park', kid_relevant: null })]
+    expect(unclassifiedCheck(incident, LLM).pass).toBe(false)
+  })
+
+  test('kid_relevant = false is a real decision and passes — only null is unclassified', () => {
+    const hidden = [...HEALTHY, row({ id: 'z', source: 'play-frisco', kid_relevant: false })]
+    expect(unclassifiedCheck(hidden, LLM).pass).toBe(true)
+  })
+
+  test('the failure names the events, so the gate report is actionable rather than a bare count', () => {
+    const many = [
+      row({ id: '1', source: 'play-frisco', title: 'One', kid_relevant: null }),
+      row({ id: '2', source: 'play-frisco', title: 'Two', kid_relevant: null }),
+      row({ id: '3', source: 'play-frisco', title: 'Three', kid_relevant: null }),
+      row({ id: '4', source: 'play-frisco', title: 'Four', kid_relevant: null }),
+    ]
+    const c = unclassifiedCheck(many, LLM)
+    expect(c.detail).toContain('4 event(s)')
+    expect(c.detail).toContain('One')
+    expect(c.detail).toContain('…') // truncated after three, not dumped in full
   })
 })
