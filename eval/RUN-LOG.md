@@ -225,3 +225,98 @@ with decision 9.
 3. Separately and independently: add the Link-field label capture, then re-measure
 4. Still open: the labels-versus-policy drift on KID (labels predate the agreed definition), and
    whether to score per instance or per distinct event
+
+---
+
+# Run 2 — prompt v3 (2026-08-31)
+
+**What changed from v2:** the `price_confidence` tier definitions, and **nothing else**. `medium`
+was redefined from *"strong contextual signal, though not stated outright"* to *"no explicit
+statement, but the event type and framing give reasonable grounds — a free public park programme,
+a drop-in community activity, an event with no sign of commerce"*, and `low` to *"little or
+nothing in the text bears on price."* Verified by diff: one block, four lines.
+
+Script: `run-v3.js`. Results: `run-v3-results.json`. Scorer: `score.js`.
+
+## The tier change worked
+
+| `price_confidence` | v2 | **v3** |
+|---|---|---|
+| high | 9 | 10 |
+| **medium** | **2** | **16** |
+| low | 49 | 35 |
+
+One sentence moved a whole tier from unusable to usable. Gates 2 and 3 still pass — zero
+high-confidence answers on the 22 unknowables, zero wrongly-free. Gate 4 unchanged (5 of 8, one
+leak), as expected since that wording wasn't touched.
+
+## But the threshold turned out not to be the lever
+
+| Policy | Badges |
+|---|---|
+| show every answer | 27 |
+| withhold LOW | **26** |
+
+**Withholding on low confidence removes exactly one badge.** Of 62 events the model answers
+free/paid on 27 and says `unknown` on 35; almost all the `low` ratings sit on `unknown` answers
+where they change nothing. **The model withholds by answering `unknown`, before confidence is
+assigned.** The dial has almost no travel.
+
+## The decisive comparison — against the labels
+
+Rows = the human label, columns = what the system said.
+
+**v1 (live today) — 71% agreement**
+
+| | free | paid | unknown | total |
+|---|---|---|---|---|
+| labelled **free** | **35** | 0 | 0 | 35 |
+| labelled **paid** | 0 | 4 | 1 | 5 |
+| labelled **unknown** | 16 | 1 | 5 | 22 |
+
+**v3 — 37% agreement** *(v2 was 39%)*
+
+| | free | paid | unknown | total |
+|---|---|---|---|---|
+| labelled **free** | **10** | 0 | **25** | 35 |
+| labelled **paid** | 0 | 4 | 1 | 5 |
+| labelled **unknown** | 9 | 4 | 9 | 22 |
+
+**Of the 35 events labelled FREE with no difficulty, v3 refuses to answer on 25.** On the 5
+labelled paid, all three versions are identical — four correct, one withheld. **Safety behaviour
+is unchanged across every version; the entire difference is willingness to answer.**
+
+## Why — and this overturns the redesign's premise
+
+The labels were reached using the same reasoning v1's prompt encodes. From the labeller's own
+notes: *"no explicit free or paid signal. But this is a community clean-up event and normally
+those would not be paid"* · *"leaning towards free"* (×5).
+
+**That is the free-by-default prior.** The labeller applied it; v1 applies it; v2 and v3 were
+explicitly forbidden from applying it. So they refuse where both the human and v1 answer
+comfortably.
+
+**The evidence on the prior itself:** zero wrongly-free across 62 events in every version. Weak
+evidence — only 5 paid events exist to be wrong about — but removing the prior costs 25 badges
+and buys nothing measurable.
+
+## The subtler finding
+
+**v1's model refuses selectively.** It answers `unknown` on 7 events, including Frisco Camp Out,
+on its own judgment. It holds the prior *and* retains discretion to override it.
+
+**A blanket policy in code has no discretion.** Converting every `unknown` to Free overwrites the
+model's considered refusals along with its uninformed ones — which is exactly why that policy row
+produces a wrongly-free while v1 does not.
+
+> **The prompt-fusion problem is real, but the cure attempted here is worse than the disease.**
+> Holding the prior inside the prompt lets the model apply it *with judgment*. Removing it made
+> the model refuse 35 times; reapplying it blanket in code removes all judgment.
+
+## Decision
+
+**Keep v1's price behaviour.** It agrees with careful human judgment nearly twice as often at
+identical safety. **Decisions 10 and 12 of `PRICE-AGE-REDESIGN.md` are reversed** — see that
+document's revised scope.
+
+The age and kid-relevance changes are a separate, measurable win and proceed.

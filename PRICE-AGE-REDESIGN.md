@@ -1,7 +1,8 @@
 # Price & age classification — the agreed redesign
 
-*Status: **designed, not built**. Design dated 2026-08-23; first eval run 2026-08-31.*
-*Run 1 did NOT pass — the prompt is being iterated. See `eval/RUN-LOG.md` before acting on anything below.*
+*Status: **scope revised after measurement**. Design 2026-08-23; eval runs 2026-08-31.*
+*Two runs measured. **The price half was rejected by the data; the age half proceeds.** Decisions 10
+and 12 below are struck. Read §3A before anything else — `eval/RUN-LOG.md` has the evidence.*
 *Companion to `EVALS.md` (how we measured) and `GUARDRAILS.md` (the runtime controls).*
 
 **Read this if:** you are picking this work up cold, or coming back to it in three months.
@@ -132,6 +133,58 @@ This is the same defect already solved for the spend cap, where the code deliber
 
 Everything above was argument. Until the golden set (`EVALS.md`), nobody had ever compared this
 system's output against a known-correct answer.
+
+---
+
+# 3A. Scope after measurement — READ THIS FIRST
+
+Two eval runs (`eval/RUN-LOG.md`) tested the price half of this design against 62 hand-labelled
+events. **It was rejected.** The age half was not, and proceeds.
+
+## What the measurement found
+
+Of the 35 events a careful human labelled **free** with no difficulty, the redesigned prompt
+**refused to answer on 25 of them.** Agreement with human judgment fell from **71% to 37%**.
+Safety was identical in every version — four of five paid events correctly identified, one
+withheld, zero wrongly-free throughout. **The entire difference was willingness to answer.**
+
+The cause: the labeller reached those answers using the same reasoning the current prompt
+encodes — *"community parks events are normally free"* — visible in their own notes
+(*"this is a community clean-up event and normally those would not be paid"*). The redesign
+explicitly forbade the model from applying that prior. So it refused where both the human and the
+current system answer comfortably.
+
+**And a subtler point.** The current model refuses *selectively* — it answers `unknown` on 7
+events, including one where it independently sensed a cost. It holds the prior **and** retains
+discretion. Re-applying the prior as a blanket rule in code removes that discretion, which is
+exactly why that configuration produced a wrongly-free where the current system does not.
+
+> **The prompt-fusion problem in §2.1 is real. The cure attempted here is worse than the disease.**
+> Holding the prior inside the prompt lets the model apply it with judgment. Removing it made the
+> model refuse 35 times; reapplying it blanket in code removes all judgment.
+
+## Revised scope
+
+| Change | Status |
+|---|---|
+| Split kid-relevance and age confidence | ✅ **ship** — fixes events deleted because their *age* was vague |
+| Broaden kid-relevance ("would a parent plausibly choose this…") | ✅ **ship** — recovers 5 of 8 wrongly-hidden events |
+| `age_basis` — stop marking a stated age as estimated | ✅ **ship** — small and correct |
+| No age badge in the list view; family fallback; `Family` vs `Family ✦` | ✅ **ship** |
+| Capture the `Link:` field label | ✅ **ship** — resolves 3 events outright, one regex, no crawl |
+| Delete `price_text` and the keyword placeholder | ✅ **ship** — dead code either way |
+| Fix the cache-poisoning bug (§2.4) | ✅ **ship** — unrelated, real |
+| **Remove "community events default to free" from the prompt** | ❌ **STRUCK** — decision 12 reversed |
+| **Add price confidence and delete the 12-word rule** | ❌ **STRUCK** — decision 10 reversed |
+| Delete the `21+` word check | ⏸️ still held — untestable without an adult sample |
+
+**Price classification behaviour is unchanged.** The confidence score was honest in both runs —
+zero high-confidence answers on events a human couldn't resolve — but it turned out not to be the
+lever: withholding on low confidence removed exactly one badge, because the model withholds by
+answering `unknown` before confidence is ever assigned.
+
+**Revisit price after the Link field is captured.** That is the one price change with measured
+value, and it may shift the picture enough to justify the rest.
 
 ---
 
@@ -407,3 +460,25 @@ Steps 1–5 are reversible. Step 6 is the only one that is not, and it comes las
    Per-instance measures what a parent experiences; per-distinct-event measures what the model
    actually judged. For a ship gate about model quality, per-distinct-event is the better basis —
    the over-claim baseline of 12 instances is only 8 distinct events.
+
+---
+
+# 9. Revision record
+
+**2026-08-23** — original design and ship gate written, before any labelling.
+
+**2026-08-23** — criterion *"suppression rate should drop from 16%"* **struck** at the product
+owner's direction. Reason: the no-badge rate is a property of the source, not the system — if the
+source publishes no price, no badge is correct. The system sat at 11% while a careful human could
+not determine an answer on 34%, so the target was below a third of the defensible floor.
+
+**2026-08-31, after two eval runs** — decisions **10** (add price confidence, delete the 12-word
+rule) and **12** (remove free-by-default from the prompt) **struck**. Reason: measured against 62
+hand-labelled events, the redesigned prompt refused to answer on 25 of the 35 events a human
+labelled free without difficulty, and agreement fell from 71% to 37% at identical safety. The
+prior being removed is one the labeller demonstrably applies themselves. Evidence:
+`eval/RUN-LOG.md`, Run 2.
+
+*Each revision is recorded with its reason because a legitimate revision — the premise was
+disproved by data — and a self-serving one — we disliked the answer — are indistinguishable in the
+final artifact. The dated reason is the only thing that separates them.*
