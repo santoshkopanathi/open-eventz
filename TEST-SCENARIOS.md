@@ -118,6 +118,21 @@ backend outage. These keep them distinct.
 | 1.7.7 | Likes POST fails | Optimistic toggle **reverts** (state + localStorage) with "Couldn’t save that — try again." | [R] [M] |
 | 1.7.8 | Share on a browser without `navigator.share` | Inline "Link copied" note — **never** a native `alert()` modal | [R] [M] |
 | 1.7.9 | Any failure state rendered | Fires GA4 `error_shown` with `surface: events | venues | likes` (8th custom event) | [R] [M] |
+### 1.6B Classifier produced no decision *(new 2026-08-23 — found while tracing the pipeline)*
+Two paths end with the classifier having decided **nothing**: the spend cap refused the call, or the
+model call failed (API error, malformed JSON, invalid shape). Both must exclude the event from the
+write. Writing `kid_relevant = false` poisons the cache — the cache-hit check is
+`prior.kid_relevant !== null`, so `false` reads as a real stored answer and the event is never
+re-classified. **One transient network blip hid an event permanently and silently.** The identical
+defect had already been reasoned through and avoided for the spend cap next door.
+| # | Scenario | Expected result | Tag |
+|---|---|---|---|
+| 1.6B.1 | Model call fails | Event **excluded from the write**, retried next run — not stored as hidden | [A] [R] · classify-skip.test.ts |
+| 1.6B.2 | Model call fails | `kid_relevant` assigned **neither way** — `false` poisons the cache, `null` fails open and the event would be **shown** | [A] [R] · classify-skip.test.ts |
+| 1.6B.3 | Both no-decision paths | Use the **same flag**, so neither can drift from the other | [A] [R] · classify-skip.test.ts |
+| 1.6B.4 | Every LLM-classified runner | Filters the flag before the write; a new source that forgets would publish undecided events | [A] [R] · classify-skip.test.ts |
+| 1.6B.5 | Guard verified non-vacuously | Reintroducing the bug fails 4 of the 5 assertions | [M] |
+
 ### 1.6A LLM spend ceiling *(new 2026-08-19 — the last governance instrument)*
 Classification cost scales with **new events, not users** (batched nightly, cached — a re-run of an unchanged source costs 0 calls). The cap exists for the anomaly: a source that suddenly returns thousands of events. Default 300 calls/run, override `MAX_LLM_CALLS_PER_RUN`. Pure logic in `src/lib/llm-budget.ts`.
 | # | Scenario | Expected result | Tag |

@@ -110,8 +110,8 @@ describe('the spend ceiling cannot be bypassed', () => {
     // Writing `false` poisons the cache (hidden forever); writing `null` fails OPEN, because
     // `kid_relevant IS NULL` passes the events API gate. Neither is acceptable.
     const block = src.slice(src.indexOf('if (!budget.spend())'), src.indexOf('llmCalls++'))
-    expect(block).toContain('_budgetSkipped')
+    expect(block).toContain('_skipWrite')
     expect(block).not.toMatch(/e\.kid_relevant\s*=/)
-    expect(src).toContain('_budgetSkipped === true')
+    expect(src).toContain('_skipWrite === true')
   })
 })

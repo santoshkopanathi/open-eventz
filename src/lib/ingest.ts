@@ -767,8 +767,9 @@ export async function runPlayFriscoIngest(): Promise<SourceIngestResult> {
     errors.push('llm-budget (play-frisco): per-run LLM call cap reached; remaining events were hidden rather than classified. Raise MAX_LLM_CALLS_PER_RUN only if this volume is the new normal.')
   }
 
-  // Budget-skipped events are excluded from the write entirely (see classifyEvents).
-  const classifiable = playFrisco.events.filter((e: any) => { const skip = e._budgetSkipped === true; delete e._budgetSkipped; return !skip })
+  // Events the classifier could not decide — spend cap hit, or the model call failed — are
+  // excluded from the write entirely so they retry next run (see classifyEvents).
+  const classifiable = playFrisco.events.filter((e: any) => { const skip = e._skipWrite === true; delete e._skipWrite; return !skip })
   const events = dedupeMerge(classifiable)
   markRecurring(events)
 
@@ -854,18 +855,21 @@ async function classifyEvents(db: ReturnType<typeof supabaseAdmin>, source: Even
       e.price_text = prior.price_text
       continue
     }
-    // Hard spend ceiling. Refusing a call means the event stays unclassified, and an
-    // unclassified event is HIDDEN — the same fail-closed direction as an LLM error. Losing
-    // coverage is the acceptable failure here; unbounded spend is not.
+    // Hard spend ceiling. Refusing a call means the event stays unclassified. Losing coverage
+    // is the acceptable failure here; unbounded spend is not.
+    //
+    // `_skipWrite` marks EXCLUSION from the write — we assign kid_relevant neither way, because
+    // both values are wrong for a decision we never made:
+    //   false  → the cache-hit check is `prior.kid_relevant !== null`, so `false` reads as a
+    //            real stored answer and the event is hidden forever, even after the cap is
+    //            raised (cache poisoning).
+    //   null   → passes the API gate (`kid_relevant IS NULL` is how library events flow
+    //            through), so an unclassified event would be SHOWN — fail-open.
+    // Writing nothing is the only option that is both fail-closed and self-healing: the event
+    // is absent today and gets classified normally on the next run. The LLM-failure branch
+    // below uses the same flag for the same reason.
     if (!budget.spend()) {
-      // Mark for EXCLUSION from the write — do not assign kid_relevant either way.
-      //   false  → the next run reads it as a cache hit and hides the event forever, even
-      //            after the cap is raised (cache poisoning).
-      //   null   → passes the API gate (`kid_relevant IS NULL` is how library events flow
-      //            through), so an unclassified event would be SHOWN — fail-open.
-      // Writing nothing is the only option that is both fail-closed and self-healing: the
-      // event is absent today and gets classified normally on the next run.
-      e._budgetSkipped = true
+      e._skipWrite = true
       continue
     }
     llmCalls++
@@ -891,9 +895,15 @@ async function classifyEvents(db: ReturnType<typeof supabaseAdmin>, source: Even
         e.price_text = priceFields.price_text
       }
     } else {
-      // LLM call failed — fail-closed: hide rather than default-show an unclassified event.
-      e.kid_relevant = false
-      e.age_reasoning = 'classification unavailable (hidden)'
+      // LLM call failed (API error, malformed JSON, invalid shape). Same treatment as a
+      // budget skip, and for the same reason: EXCLUDE from the write rather than storing a
+      // decision we never made.
+      //
+      // Writing `false` here — which this used to do — poisons the cache. The cache-hit check
+      // above is `prior.kid_relevant !== null`, so `false` reads as a real stored answer and
+      // the event is never re-classified. One transient network blip hid an event permanently,
+      // silently, even after the model recovered.
+      e._skipWrite = true
     }
   }
 
@@ -1021,8 +1031,9 @@ export async function runKaleidoscopeIngest(): Promise<SourceIngestResult> {
     errors.push('llm-budget (kaleidoscope-park): per-run LLM call cap reached; remaining events were hidden rather than classified. Raise MAX_LLM_CALLS_PER_RUN only if this volume is the new normal.')
   }
 
-  // Budget-skipped events are excluded from the write entirely (see classifyEvents).
-  const classifiable = kaleidoscope.events.filter((e: any) => { const skip = e._budgetSkipped === true; delete e._budgetSkipped; return !skip })
+  // Events the classifier could not decide — spend cap hit, or the model call failed — are
+  // excluded from the write entirely so they retry next run (see classifyEvents).
+  const classifiable = kaleidoscope.events.filter((e: any) => { const skip = e._skipWrite === true; delete e._skipWrite; return !skip })
   const events = dedupeMerge(classifiable)
   markRecurring(events)
 

@@ -119,7 +119,7 @@ whether the event exists.
 So an event plainly suitable for a family but vague about *which* ages gets a lowish score and
 **disappears entirely**. An event was deleted because we were unsure about its age.
 
-### 2.4 A failed model call hides an event forever
+### 2.4 A failed model call hides an event forever — ✅ FIXED 2026-08-23
 
 When the model call fails, the code writes `kid_relevant = false` (meaning *hide*). But `false`
 is not *empty* — so the next night the cache reads it as a real stored answer and never asks
