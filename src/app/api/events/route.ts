@@ -3,6 +3,14 @@ import { supabase } from '@/lib/supabase'
 import type { Event } from '@/lib/types'
 import { passesAgeFilter } from '@/lib/age-filter'
 
+
+// Sources whose events are classified by the LLM. For these, kid_relevant = NULL means
+// "never successfully classified", not "not applicable" — so it must be treated as hidden.
+// Kept as one expression used by BOTH queries so they cannot drift apart.
+const LLM_CLASSIFIED = ['play-frisco', 'kaleidoscope-park']
+const KID_VISIBILITY_GATE =
+  `kid_relevant.eq.true,and(kid_relevant.is.null,source.not.in.(${LLM_CLASSIFIED.join(',')}))`
+
 // Convert a YYYY-MM-DD date string to a UTC ISO string at midnight CT (CDT = UTC-5)
 function dateToCtMidnightUtc(dateStr: string): string {
   const [y, m, d] = dateStr.split('-').map(Number)
@@ -45,9 +53,14 @@ export async function GET(req: NextRequest) {
   if (date_from) query = query.gte('start_datetime', dateToCtMidnightUtc(date_from))
   if (date_to) query = query.lt('start_datetime', dateToCtEndOfDayUtc(date_to))
 
-  // Hard gate: Play Frisco events flagged not kid-relevant are never shown; events with no
-  // inference (kid_relevant IS NULL — all library events) pass through.
-  query = query.or('kid_relevant.is.null,kid_relevant.eq.true')
+  // Hard gate. Two different meanings of NULL had to be separated:
+  //   • a library event has no LLM inference at all — NULL is expected, and it passes
+  //   • an LLM-classified event with NULL was never successfully classified — it must NOT pass
+  // The old gate let both through. That is fail-open, and it fired for real on 2026-09-01: a
+  // Play Frisco event whose model call returned malformed JSON was correctly excluded from the
+  // write, but the row already existed with a cleared classification, so "write nothing" left
+  // NULL behind — and NULL passed the gate. The event was served, unclassified, to parents.
+  query = query.or(KID_VISIBILITY_GATE)
 
   // Always exclude adults-only events (age_min >= 18 marks Frisco Library adult events)
   query = query.or('age_min.is.null,age_min.lt.18')
@@ -78,7 +91,7 @@ export async function GET(req: NextRequest) {
   if (branches.length === 1) ongoingQuery = ongoingQuery.eq('location_name', branches[0])
   if (branches.length > 1) ongoingQuery = ongoingQuery.in('location_name', branches)
   if (is_free === 'true') ongoingQuery = ongoingQuery.eq('is_free', true)
-  ongoingQuery = ongoingQuery.or('kid_relevant.is.null,kid_relevant.eq.true')
+  ongoingQuery = ongoingQuery.or(KID_VISIBILITY_GATE)
   ongoingQuery = ongoingQuery.or('age_min.is.null,age_min.lt.18')
   const { data: ongoing } = await ongoingQuery.limit(100)
 

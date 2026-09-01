@@ -133,6 +133,19 @@ defect had already been reasoned through and avoided for the spend cap next door
 | 1.6B.4 | Every LLM-classified runner | Filters the flag before the write; a new source that forgets would publish undecided events | [A] [R] · classify-skip.test.ts |
 | 1.6B.5 | Guard verified non-vacuously | Reintroducing the bug fails 4 of the 5 assertions | [M] |
 
+### 1.6D Events API visibility gate *(new 2026-09-01 — found in production)*
+`kid_relevant IS NULL` means two different things: a library event has no LLM inference (expected,
+passes), and an LLM-classified event was never successfully classified (must not pass). The original
+gate conflated them. **"Write nothing" is only fail-closed when the row does not already exist** —
+an excluded event whose row had been cleared kept its NULL, and NULL was served.
+| # | Scenario | Expected result | Tag |
+|---|---|---|---|
+| 1.6D.1 | Library event, `kid_relevant` NULL | **Served** — it has no inference by design | [A] [R] · kid-visibility-gate.test.ts |
+| 1.6D.2 | LLM-classified event, `kid_relevant` NULL | **Not served** — unclassified, not exempt | [A] [R] · kid-visibility-gate.test.ts |
+| 1.6D.3 | Both queries (upcoming + ongoing) | Use one shared gate constant so they cannot drift | [A] [R] · kid-visibility-gate.test.ts |
+| 1.6D.4 | A new LLM-classified source | Must be added to the gate's source list or its unclassified rows leak | [A] [R] · kid-visibility-gate.test.ts |
+| 1.6D.5 | Guard verified non-vacuously | Restoring the old gate fails 2 of the 4; and against live PostgREST, one row set to NULL was served by the old gate and not by the new | [M] |
+
 ### 1.6C Age inference — visibility, fallback and the estimated marker *(new 2026-08-23, v1.3)*
 One confidence score used to do two unrelated jobs: show the age badge, AND decide whether the event
 existed. Because the prompt defines that score in AGE terms, a listing plainly fit for a family but
