@@ -51,7 +51,7 @@ export default async function DashboardPage() {
   // ---- Functional (BigQuery) ----
   const fetched = await fetchAnalyticsRows()
   const rows = fetched.rows
-  const wadSeries = weeklyActiveDiscoverers(rows)
+  const wadSeries = weeklyActiveDiscoverers(rows, Date.now())
   const top = topEvents(rows, 10)
   const topIds = top.map(t => t.event_id)
   const nameById: Record<string, { title: string; source: string }> = {}

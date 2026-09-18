@@ -95,6 +95,30 @@ describe('weeklyActiveDiscoverers', () => {
       { week: WEEK2, wad: 1 }, // v6 (calendar_add)
     ])
   })
+
+  // Regression (2026-09-18): weeks with no conversions were dropped, so the "recent weeks"
+  // chart froze on the week of Aug 17 while GA4 data kept arriving through mid-September.
+  test('fills zero-conversion weeks and extends to the current week', () => {
+    const DAY = 86_400_000
+    const t0 = Date.parse('2026-08-11T12:00:00Z') // Tue, week of 08-10
+    const rows = [
+      { visitor_id: 'a', session_id: 'a.1', event_name: 'calendar_add', timestamp: t0 },
+      { visitor_id: 'b', session_id: 'b.1', event_name: 'attending_tap', timestamp: t0 + 14 * DAY }, // week of 08-24
+      { visitor_id: 'c', session_id: 'c.1', event_name: 'detail_view', timestamp: t0 + 35 * DAY },   // not a conversion
+    ]
+    expect(weeklyActiveDiscoverers(rows, Date.parse('2026-09-18T15:00:00Z'))).toEqual([
+      { week: '2026-08-10', wad: 1 },
+      { week: '2026-08-17', wad: 0 },
+      { week: '2026-08-24', wad: 1 },
+      { week: '2026-08-31', wad: 0 },
+      { week: '2026-09-07', wad: 0 },
+      { week: '2026-09-14', wad: 0 },
+    ])
+  })
+
+  test('no conversions at all → empty series (chart shows its empty state)', () => {
+    expect(weeklyActiveDiscoverers([], Date.parse('2026-09-18T00:00:00Z'))).toEqual([])
+  })
 })
 
 // ---------------------------------------------------------------------------

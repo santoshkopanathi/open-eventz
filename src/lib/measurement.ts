@@ -64,8 +64,12 @@ export function weekKey(ts: number): string {
 // ---------------------------------------------------------------------------
 // North Star — Weekly Active Discoverers: unique visitors per week with >=1 conversion
 // action (calendar_add OR attending_tap), counted once per visitor per week.
+// The series is continuous: it runs from the first converting week to the week of `now`
+// (default: the last converting week), with zero-conversion weeks filled in as wad: 0.
+// Without the fill, a run of quiet weeks simply vanished and the chart froze on the last
+// week that had a conversion — a stale number that looked current.
 // ---------------------------------------------------------------------------
-export function weeklyActiveDiscoverers(rows: AnalyticsRow[]): { week: string; wad: number }[] {
+export function weeklyActiveDiscoverers(rows: AnalyticsRow[], now?: number): { week: string; wad: number }[] {
   const perWeek = new Map<string, Set<string>>()
   for (const r of rows) {
     if (!CONVERSION_EVENTS.has(r.event_name)) continue
@@ -74,9 +78,16 @@ export function weeklyActiveDiscoverers(rows: AnalyticsRow[]): { week: string; w
     set.add(r.visitor_id)
     perWeek.set(wk, set)
   }
-  return [...perWeek.entries()]
-    .map(([week, set]) => ({ week, wad: set.size }))
-    .sort((a, b) => a.week.localeCompare(b.week))
+  if (perWeek.size === 0) return []
+  const weeks = [...perWeek.keys()].sort()
+  const last = now === undefined ? weeks[weeks.length - 1] : weekKey(now)
+  const series: { week: string; wad: number }[] = []
+  for (let t = Date.parse(`${weeks[0]}T00:00:00Z`); ; t += 7 * 86_400_000) {
+    const week = weekKey(t)
+    if (week > last) break
+    series.push({ week, wad: perWeek.get(week)?.size ?? 0 })
+  }
+  return series
 }
 
 // ---------------------------------------------------------------------------
