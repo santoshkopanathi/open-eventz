@@ -109,10 +109,11 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
     return `https://calendar.google.com/calendar/render?${p}`
   })()
 
-  const cityLabel = city === 'plano' ? 'Plano' : 'Frisco'
-  // Bordered secondary — matches the in-app detail's secondary actions. Ink fill is reserved
-  // for the masthead and the single primary CTA (Get directions), so it stays meaningful.
+  // Bordered secondary — matches the in-app detail's secondary actions.
   const secondaryStyle = { borderRadius: 'var(--radius-button)', border: '1px solid var(--color-border-strong)', color: 'var(--color-ink)' }
+  // Ink fill — shared by the two actions that matter most on a shared link: getting into the
+  // app, and getting to the venue. Declared once so they cannot drift apart.
+  const primaryStyle = { borderRadius: 'var(--radius-button)', backgroundColor: 'var(--color-ink)', color: 'var(--color-paper)' }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-paper)', color: 'var(--color-ink)' }}>
@@ -126,26 +127,28 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
       {/* Masthead — same ink band + rust rule + two-colour wordmark as the home page and the
           mobile detail overlay. A shared link is often someone's first ever view of the
           product, so it has to read as the same product, not a stray page. */}
-      <header className="masthead flex items-center" style={{ backgroundColor: '#1F1B16', borderBottom: '3px solid #B4623B', padding: '16px 20px' }}>
-        <Link href="/" className="flex flex-col gap-0.5 w-fit min-w-0">
-          <span className="font-display leading-none whitespace-nowrap text-[28px]" style={{ letterSpacing: '-0.015em' }}>
+      <header className="masthead flex items-center" style={{ backgroundColor: '#1F1B16', borderBottom: '3px solid #B4623B', padding: '22px 28px' }}>
+        <Link href="/" className="flex flex-col md:flex-row md:items-baseline gap-1 md:gap-4 w-fit min-w-0">
+          <span className="font-display leading-none whitespace-nowrap text-[34px] max-[640px]:text-[30px]" style={{ letterSpacing: '-0.015em' }}>
             <span style={{ color: '#FBF7F1' }}>Open </span><span style={{ color: '#E8A87C' }}>Eventz</span>
           </span>
-          <span className="font-mono uppercase whitespace-nowrap text-[9.5px] tracking-[0.1em]" style={{ color: '#A79C8B' }}>
+          <span className="font-mono uppercase whitespace-nowrap text-[11px] tracking-[0.14em] max-[430px]:text-[9.5px] max-[430px]:tracking-[0.07em]" style={{ color: '#A79C8B' }}>
             Free things to do with kids · Frisco &amp; Plano
           </span>
         </Link>
       </header>
 
       <main className="max-w-2xl mx-auto px-5 py-6">
-        {/* Two clear exits — matters for someone arriving on a shared link: back into the
-            main app (on this event's city), and to this city's full event list. */}
-        <nav className="mb-5 flex flex-wrap gap-2">
-          <Link href={`/?city=${city}`} className="px-4 py-2 text-sm font-medium transition-colors" style={secondaryStyle}>
+        {/* One exit, not two — a shared link is often someone's first view, and a single
+            filled route into the app reads faster than a pair of bordered choices. The
+            city list is one tap further in, from the app's own city tabs. */}
+        <nav className="mb-5 flex">
+          <Link
+            href={`/?city=${city}`}
+            className="px-4 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90"
+            style={primaryStyle}
+          >
             Open Eventz home
-          </Link>
-          <Link href={`/${city}`} className="px-4 py-2 text-sm font-medium transition-colors" style={secondaryStyle}>
-            View all {cityLabel} events
           </Link>
         </nav>
 
@@ -274,7 +277,7 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full text-center py-3 text-sm font-semibold transition-opacity hover:opacity-90"
-                style={{ borderRadius: 'var(--radius-button)', backgroundColor: 'var(--color-ink)', color: 'var(--color-paper)' }}
+                style={primaryStyle}
               >
                 Get directions
               </a>

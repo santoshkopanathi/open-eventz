@@ -1636,3 +1636,21 @@ Each route keeps its own `metadata`, canonical URL and structured data, so nothi
 **What this does not do.** It cannot move the listing off the old Vercel address — only re-indexing does that, and Search Console verification of `openeventz.com` is still open. Structured data makes the *name* correct once Google reads the right host; it is one half of a two-half fix, and the other half isn't code.
 
 **The lesson.** **A branded surface you never verified is an unbranded surface.** The SEO build shipped structured data for the things being indexed — events, city lists — and never asked what identifies the *site*, because nothing in the codebase looks wrong when that markup is missing. It only became visible in the one place we don't control the rendering: someone else's search results page. Check the surfaces you don't own by looking at them, not by reading your own code.
+
+---
+
+## The shared-link page, tightened
+
+*Date: 2026-09-23. Module: [`src/app/events/[id]/page.tsx`](src/app/events/[id]/page.tsx).*
+
+**Initial situation.** The per-event page opened with two bordered buttons — *Open Eventz home* and *View all {City} events* — and wore a smaller masthead than the app (28px wordmark, 9.5px tagline, 16/20 padding, always stacked) on the theory that a content page wants a lighter header.
+
+**Why it changed.** Seen in the wild, from a link a friend actually shared, both choices read wrong. Two equal-weight bordered buttons make the reader choose between routes they cannot yet distinguish, and the shrunken masthead makes the page look like an offshoot of Open Eventz rather than Open Eventz — the opposite of what the masthead was added for.
+
+**What changed.** One route in, not two: *View all {City} events* is gone (the city list is one tap further, from the app's own city tabs), and *Open Eventz home* now carries the ink fill previously reserved for *Get directions*. Both now read from a single `primaryStyle` constant so they cannot drift. The masthead matches the home page exactly — 34px/30px wordmark, 11px tagline with the same tracking, 22/28 padding, the same stacked-to-inline behaviour.
+
+**The reserved-ink question.** The old comment claimed ink fill was reserved for the masthead and one primary CTA. Two filled buttons do dilute that, and the dilution is accepted deliberately: on a shared link, *getting into the product* is as important as *getting to the venue*. The comment now says so, rather than sitting there contradicting the code.
+
+**Verification.** Both buttons compared by computed style (identical fill, text colour, radius, weight, size), both mastheads measured on their own pages (81px tall, identical type), and mobile at 375px checked for overflow (none; tagline drops to 9.5px as on the home page). Gates green: typecheck, 357 unit tests, lint unchanged, doc-parity, build.
+
+**The lesson.** **A page you only ever read in code review is a page you have not seen.** This one had been "done" for weeks; it took arriving on it the way a stranger does — from someone else's link — to notice that its first impression was two ambiguous buttons under a shrunken logo.
