@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Open Eventz">
+  <!-- Weekend Paper palette: rust ground, cream ring, ink rule (the masthead's
+       bottom rule — the one mark that still reads as Open Eventz at 16px).
+       The rust ground is deliberate: ink disappears against a dark results page
+       and paper disappears against a light one, while a mid-tone holds on both.
+       Font-free on purpose: a favicon renderer cannot be relied on to have any
+       typeface, so the mark is drawn, never set. -->
+  <rect width="48" height="48" rx="10" fill="#B4623B"/>
+  <circle cx="24" cy="20.5" r="10" fill="none" stroke="#FBF7F1" stroke-width="4.5"/>
+  <rect x="12" y="36" width="24" height="4" rx="2" fill="#1F1B16"/>
+</svg>

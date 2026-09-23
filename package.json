@@ -14,7 +14,8 @@
     "calibrate:price": "jest --config jest.calibration.config.js",
     "test:docs": "node scripts/check-doc-parity.mjs",
     "typecheck": "tsc --noEmit",
-    "prepare": "git config core.hooksPath .githooks || exit 0"
+    "prepare": "git config core.hooksPath .githooks || exit 0",
+    "icons": "node scripts/build-icons.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.110.0",
