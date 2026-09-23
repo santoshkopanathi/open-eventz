@@ -89,6 +89,7 @@ All new surfaces are **React Server Components** (App Router), so their HTML —
 | File | Kind | Responsibility |
 |---|---|---|
 | `src/lib/site.ts` | pure | Canonical origin (`SITE_URL`, override via `NEXT_PUBLIC_SITE_URL`) and URL/label helpers: `eventUrl`, `cityUrl`, `sourceOrg`, `sourceCity`. |
+| `src/lib/site-jsonld.ts` | pure | `buildSiteJsonLd()` → the home page's `WebSite` + `Organization` graph. What Google reads to print the site name above a result. Home page **only** — ignored on inner pages. |
 | `src/lib/event-jsonld.ts` | pure | `buildEventJsonLd(event)` → a schema.org/Event object ready to serialise. The highest-leverage surface. |
 | `src/lib/seo-indexable.ts` | pure | `isIndexableEvent(event, todayIso)` + `startOfTodayCtIso()` + `CITY_SOURCES`. The single definition of "what may be indexed." **No I/O**, so it's unit-testable and shared. |
 | `src/lib/seo-data.ts` | server | Supabase access: `getEventById(id)`, `getIndexableEvents(city?)`. Applies the pure gate. |

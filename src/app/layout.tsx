@@ -33,6 +33,13 @@ export const metadata: Metadata = {
     template: "%s | Open Eventz",
   },
   description: "Discover free and low-cost events for kids in Plano and Frisco, TX — libraries, parks, and more in one place.",
+  // Names the site for link previews (Slack, iMessage, Facebook). The search-result
+  // site name comes from the home page's WebSite JSON-LD — see src/lib/site-jsonld.ts.
+  applicationName: "Open Eventz",
+  openGraph: {
+    siteName: "Open Eventz",
+    type: "website",
+  },
 };
 
 export default function RootLayout({

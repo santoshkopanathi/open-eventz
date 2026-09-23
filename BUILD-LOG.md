@@ -1618,3 +1618,21 @@ Each route keeps its own `metadata`, canonical URL and structured data, so nothi
 **Verification.** 352 unit tests green, typecheck clean, no new lint findings. Then the routes in a real browser: `/plano` opens with the Plano tab active and 53 Plano events, `/frisco` with the Frisco tab and its own list, `/?city=plano` still deep-links correctly (the event pages' "Open Eventz home" link depends on it). The served HTML for `/frisco` carries its title, canonical, ItemList JSON-LD, the `h1`, and 230 event links.
 
 **The lesson.** **Ranking and landing are two different jobs, and the page that does the first is not automatically fit for the second.** The SEO build optimised for getting found and quietly accepted a worse destination; the gap stayed invisible until someone clicked their own search result. Before the redirect reflex, ask what the ranking is standing on — here, a title, a blurb and 230 event titles in server HTML — and then move the *app* to the URL that already has it, rather than moving the *visitor* to a URL that has none of it.
+
+---
+
+## The site had no name — `WebSite` structured data on the home page
+
+*Date: 2026-09-23. Modules: [`src/lib/site-jsonld.ts`](src/lib/site-jsonld.ts), [`src/app/page.tsx`](src/app/page.tsx), [`src/app/layout.tsx`](src/app/layout.tsx). See SEO-DESIGN.md §File map.*
+
+**Initial situation.** A Google search for *free kids events this weekend in frisco* returned the Frisco page on page one — listed as **"Vercel"**, with Vercel's triangle logo above it. The listing pointed at `open-eventz.vercel.app/frisco`, an address that has permanently redirected to `openeventz.com` since the August domain move.
+
+**Two separate causes, and only one is ours.** The stale address is Google's index catching up with a 308 it has not re-crawled; the fix is Search Console, not code. The *name* is ours: Google takes the site name above a result from **`WebSite` structured data on the home page**, and with none present it infers from the host — for a `*.vercel.app` subdomain, that inference is the platform's name and icon, not the site's. Every other surface had structured data (events, city pages), and the one that names the site itself had none.
+
+**What changed.** `buildSiteJsonLd()` — a pure builder emitting a `WebSite` + `Organization` `@graph`, rendered only by `/`. Two details carry the weight: the `WebSite.url` must be **exactly** `SITE_URL` (the feature is matched to the indexed domain root, so a trailing slash quietly opts out), and the markup belongs on the home page **only** — Google ignores it on inner pages, so `/frisco` deliberately does not emit it. The root layout also gained `openGraph.siteName` + `applicationName`, which name the site in link previews (Slack, iMessage) — a different surface from search, worth separating so the next reader doesn't assume one fixed the other. The home page picked up a canonical too, so `?city=` deep links aren't read as duplicates.
+
+**Verification.** 5 unit tests, including the trailing-slash regression and a check that the `WebSite.publisher` resolves to the `Organization` node. Then the served HTML: `/` carries both nodes, `name: "Open Eventz"`, the canonical and `og:site_name`; `/frisco` carries **zero** `WebSite` nodes, as intended. Full gates green: typecheck, 357 unit tests, lint unchanged, build.
+
+**What this does not do.** It cannot move the listing off the old Vercel address — only re-indexing does that, and Search Console verification of `openeventz.com` is still open. Structured data makes the *name* correct once Google reads the right host; it is one half of a two-half fix, and the other half isn't code.
+
+**The lesson.** **A branded surface you never verified is an unbranded surface.** The SEO build shipped structured data for the things being indexed — events, city lists — and never asked what identifies the *site*, because nothing in the codebase looks wrong when that markup is missing. It only became visible in the one place we don't control the rendering: someone else's search results page. Check the surfaces you don't own by looking at them, not by reading your own code.
