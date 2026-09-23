@@ -1044,7 +1044,7 @@ The app was a single client-rendered page — invisible to crawlers at the event
 
 - **Per-event pages** `src/app/events/[id]/page.tsx` — React Server Component, `generateMetadata` (title/description/canonical/OG/Twitter), `notFound()` on a missing id, `robots: noindex` for non-indexable rows, `revalidate = 3600`. Content is fully server-rendered (the opposite of the `'use client'` home page — that's the point: crawlable HTML).
 - **Event JSON-LD** `src/lib/event-jsonld.ts` (pure) — schema.org/Event: name, start/end, Offline attendance, canonical `url`, `organizer`, HTML-stripped description, `image`, `location` (Place + `geo`), `typicalAgeRange`, price fields (see decision below). Highest-leverage surface — makes each event eligible for Google's Event rich card.
-- **City landing pages** `/frisco`, `/plano` — shared `src/components/CityLanding.tsx` (server): keyword-relevant intro + server-rendered event list + **ItemList** JSON-LD. Catch the broad local queries; event pages catch the long-tail.
+- **City landing pages** `/frisco`, `/plano` — shared `src/components/CityLanding.tsx` (server): keyword-relevant intro + server-rendered event list + **ItemList** JSON-LD. Catch the broad local queries; event pages catch the long-tail. *(Superseded 2026-09-23 — these routes now serve the app itself with the crawlable list kept underneath; the landing pages ranked but were the thinnest page in the product. See "Search traffic landed on the thinnest page".)*
 - **Sitemap + robots** `src/app/sitemap.ts` (home + 2 city + all upcoming indexable events, hourly ISR) and `src/app/robots.ts` (allow `/`, disallow `/api/` + `/dashboard`, link sitemap).
 - **Consistency gate** `src/lib/seo-indexable.ts` (pure, **no Supabase import** so it's unit-testable): `isIndexableEvent` mirrors the app's list gates (not-kid-relevant Play Frisco, `age_min ≥ 18`, Frisco adult-keyword list, past one-offs). Sitemap, city pages, and per-event `noindex` all call the one gate — they can never disagree. Supabase access split into `src/lib/seo-data.ts` (`getEventById`, `getIndexableEvents`).
 - **Consent Mode v2** — `layout.tsx` now sets `metadataBase`, a `title.template` (`%s | Open Eventz`), and an inline `gtag('consent','default',{analytics_storage:'denied'})` **before** the GA `config`; `src/components/ConsentBanner.tsx` (client) + `updateConsent`/`CONSENT_KEY` in `analytics.ts` flip consent on accept and remember it in `localStorage`. GA still runs cookieless when denied — the standard compliant pattern.
@@ -1588,3 +1588,33 @@ Non-empty didn't cover it either, and the reason is the interesting part: **106 
 **Verification.** 6 new unit tests built from the real incident, including one that asserts the *replaced* global check would still have passed on the same data — the bug encoded as a regression, not just the fix. Then the house rule, against the live DB: the gate went red on `kaleidoscope-park: freshness — last write 77.0h ago (max 48h)` with every other check green, while `kaleidoscope-park: non-empty` sat there passing at 106 events. Full gates green: typecheck, 329 unit tests, doc-parity.
 
 **The lesson.** **A guardrail whose input is an aggregate over healthy and unhealthy subjects cannot see the unhealthy one.** A max, a total, an "any" — each one launders a dead subject into a live number. Ask the question per subject, or don't claim the guardrail. The corollary is worse and worth stating: this check passed every night for months, and its passing meant nothing. **A green check you have never seen fail is indistinguishable from a check that cannot fail** — the same reason the fire drill exists for alerts.
+
+---
+
+## Search traffic landed on the thinnest page — the city routes now serve the app
+
+*Date: 2026-09-23. Modules: [`src/components/EventsApp.tsx`](src/components/EventsApp.tsx), [`src/components/CityEventIndex.tsx`](src/components/CityEventIndex.tsx), [`src/app/frisco/page.tsx`](src/app/frisco/page.tsx), [`src/app/plano/page.tsx`](src/app/plano/page.tsx). See SEO-DESIGN.md §File map.*
+
+**Initial situation.** The SEO work shipped `/frisco` and `/plano` as dedicated landing pages: a server-rendered intro, a flat list of upcoming events, ItemList JSON-LD, and a small footer link to the app. That was the right call for getting indexed, and it worked — a search for *free kids events this weekend in frisco* now returns `Free Kids Events in Frisco, TX` on page one.
+
+**Why it changed.** Watching the result get clicked exposed the cost of the split. A visitor arriving from Google landed on the **thinnest page in the product**: no city tabs, no age or date filters, no map, no detail panel — and the only way into the actual app was a link below the fold. The page that search traffic lands on is the page that forms the first impression, and it was showing the least of what Open Eventz does. Ranking was never the problem; the destination was.
+
+**The option not taken.** The obvious fix — redirect `/frisco` to `/?city=frisco` — gets the visitor into the app in two lines and **gives away the ranking that produced the visit**. The redirect target's title is the generic home-page title, it carries no city-specific copy, and its event list is fetched client-side, so there is little in the HTML to match a city query. Google also tends to fold `?city=` variants into `/`, collapsing both cities into one listing. That trade — keep the click, lose the source of clicks — was refused.
+
+**What changed.** The city routes now render the app itself, preselected to that city, with the crawlable content kept underneath:
+
+| Piece | Before | After |
+|---|---|---|
+| `src/app/page.tsx` | the whole app (client) | thin server route rendering `<EventsApp />` |
+| `src/components/EventsApp.tsx` | — | the app, now takes an optional `initialCity` |
+| `src/components/CityLanding.tsx` | the entire city page | replaced by `CityEventIndex` |
+| `src/components/CityEventIndex.tsx` | — | server-rendered `h1` + blurb + full event list + ItemList JSON-LD, below the app |
+| `/frisco`, `/plano` | `<CityLanding city>` | `<EventsApp initialCity>` + `<CityEventIndex city>` |
+
+Each route keeps its own `metadata`, canonical URL and structured data, so nothing that earns the ranking moved. The URL stays `/frisco` — no redirect, no new address to re-earn.
+
+**The SEO reasoning worth keeping.** A client-rendered app is a weak thing to rank: Google does execute JavaScript, but scheduling that render is a second, slower pass, and depending on it to see your primary content is a bet with no upside. `CityEventIndex` removes the bet. The city's name, its blurb and 230 real event titles are in the server HTML on first byte, **visible on the page** rather than hidden — hidden text serving crawlers what users don't see is cloaking, and the list is genuinely useful as a full index when the app's default view is only the next seven days.
+
+**Verification.** 352 unit tests green, typecheck clean, no new lint findings. Then the routes in a real browser: `/plano` opens with the Plano tab active and 53 Plano events, `/frisco` with the Frisco tab and its own list, `/?city=plano` still deep-links correctly (the event pages' "Open Eventz home" link depends on it). The served HTML for `/frisco` carries its title, canonical, ItemList JSON-LD, the `h1`, and 230 event links.
+
+**The lesson.** **Ranking and landing are two different jobs, and the page that does the first is not automatically fit for the second.** The SEO build optimised for getting found and quietly accepted a worse destination; the gap stayed invisible until someone clicked their own search result. Before the redirect reflex, ask what the ranking is standing on — here, a title, a blurb and 230 event titles in server HTML — and then move the *app* to the URL that already has it, rather than moving the *visitor* to a URL that has none of it.

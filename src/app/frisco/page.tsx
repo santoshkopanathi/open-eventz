@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import CityLanding from '@/components/CityLanding'
+import EventsApp from '@/components/EventsApp'
+import CityEventIndex from '@/components/CityEventIndex'
 import { cityUrl } from '@/lib/site'
 
 export const revalidate = 3600
@@ -18,6 +19,14 @@ export const metadata: Metadata = {
   },
 }
 
+// The app itself, preselected to Frisco — search traffic lands in the working product instead
+// of a separate list page. CityEventIndex below it keeps the city name, blurb and event titles
+// in the server-rendered HTML this page ranks on; the app above is client-rendered.
 export default function FriscoPage() {
-  return <CityLanding city="frisco" />
+  return (
+    <>
+      <EventsApp initialCity="frisco" />
+      <CityEventIndex city="frisco" />
+    </>
+  )
 }

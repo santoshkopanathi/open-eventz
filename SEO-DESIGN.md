@@ -93,8 +93,9 @@ All new surfaces are **React Server Components** (App Router), so their HTML —
 | `src/lib/seo-indexable.ts` | pure | `isIndexableEvent(event, todayIso)` + `startOfTodayCtIso()` + `CITY_SOURCES`. The single definition of "what may be indexed." **No I/O**, so it's unit-testable and shared. |
 | `src/lib/seo-data.ts` | server | Supabase access: `getEventById(id)`, `getIndexableEvents(city?)`. Applies the pure gate. |
 | `src/app/events/[id]/page.tsx` | server route | The per-event page + `generateMetadata` + JSON-LD script; `notFound()` on a missing id; `noindex` on non-indexable rows. |
-| `src/components/CityLanding.tsx` | server | Shared city-page component: intro copy, event list, ItemList JSON-LD. |
-| `src/app/frisco/page.tsx`, `src/app/plano/page.tsx` | server routes | Thin wrappers rendering `CityLanding` + each city's `metadata`. |
+| `src/components/CityEventIndex.tsx` | server | Shared crawlable half of a city page: `h1`, intro copy, full event list, ItemList JSON-LD. Visible below the app, never hidden. *(Replaced `CityLanding.tsx` on 2026-09-23.)* |
+| `src/components/EventsApp.tsx` | client | The app itself. Optional `initialCity` preselects a city, so a city route opens on its own city; `/` keeps the `?city=` deep link. |
+| `src/app/frisco/page.tsx`, `src/app/plano/page.tsx` | server routes | Each city's `metadata` + `<EventsApp initialCity>` above `<CityEventIndex>`: search traffic lands in the working app while the ranking content stays in server HTML. |
 | `src/app/sitemap.ts` | server route | `MetadataRoute.Sitemap`: home + city pages + all upcoming indexable events. |
 | `src/app/robots.ts` | server route | `MetadataRoute.Robots`: allow `/`, disallow `/api/` + `/dashboard`, link the sitemap. |
 | `src/components/ConsentBanner.tsx` | client | Consent Mode v2 UI; writes the choice to `localStorage`, calls `updateConsent`. |
