@@ -1654,3 +1654,29 @@ Each route keeps its own `metadata`, canonical URL and structured data, so nothi
 **Verification.** Both buttons compared by computed style (identical fill, text colour, radius, weight, size), both mastheads measured on their own pages (81px tall, identical type), and mobile at 375px checked for overflow (none; tagline drops to 9.5px as on the home page). Gates green: typecheck, 357 unit tests, lint unchanged, doc-parity, build.
 
 **The lesson.** **A page you only ever read in code review is a page you have not seen.** This one had been "done" for weeks; it took arriving on it the way a stranger does — from someone else's link — to notice that its first impression was two ambiguous buttons under a shrunken logo.
+
+---
+
+## The guard that ate its own denominator
+
+*Date: 2026-10-19. Modules: [`src/lib/ingest-guard.ts`](src/lib/ingest-guard.ts), [`src/lib/ingest.ts`](src/lib/ingest.ts). See INGEST-DESIGN.md §8.*
+
+**Initial situation.** For three consecutive nights the Frisco job went red with `ABORT: batch has 210 events vs 525 stored — looks like a partial scrape`, and the data-quality gate followed it red on per-source freshness. Frisco's data stopped updating on 2026-10-17.
+
+**The source was fine.** Paging the live BiblioCommons calendar by hand returned 11 pages, 210 events, today through 2027-01-01, terminating on a page with no next link. **210 was the truth.** The guard was comparing it against the wrong thing.
+
+**The bug.** A scrape returns a source's *forward window*. The shrink rule compared it against *every row ever written* for that source — 525 for Frisco, of which **357 were past events going back to June 25**. Play Frisco and Kaleidoscope purge rows that fall out of their batch, so they self-trim; the two library sources only ever upsert, so their past accumulates forever. The numerator stays the size of the source's forward window while the denominator grows every night. **This was not a bug that appeared; it was a countdown that finished.** Autumn made it land — Frisco's forward window shrinks as summer programming ends.
+
+**The second bug, which hid the first.** PostgREST caps an unpaginated select at 1000 rows, silently. Plano has 1683, so the guard judged it against an arbitrary 1000-row slice — threshold 500, batch 604, pass. Frisco at 525 rows was under the cap, got its true count, and aborted. **The same defect produced a red job and a green one, which is why it read as a Frisco problem.** The truncation also quietly narrowed the uniform-shift check to whichever 1000 rows came back.
+
+**What changed.** `upcomingStored(stored, nowIso)` — pure, tested — narrows the comparison to rows that could actually be in an incoming batch. Past events cannot be scraped, cannot change, and are therefore not evidence about this scrape's completeness. The stored read now pages explicitly instead of trusting an unpaginated select.
+
+| Source | Stored | Upcoming | Last batch | Abort threshold before → after |
+|---|---|---|---|---|
+| frisco-library | 525 | 169 | 210 | 263 (**abort**) → 85 (pass) |
+| plano-library | 1683 | 605 | 604 | 500 (pass, by truncation) → 303 (pass) |
+| play-frisco | 64 | 45 | 64 | 32 (pass) → 23 (pass) |
+
+**Verification.** 6 new unit tests, including the incident reproduced with its real numbers — asserting the *old* comparison aborts and the new one does not, so the bug is encoded, not just the fix — plus one asserting a genuinely halved batch still aborts, because narrowing a rule must not disable it. Then a read-only simulation against the live database reproducing the table above. Full gates: typecheck, 363 unit tests in both timezones, lint, doc-parity.
+
+**The lesson.** **A ratio is only a guardrail if both sides measure the same thing.** This one compared a window against an accumulation, which made it a clock, not a check — it was always going to fire, and the only question was which night. When a threshold is a ratio, say out loud what the denominator grows with; if the answer is "time", you have written a countdown. The second lesson is about the pattern that masked it: the same bug read as healthy on one source purely because a silent row cap cut the denominator down. **A limit you did not ask for is a limit you will not remember.**

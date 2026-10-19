@@ -1,5 +1,5 @@
 import type { Event } from './types'
-import { hasImplausibleStart, detectUniformShift, screenBatch, DEFAULT_GUARD } from './ingest-guard'
+import { hasImplausibleStart, detectUniformShift, screenBatch, upcomingStored, DEFAULT_GUARD } from './ingest-guard'
 
 function ev(over: Partial<Event>): Event {
   return {
@@ -161,5 +161,57 @@ describe('screenBatch — the pre-write decision', () => {
   test('thresholds are the documented defaults', () => {
     expect(DEFAULT_GUARD.minShiftAgreement).toBe(0.8)
     expect(DEFAULT_GUARD.minOverlapForShift).toBe(20)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// upcomingStored — the 2026-10-17 outage: past events accumulating in the
+// denominator until a healthy scrape looked like a partial one.
+// ---------------------------------------------------------------------------
+describe('upcomingStored', () => {
+  const NOW = '2026-10-19T05:00:00Z'
+  const PAST = Array.from({ length: 357 }, (_, i) => ({ id: `p${i}`, start_datetime: '2026-07-01T15:00:00Z' }))
+  const FUTURE = Array.from({ length: 168 }, (_, i) => ({ id: `f${i}`, start_datetime: '2026-11-01T15:00:00Z' }))
+
+  test('keeps upcoming rows and drops past ones', () => {
+    expect(upcomingStored([...PAST, ...FUTURE], NOW)).toHaveLength(168)
+  })
+
+  test('keeps rows starting exactly at the cutoff', () => {
+    expect(upcomingStored([{ id: 'a', start_datetime: NOW }], NOW)).toHaveLength(1)
+  })
+
+  test('keeps unparseable rows — they are not evidence of shrinkage', () => {
+    expect(upcomingStored([{ id: 'a', start_datetime: 'not-a-date' }], NOW)).toHaveLength(1)
+  })
+
+  test('an unparseable cutoff falls back to comparing against everything', () => {
+    expect(upcomingStored([...PAST, ...FUTURE], 'nonsense')).toHaveLength(525)
+  })
+
+  // The incident itself, reproduced end to end: Frisco's real numbers from the three
+  // nights the nightly run went red.
+  test('REGRESSION: a healthy 210-event Frisco batch no longer aborts', () => {
+    const batch = Array.from({ length: 210 }, (_, i) => ev({ id: `f${i}`, start_datetime: '2026-11-01T15:00:00Z' }))
+    const storedAll = [...PAST, ...FUTURE] // 525 rows, 357 of them past
+
+    // What the guard used to be given — and why it aborted.
+    const before = screenBatch(batch, storedAll)
+    expect(before.abort).toBe(true)
+    expect(before.reasons.join(' ')).toMatch(/partial scrape/)
+
+    // What it is given now.
+    const after = screenBatch(batch, upcomingStored(storedAll, NOW))
+    expect(after.abort).toBe(false)
+    expect(after.write).toHaveLength(210)
+  })
+
+  // The guard must still catch a genuinely partial scrape — the fix narrows the
+  // comparison, it does not disable the rule.
+  test('a real partial scrape still aborts when compared on upcoming rows only', () => {
+    const half = Array.from({ length: 50 }, (_, i) => ev({ id: `f${i}`, start_datetime: '2026-11-01T15:00:00Z' }))
+    const d = screenBatch(half, upcomingStored([...PAST, ...FUTURE], NOW))
+    expect(d.abort).toBe(true)
+    expect(d.reasons.join(' ')).toMatch(/partial scrape/)
   })
 })

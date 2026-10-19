@@ -12,7 +12,8 @@ import { fallbackPriceClass, resolvePriceClass, priceClassToFields, interpretCos
 import { PER_INFERENCE_COST_USD } from './technical-metrics'
 import { markRecurring } from './recurring'
 import { centralWallTimeToUtc, parseCentralWallTime } from './datetime'
-import { screenBatch } from './ingest-guard'
+import { screenBatch, upcomingStored, type StoredTime } from './ingest-guard'
+import { startOfTodayCtIso } from './seo-indexable'
 import { createLlmBudget, type LlmBudget } from './llm-budget'
 
 // Adult programs that BiblioCommons incorrectly includes in children audience feeds
@@ -679,17 +680,33 @@ async function guardedUpsert(
 ): Promise<{ upserted: number; aborted: boolean; dropped: number }> {
   if (events.length === 0) return { upserted: 0, aborted: false, dropped: 0 }
 
-  const { data: stored, error: readErr } = await db
-    .from('events')
-    .select('id,start_datetime')
-    .eq('source', source)
-  if (readErr) {
-    // Can't compare against the current state → refuse rather than write blind.
-    errors.push(`guard (${source}): could not read stored events (${readErr.message}) — refusing to write`)
-    return { upserted: 0, aborted: true, dropped: 0 }
+  // Page explicitly: PostgREST caps an unpaginated select at 1000 rows, and it does so
+  // SILENTLY. Plano has 1683 rows, so the guard was judging it against an arbitrary 1000-row
+  // slice — which is also why Plano kept passing while Frisco aborted on the same bug.
+  const stored: StoredTime[] = []
+  const PAGE = 1000
+  for (let from = 0; ; from += PAGE) {
+    const { data, error: readErr } = await db
+      .from('events')
+      .select('id,start_datetime')
+      .eq('source', source)
+      .order('id')
+      .range(from, from + PAGE - 1)
+    if (readErr) {
+      // Can't compare against the current state → refuse rather than write blind.
+      errors.push(`guard (${source}): could not read stored events (${readErr.message}) — refusing to write`)
+      return { upserted: 0, aborted: true, dropped: 0 }
+    }
+    stored.push(...((data ?? []) as StoredTime[]))
+    if (!data || data.length < PAGE) break
   }
 
-  const decision = screenBatch(events, stored ?? [], {
+  // Compare like with like: an incoming batch is the source's forward window, so only
+  // upcoming stored rows are evidence about it. See upcomingStored() for the outage this
+  // fixes — past events accumulating into the denominator froze Frisco for three nights.
+  const comparable = upcomingStored(stored, startOfTodayCtIso())
+
+  const decision = screenBatch(events, comparable, {
     allowTimeShift: process.env.INGEST_ALLOW_TIME_SHIFT === '1',
   })
   for (const r of decision.reasons) {
@@ -698,7 +715,7 @@ async function guardedUpsert(
   }
 
   if (decision.abort) {
-    console.error(`[ingest] guard (${source}): BATCH REJECTED — ${stored?.length ?? 0} stored events left untouched`)
+    console.error(`[ingest] guard (${source}): BATCH REJECTED — ${comparable.length} upcoming stored events left untouched (${stored.length} total)`)
     return { upserted: 0, aborted: true, dropped: decision.dropped.length }
   }
 

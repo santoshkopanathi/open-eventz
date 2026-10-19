@@ -132,6 +132,28 @@ export function detectUniformShift(
   }
 }
 
+/**
+ * The stored rows a batch may fairly be compared against: the UPCOMING ones.
+ *
+ * WHY THIS EXISTS (2026-10-17 outage). A scrape returns a source's forward window only —
+ * Frisco published 210 upcoming events. The shrink rule compared that against every row ever
+ * written for the source: 525, of which 357 were past events dating back to June that nothing
+ * ever deletes. So the denominator grew every night while the numerator stayed the size of the
+ * source's forward window, and the guard was guaranteed to call a healthy scrape a partial one
+ * eventually. It did, for three nights running, freezing Frisco's data.
+ *
+ * Comparing like with like fixes the class: past events cannot be in an incoming batch, cannot
+ * change, and therefore say nothing about whether this scrape is complete.
+ */
+export function upcomingStored(stored: StoredTime[], nowIso: string): StoredTime[] {
+  const cutoff = Date.parse(nowIso)
+  if (isNaN(cutoff)) return stored // unparseable cutoff → compare against everything (fail safe)
+  return stored.filter(s => {
+    const t = Date.parse(s.start_datetime)
+    return isNaN(t) || t >= cutoff // keep unparseable rows; they are not evidence of shrinkage
+  })
+}
+
 export interface GuardDecision {
   /** Events safe to write. Empty when the batch is rejected. */
   write: Event[]
