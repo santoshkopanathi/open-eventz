@@ -44,6 +44,9 @@ export function isIndexableEvent(event: Event, todayIso: string): boolean {
     const t = event.title.toLowerCase()
     if (FRISCO_ADULT_KEYWORDS.some(kw => t.includes(kw))) return false
   }
+  // Dates we inferred rather than read: shown in the app, never published to Google. We
+  // cannot put an event in a sitemap or emit Event rich data for a date nobody announced.
+  if (event.date_inferred === true) return false
   // Past events: a one-off that already started (and, if multi-day, already ended).
   const ended = event.end_datetime ? event.end_datetime < todayIso : event.start_datetime < todayIso
   if (ended) return false

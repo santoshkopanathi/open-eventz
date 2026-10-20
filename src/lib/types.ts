@@ -20,6 +20,8 @@ export interface Event {
   age_min: number | null
   age_max: number | null
   age_label: string | null
+  /** This occurrence s DATE was inferred from a stated cadence, not published. See migration 008. */
+  date_inferred?: boolean
   is_recurring: boolean
   recurrence_label: string | null
   thumbnail_url: string | null

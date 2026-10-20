@@ -88,8 +88,33 @@ Prefer data sources in this order: **documented JSON API > JSON-LD embedded in t
 
 ---
 
-## Worked example — Kaleidoscope Park (shipped 2026-08-13)
+## Worked example — Kaleidoscope Park (shipped 2026-08-13; **source rebuilt 2026-10-20 — see below**)
 
-- **Platform:** WordPress + **The Events Calendar** (`tribe-events`). **Endpoint:** `GET /wp-json/tribe/events/v1/events` (needs `Accept: application/json` + browser UA + `Referer` — a bare request is **403 WAF-blocked**). Structured: title, dates, venue (geo often empty → park-coords fallback), `cost`, `image.url`, description. **Timezone gotcha (Principle 7):** the site's `utc_*` is 10h wrong (WordPress TZ = "UTC+5"), so we convert the local `start_date` as America/Chicago (`centralWallTimeToUtc`).
+- **Platform (until 2026-10):** WordPress + **The Events Calendar** (`tribe-events`). **Endpoint:** `GET /wp-json/tribe/events/v1/events` (needs `Accept: application/json` + browser UA + `Referer` — a bare request is **403 WAF-blocked**). Structured: title, dates, venue (geo often empty → park-coords fallback), `cost`, `image.url`, description. **Timezone gotcha (Principle 7):** the site's `utc_*` is 10h wrong (WordPress TZ = "UTC+5"), so we convert the local `start_date` as America/Chicago (`centralWallTimeToUtc`).
 - **What it took (the playbook proved out):** `EventSource` + `site.ts` helpers + a `getSupervisionBadge` branch (park → "check with venue"); `ingestKaleidoscope()` + `runKaleidoscopeIngest()` (reusing the shared **`classifyEvents()`** LLM pass — extracted from Play Frisco in the same change, so onboarding was *smaller* than the last source, not larger); `scripts/ingest.ts` + the `ingest.yml` matrix job; a `kaleidoscope-park` non-empty check in the data-quality gate; the Frisco sub-filter option + default-sources list. **No migration** (schema fit).
 - **Result on prod:** **103 events → 84 kid-facing**, all with images, Sep 2026 → Feb 2027. The LLM-primary classifier earned its keep: "Pop & Pour" (a wine event) → **hidden** with reasoning *"explicitly requires guests to be 21+"*, while SaturYAY!/festivals/Tree Lighting are shown. Gates: typecheck + 250 unit + 11 E2E + build + doc-parity + `npm run validate` green; Play Frisco re-run = 0 LLM calls (the shared-classifier refactor is regression-free).
+
+### The same source, rebuilt (2026-10-20) — what changed, and what that teaches
+
+The park replaced its site with a static **Next.js** build. The whole WordPress REST API is gone
+(`/wp-json/` itself 404s, not just the `tribe` namespace), so the connector above could not be
+repaired — only replaced.
+
+- **New access pattern:** the park's own **sitemap** enumerates event pages; each page carries
+  complete **schema.org Event JSON-LD** (name, true-UTC start/end, image, description, offers,
+  named sub-venue, full address). Pages under `/events/` with no Event JSON-LD ("host an event",
+  "vendor opportunities") are not events — the markup's absence is the park's own filter.
+- **Timezone reversal (Principle 7, again):** the old site's `utc_*` was 10h wrong, so the old
+  connector read wall-clock time. The new JSON-LD is **true UTC**. Carrying the old habit across
+  would have moved every event 5 hours. *When a source is rebuilt, re-derive the timezone rule
+  from scratch; never inherit it.*
+- **Shape change:** one page per **programme**, not per occurrence. The JSON-LD gives the NEXT
+  occurrence only; further dates live in the marketing copy ("September 3: Bryan Mayberry …"),
+  and one programme publishes no list at all. Parsing lives in `src/lib/kaleidoscope-parse.ts`
+  with two fail-closed rules: the confirmed date must appear in whatever we read out of the
+  prose (a checksum), and the series weekday resolves the year the copy omits.
+- **Inferred dates:** for a weekly programme with no list we generate a short rolling horizon,
+  flagged `date_inferred` (migration 008) — shown in the app, withheld from the sitemap and from
+  Event rich data, because nobody published those dates.
+- **The guard did its job:** 189 stored occurrences → 19 real ones is a 90% collapse, and the
+  shrink rule rejected it. Replacing a source is a **human-run migration**, not a nightly write.

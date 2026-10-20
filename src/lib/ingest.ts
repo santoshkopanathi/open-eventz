@@ -13,6 +13,7 @@ import { PER_INFERENCE_COST_USD } from './technical-metrics'
 import { markRecurring } from './recurring'
 import { centralWallTimeToUtc, parseCentralWallTime } from './datetime'
 import { screenBatch, upcomingStored, purgeCandidates, type StoredTime } from './ingest-guard'
+import { parseEventJsonLd, parseCadence, parseListedDates, weeklyOccurrences } from './kaleidoscope-parse'
 import { startOfTodayCtIso } from './seo-indexable'
 import { createLlmBudget, type LlmBudget } from './llm-budget'
 
@@ -719,21 +720,28 @@ async function guardedUpsert(
     errors.push(`guard (${source}): ${r}`)
   }
 
-  if (decision.abort) {
-    console.error(`[ingest] guard (${source}): BATCH REJECTED — ${comparable.length} upcoming stored events left untouched (${stored.length} total)`)
-    return { upserted: 0, aborted: true, dropped: decision.dropped.length, purged: 0 }
-  }
-
   // INGEST_DRY_RUN=1 — scrape, screen and report, but touch nothing. Added when the
   // cancellation purge went in: "what would tonight delete?" is a question worth being able
   // to ask without finding out the hard way, and it is the cheapest way to vet a source
   // whose format has changed.
   if (process.env.INGEST_DRY_RUN === '1') {
-    const wouldPurge = purgeCandidates(stillAhead, events)
-    console.warn(`[ingest] DRY RUN (${source}): would write ${decision.write.length}, drop ${decision.dropped.length}, purge ${wouldPurge.skipped ? 0 : wouldPurge.remove.length}${wouldPurge.skipped ? ' (purge would be SKIPPED — see reason)' : ''}`)
-    if (wouldPurge.reason) console.warn(`[ingest] DRY RUN (${source}): ${wouldPurge.reason}`)
-    for (const id of wouldPurge.remove.slice(0, 20)) console.warn(`[ingest] DRY RUN (${source}): would purge ${id}`)
+    const wouldPurge = decision.abort ? null : purgeCandidates(stillAhead, events)
+    console.warn(`[ingest] DRY RUN (${source}): ${decision.abort ? 'the guard would REJECT this batch' : `would write ${decision.write.length}, drop ${decision.dropped.length}, purge ${wouldPurge!.skipped ? 0 : wouldPurge!.remove.length}`}`)
+    if (wouldPurge?.reason) console.warn(`[ingest] DRY RUN (${source}): ${wouldPurge.reason}`)
+    // The batch itself, not just the counts — vetting a source whose format changed means
+    // reading the rows, and a rejected batch is exactly when you most want to see them.
+    for (const e of events.slice(0, 30)) {
+      const when = new Date(e.start_datetime).toLocaleString('en-US', { timeZone: 'America/Chicago', dateStyle: 'medium', timeStyle: 'short' })
+      console.warn(`[ingest] DRY RUN (${source}):   ${when.padEnd(26)} ${String(e.title).slice(0, 46).padEnd(48)}${e.date_inferred ? ' [inferred date]' : ''}`)
+    }
+    if (events.length > 30) console.warn(`[ingest] DRY RUN (${source}):   … and ${events.length - 30} more`)
+    for (const id of wouldPurge?.remove.slice(0, 20) ?? []) console.warn(`[ingest] DRY RUN (${source}): would purge ${id}`)
     return { upserted: 0, aborted: false, dropped: decision.dropped.length, purged: 0 }
+  }
+
+  if (decision.abort) {
+    console.error(`[ingest] guard (${source}): BATCH REJECTED — ${comparable.length} upcoming stored events left untouched (${stored.length} total)`)
+    return { upserted: 0, aborted: true, dropped: decision.dropped.length, purged: 0 }
   }
 
   const { error } = await db.from('events').upsert(decision.write, { onConflict: 'id' })
@@ -997,12 +1005,12 @@ async function classifyEvents(db: ReturnType<typeof supabaseAdmin>, source: Even
 }
 
 // ---------------------------------------------------------------------------
-// Kaleidoscope Park (Frisco signature park) — WordPress + The Events Calendar REST API.
-// Best-case source: fully structured JSON. The bare API is WAF-blocked (403); it returns 200
-// with a browser UA + Accept: application/json + Referer. All events are at the park, so
-// sub-venues share the park's coordinates. See SOURCE-ONBOARDING.md worked example.
+// Kaleidoscope Park (Frisco signature park) — static Next.js site, schema.org Event JSON-LD
+// per event page, enumerated from the park's sitemap. The old WordPress/Tribe API it used
+// until 2026-10 no longer exists. All events are at the park, so sub-venues share its
+// coordinates. See SOURCE-ONBOARDING.md worked example.
 // ---------------------------------------------------------------------------
-const KALEIDOSCOPE_API = 'https://kaleidoscopepark.org/wp-json/tribe/events/v1/events'
+const KALEIDOSCOPE_SITEMAP = 'https://www.kaleidoscopepark.org/sitemap.xml'
 const KALEIDOSCOPE_COORDS = { lat: 33.0978, lng: -96.8230 } // Kaleidoscope Park @ Hall Park, Frisco
 const KALEIDOSCOPE_HEADERS = {
   'Accept': 'application/json',
@@ -1010,60 +1018,89 @@ const KALEIDOSCOPE_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
 }
 
+/**
+ * Kaleidoscope Park — the rebuilt site (2026-10). The WordPress REST API this connector used
+ * is gone entirely (/wp-json 404s), so events now come from each event page's schema.org
+ * Event JSON-LD, enumerated from the park's own sitemap. Parsing lives in
+ * ./kaleidoscope-parse.ts (pure, tested against captured real pages).
+ *
+ * One page per PROGRAM, not per occurrence, so each page yields:
+ *   - the confirmed occurrence, straight from the JSON-LD;
+ *   - any further dates published in the copy, transcribed and checksummed;
+ *   - for a weekly program that publishes no list, a short inferred horizon, flagged
+ *     date_inferred so it can be kept out of the sitemap and the Event rich data.
+ */
 async function ingestKaleidoscope() {
   const errors: string[] = []
   const events: any[] = []
-  const startDate = new Date().toISOString().slice(0, 10) // upcoming events only
+  const todayStart = startOfTodayCtIso()
 
   try {
-    let page = 1
-    let totalPages = 1
-    do {
-      const res = await fetch(`${KALEIDOSCOPE_API}?per_page=50&page=${page}&start_date=${startDate}`, {
-        headers: KALEIDOSCOPE_HEADERS,
-      })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const json: any = await res.json()
-      totalPages = json.total_pages ?? 1
+    const smRes = await fetch(KALEIDOSCOPE_SITEMAP, { headers: KALEIDOSCOPE_HEADERS })
+    if (!smRes.ok) throw new Error(`sitemap HTTP ${smRes.status}`)
+    const sitemap = await smRes.text()
+    const urls = [...sitemap.matchAll(/<loc>([^<]*\/events\/[^<]+)<\/loc>/g)]
+      .map(m => m[1])
+      .filter(u => !/\/events\/?$/.test(u))
 
-      for (const e of (json.events ?? [])) {
-        // Use the LOCAL wall time (start_date) as America/Chicago — the source's utc_* is 10h wrong
-        // (its WordPress TZ is misconfigured as UTC+5). See centralWallTimeToUtc above.
-        const start = centralWallTimeToUtc(e.start_date ?? '')
-        if (!start || isNaN(start.getTime())) continue
-        const end = e.end_date ? centralWallTimeToUtc(e.end_date) : null
-        const title = decodeHtml(e.title ?? '')
-        if (!title) continue
-        const description = e.description ? decodeHtml(String(e.description).replace(/<[^>]+>/g, ' ')) : null
-        const image = e.image?.url ? encodeURI(decodeHtml(String(e.image.url))) : null
+    if (urls.length === 0) throw new Error('sitemap listed no event pages')
 
-        // Price: the Tribe `cost` string ("Free" / "$X" / "") is authoritative when present;
-        // an empty cost → free-by-default inference (same six-layer model as Play Frisco).
-        const costText = typeof e.cost === 'string' ? e.cost.trim() : ''
-        const costFieldClass = interpretCostField(costText)
-        const priceLocked = costFieldClass !== null
-        const resolved = priceLocked
-          ? { price_class: costFieldClass!, price_confidence: 'confirmed' as const }
+    for (const url of urls) {
+      const res = await fetch(url, { headers: KALEIDOSCOPE_HEADERS })
+      if (!res.ok) { errors.push(`kaleidoscope-park: ${url} HTTP ${res.status}`); continue }
+      const html = await res.text()
+
+      // Pages like "host an event" and "vendor opportunities" live under /events/ but carry
+      // no Event markup. Absence of JSON-LD is the correct filter: it is the park's own
+      // statement about what is an event.
+      const parsed = parseEventJsonLd(html)
+      if (!parsed) continue
+
+      const slug = url.replace(/\/$/, '').split('/').pop()!
+      const cadence = parseCadence(html)
+      const listed = parseListedDates(html, parsed.startIso)
+      if (listed.rejected) errors.push(`kaleidoscope-park (${slug}): ${listed.rejected}`)
+
+      // Inferred dates only fill the gap a published list would otherwise have covered.
+      const inferred = listed.dates.length === 0 ? weeklyOccurrences(parsed.startIso, cadence) : []
+
+      const occurrences: { startIso: string; inferred: boolean }[] = [
+        { startIso: parsed.startIso, inferred: false },
+        ...listed.dates.map(d => ({ startIso: d, inferred: false })),
+        ...inferred.map(d => ({ startIso: d, inferred: true })),
+      ]
+
+      const durationMs = parsed.endIso ? Date.parse(parsed.endIso) - Date.parse(parsed.startIso) : null
+
+      for (const occ of occurrences) {
+        if (occ.startIso < todayStart) continue // past occurrences from the published list
+        const title = decodeHtml(parsed.name)
+        const description = parsed.description ? decodeHtml(parsed.description) : null
+
+        // Price: isAccessibleForFree is the park's own statement; otherwise fall back to the
+        // same inference the other sources use.
+        const resolved = parsed.isFree === true
+          ? { price_class: 'free' as const, price_confidence: 'confirmed' as const }
           : fallbackPriceClass({ title, description: description ?? '', registration_required: requiresRegistration(`${title} ${description ?? ''}`) })
         const priceFields = priceClassToFields(resolved.price_class)
 
         events.push({
-          id: `kaleidoscope-park-${e.id}`,
+          id: `kaleidoscope-park-${slug}-${occ.startIso.slice(0, 10)}`,
           source: 'kaleidoscope-park',
           title,
           description,
-          start_datetime: start.toISOString(),
-          end_datetime: end && !isNaN(end.getTime()) ? end.toISOString() : null,
-          location_name: e.venue?.venue ? decodeHtml(String(e.venue.venue)) : 'Kaleidoscope Park',
-          location_address: e.venue?.address ? decodeHtml(String(e.venue.address)) : '6635 Warren Parkway, Frisco, TX',
-          location_lat: e.venue?.geo_lat ? Number(e.venue.geo_lat) : KALEIDOSCOPE_COORDS.lat,
-          location_lng: e.venue?.geo_lng ? Number(e.venue.geo_lng) : KALEIDOSCOPE_COORDS.lng,
+          start_datetime: occ.startIso,
+          end_datetime: durationMs !== null ? new Date(Date.parse(occ.startIso) + durationMs).toISOString() : null,
+          location_name: parsed.locationName ?? 'Kaleidoscope Park',
+          location_address: parsed.address ?? '6635 Warren Parkway, Frisco, TX',
+          location_lat: KALEIDOSCOPE_COORDS.lat,
+          location_lng: KALEIDOSCOPE_COORDS.lng,
           is_free: priceFields.is_free,
           price_text: priceFields.price_text,
           price_class: resolved.price_class,
           price_confidence: resolved.price_confidence,
-          price_reasoning: priceLocked ? `Cost field: "${costText}"` : null,
-          _priceLocked: priceLocked,
+          price_reasoning: parsed.isFree === true ? 'Source states the event is free to attend' : null,
+          _priceLocked: parsed.isFree === true,
           age_min: null,
           age_max: null,
           age_label: null,
@@ -1073,18 +1110,18 @@ async function ingestKaleidoscope() {
           age_basis: null,
           age_confidence: null,
           age_reasoning: null,
-          is_recurring: false,
-          recurrence_label: null,
-          thumbnail_url: image,
-          event_url: e.url || 'https://kaleidoscopepark.org/events/',
+          is_recurring: occurrences.length > 1,
+          recurrence_label: occurrences.length > 1 ? cadence : null,
+          date_inferred: occ.inferred,
+          thumbnail_url: parsed.imageUrl ? encodeURI(parsed.imageUrl) : null,
+          event_url: url,
           category: guessCategory(title, description ?? ''),
           registration_required: requiresRegistration(`${title} ${description ?? ''}`),
-          raw_json: { id: e.id, venue: e.venue?.venue ?? null },
+          raw_json: { slug, cadence, inferred: occ.inferred },
           ingested_at: new Date().toISOString(),
         })
       }
-      page++
-    } while (page <= totalPages)
+    }
   } catch (err: any) {
     errors.push(`kaleidoscope-park: ${err.message}`)
   }

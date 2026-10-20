@@ -187,7 +187,7 @@ Classification cost scales with the number of **new events, not users**: it runs
 
 ### 8.5 Per-source freshness — the check that could never fail (2026-08-22)
 
-**The incident.** Kaleidoscope Park dropped The Events Calendar plugin from its WordPress site.
+**The incident.** Kaleidoscope Park dropped The Events Calendar plugin from its WordPress site. (*Epilogue, 2026-10-20: the park then replaced the whole site with a static Next.js build — `/wp-json/` 404s entirely. The connector was rebuilt on schema.org Event JSON-LD; see SOURCE-ONBOARDING.md and the BUILD-LOG entry.*)
 The Tribe REST route (`/wp-json/tribe/events/v1/events`) began returning **404** — the `tribe`
 namespace is gone from `/wp-json/` and `tribe_events` is no longer a registered post type, so no
 header or URL change recovers it. The source ingested nothing on **three consecutive nights**

@@ -117,12 +117,17 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-paper)', color: 'var(--color-ink)' }}>
-      {/* JSON-LD structured data — the Event rich-result source */}
-      <script
-        type="application/ld+json"
-        // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      {/* JSON-LD structured data — the Event rich-result source. Omitted when the DATE was
+          inferred from a stated cadence rather than published: the page still renders for a
+          visitor, but we do not make a machine-readable claim about an occurrence nobody
+          announced. Such pages are also noindex via isIndexableEvent. */}
+      {!event.date_inferred && (
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
 
       {/* Masthead — same ink band + rust rule + two-colour wordmark as the home page and the
           mobile detail overlay. A shared link is often someone's first ever view of the
@@ -177,6 +182,14 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
           </h1>
 
           <div className="mb-2" style={{ fontSize: '15px', color: 'var(--color-ink-70)' }}>{formatWhen(event)}</div>
+
+          {/* An inferred date is one we derived from the organiser's stated cadence because
+              they publish only the next occurrence. Saying so is the price of showing it. */}
+          {event.date_inferred && (
+            <div className="mb-3" style={{ fontSize: '13px', color: 'var(--color-ink-35)' }}>
+              Date expected from {event.recurrence_label ? `the organizer's "${event.recurrence_label.toLowerCase()}" schedule` : 'the organizer’s regular schedule'} — only the next session is listed by the venue, so confirm before you go.
+            </div>
+          )}
 
           {event.location_name && (
             <div className="mb-3" style={{ fontSize: '15px', color: 'var(--color-ink-70)' }}>

@@ -25,6 +25,14 @@ const ALLOWED_ARG_FORMS: { fragment: string; why: string }[] = [
     fragment: 'new Date(now.getFullYear(), now.getMonth() + i, 1)',
     why: 'numeric Y/M/D constructor building CivicPlus month params — no string parsing, and only the month label is used',
   },
+  {
+    fragment: "new Date(e.start_datetime).toLocaleString('en-US', { timeZone: 'America/Chicago'",
+    why: 'INGEST_DRY_RUN logging only. The argument is a stored ISO instant (unambiguous) and the render names America/Chicago explicitly — it never produces a value that is written',
+  },
+  {
+    fragment: 'new Date(Date.parse(occ.startIso) + durationMs)',
+    why: 'Kaleidoscope occurrence end time: arithmetic on two ISO instants (start + duration), never a wall-clock string. The START instants come from kaleidoscope-parse, which resolves Central wall time per date to survive DST',
+  },
 ]
 
 function codeLines(src: string): { line: number; text: string }[] {

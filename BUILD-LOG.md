@@ -1706,3 +1706,41 @@ Diffing the live Frisco calendar against our rows found three **Teen Anime Club*
 **Verification.** 8 new unit tests, including the Teen Anime Club incident, the cap boundary (exactly 25% purges, one more skips), the dropped-event case, and the finished-this-morning case the dry run exposed. Then dry runs against live data: Frisco 207 written / 3 purged, Plano 589 written / 3 purged, each candidate verified by hand against the source — the three Frisco ids return **HTTP 404**, the Plano pages say cancelled. Full gates: typecheck, 371 unit tests in both timezones, lint (down 2 problems), doc-parity.
 
 **The lesson.** **Absence is not a fact a system records unless you ask it to.** Every check we had was about the data that arrived — were the times plausible, had they shifted, was the batch too small. Nothing asked what *stopped* arriving, so the one failure mode that needs no bad data to happen was invisible: we published a cancelled event not because something broke, but because nothing was watching the gap where it used to be. The second lesson is quieter: two of four sources had the purge all along. **A guarantee that holds for some sources is a guarantee you do not have** — the same completeness problem as the freshness check that was global when it claimed to be per-source.
+
+---
+
+## Kaleidoscope, rebuilt — reading the page instead of the API
+
+*Date: 2026-10-20. Modules: [`src/lib/kaleidoscope-parse.ts`](src/lib/kaleidoscope-parse.ts), [`src/lib/ingest.ts`](src/lib/ingest.ts), [`supabase/migrations/008_date_inferred.sql`](supabase/migrations/008_date_inferred.sql). See SOURCE-ONBOARDING.md.*
+
+**Initial situation.** `kaleidoscope-park: HTTP 404`, nightly. In August the park had dropped The Events Calendar plugin; this time they replaced the site altogether with a static Next.js build. **The whole WordPress REST API is gone** — `/wp-json/` itself 404s, not just the `tribe` namespace. There was no connector to repair.
+
+**What the new site has instead.** Every event page carries complete **schema.org Event JSON-LD** — name, start/end, image, description, `isAccessibleForFree`, a named sub-venue and a full address — and the park's sitemap enumerates the pages. It is the cleanest source we ingest: the same schema we publish ourselves. Pages under `/events/` with no Event markup ("host an event", "vendor opportunities") are not events, and the markup's absence is the park's own filter — no keyword list required.
+
+**The timezone trap, running the other way.** The old WordPress had its timezone misconfigured as UTC+5, which is why the old connector deliberately read wall-clock time instead of the UTC field. The new JSON-LD is **true UTC**. Inheriting the old habit would have moved every Kaleidoscope event five hours — the 2026-08 incident in reverse, caused by being careful in a way that had stopped being correct. Verified against three events (SaturYAY 15:00Z = 10 AM CDT, Live After 5 22:30Z = 5:30 PM, tree lighting 2026-11-21T00:00Z = Friday 20 November 6 PM), each matching the human-readable line on the page. **When a source is rebuilt, re-derive the timezone rule from scratch.**
+
+**The shape change, which is the real work.** The old API returned dated occurrences. The new site has one page per **programme**, with the next occurrence in JSON-LD and any further dates written into the marketing copy:
+
+> September 3: Bryan Mayberry  September 10: Jade Nikol  September 17: David Archibald …
+
+Three programmes publish such a list; one (SaturYAY) publishes only `Every Saturday · through Dec 18, 2027`.
+
+**Why we transcribe lists but do not trust cadence sentences.** The concert series states "First Saturday of every month" — and its published lineup skips **July and August**. A rule-based generator would have invented two concerts that do not exist. The list knows about the summer break; the sentence does not. So published dates are transcribed, and only one programme's dates are generated at all.
+
+**The transcription rules, all fail-closed** (we are reading copy a marketing team types by hand):
+
+| Rule | Why |
+|---|---|
+| The confirmed JSON-LD date must appear in whatever we read out of the prose | It is the one thing on the page we trust completely, so it doubles as a checksum. If our reading does not contain it, our reading is wrong — drop the list, publish the confirmed occurrence alone. |
+| The series weekday **resolves** the year the copy omits | "September 10" carries no year; of the years either side of the confirmed date, at most one puts it on the series' weekday. A date matching no candidate is not an occurrence — it is a date in unrelated copy — and is skipped. |
+| The series time is applied as **Central wall time per date** | Live After 5 is 5:30 PM on both sides of 1 November, but that is 22:30Z in October and 23:30Z in November. Copying the confirmed instant forward would publish every November date an hour early. |
+
+**Inferred dates, and the line they must not cross.** SaturYAY gets a rolling 8-week horizon of generated Saturdays, flagged `date_inferred` (migration 008). They appear in the app, where the detail page says the date came from the organiser's stated schedule and to confirm before going. They are **excluded from the sitemap and emit no Event JSON-LD**: telling Google in machine-readable form that an event starts at 10 AM on 9 January, when nobody announced it, is a claim we cannot back. The horizon is short for the same reason — the nightly re-read re-anchors on the park's own next date, so a skipped week is corrected within days rather than advertised for a year.
+
+**The guard refused the swap, correctly.** 189 stored occurrences → 19 real ones is a 90% collapse, and the shrink rule rejected the batch. The 189 were generated by the old site's recurrence engine and run to October 2028; the system that produced them no longer exists, so not one can be re-verified. Replacing a source is a **human-run migration** (migration 008, step 2), not a nightly write.
+
+**Verification.** 17 unit tests against **captured real pages** — invented HTML would only prove the parser can read HTML we wrote — covering the true-UTC reading, the DST boundary in both the transcribed and the inferred path, the July/August gap, the checksum rejecting a reformatted page, and a non-weekly cadence inferring nothing. Then a dry run against the live site: 19 events, every one checked by hand against the park's own pages. Full gates: typecheck, 391 unit tests in both timezones, lint (down one), doc-parity, build.
+
+**A guard we wrote caught us too.** The structural `new Date(<arg>)` ban in the ingest — added after the 5 AM story-time incident — failed on two new lines. Both were genuinely safe (instant arithmetic, and a dry-run log that names its timezone), and both had to be justified on the allowlist before the suite would pass. **That friction is the feature**: the rule does not ask whether you were careful, it asks you to write down why.
+
+**The lesson.** **A source is not an endpoint; it is an agreement about shape, and the shape can change without anyone telling you.** We lost an API and gained better data in a worse form — richer per event, poorer per occurrence — and most of the work was not fetching, it was deciding what we are entitled to claim once the publisher stops enumerating. The split that fell out of it is worth keeping: *transcribe what they published, infer only what they stated, and never let an inference reach a machine-readable surface.*

@@ -84,3 +84,28 @@ describe('startOfTodayCtIso', () => {
     expect(startOfTodayCtIso(new Date('2026-07-25T02:00:00Z'))).toBe('2026-07-24T05:00:00.000Z')
   })
 })
+
+// ---------------------------------------------------------------------------
+// Inferred dates (migration 008). We generate a short horizon of occurrences for
+// a weekly program that publishes only its next session. Those are shown in the
+// app and withheld from Google — a sitemap entry or Event rich data would be a
+// machine-readable claim about a date nobody announced.
+// ---------------------------------------------------------------------------
+describe('isIndexableEvent — inferred dates', () => {
+  const TODAY = '2026-10-20T05:00:00Z'
+  const base = (over: Partial<Event>) => makeEvent({
+    source: 'kaleidoscope-park', start_datetime: '2026-11-07T16:00:00Z', end_datetime: null, ...over,
+  })
+
+  test('a published occurrence is indexable', () => {
+    expect(isIndexableEvent(base({ date_inferred: false }), TODAY)).toBe(true)
+  })
+
+  test('an inferred occurrence is not', () => {
+    expect(isIndexableEvent(base({ date_inferred: true }), TODAY)).toBe(false)
+  })
+
+  test('rows from before the column existed (undefined) stay indexable', () => {
+    expect(isIndexableEvent(base({ date_inferred: undefined }), TODAY)).toBe(true)
+  })
+})
