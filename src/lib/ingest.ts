@@ -12,7 +12,7 @@ import { fallbackPriceClass, resolvePriceClass, priceClassToFields, interpretCos
 import { PER_INFERENCE_COST_USD } from './technical-metrics'
 import { markRecurring } from './recurring'
 import { centralWallTimeToUtc, parseCentralWallTime } from './datetime'
-import { screenBatch, upcomingStored, type StoredTime } from './ingest-guard'
+import { screenBatch, upcomingStored, purgeCandidates, type StoredTime } from './ingest-guard'
 import { startOfTodayCtIso } from './seo-indexable'
 import { createLlmBudget, type LlmBudget } from './llm-budget'
 
@@ -677,8 +677,10 @@ async function guardedUpsert(
   source: EventSource,
   events: any[],
   errors: string[],
-): Promise<{ upserted: number; aborted: boolean; dropped: number }> {
-  if (events.length === 0) return { upserted: 0, aborted: false, dropped: 0 }
+): Promise<{ upserted: number; aborted: boolean; dropped: number; purged: number }> {
+  // An empty batch is a failed scrape, not "everything was cancelled" — nothing is written,
+  // and nothing is purged either.
+  if (events.length === 0) return { upserted: 0, aborted: false, dropped: 0, purged: 0 }
 
   // Page explicitly: PostgREST caps an unpaginated select at 1000 rows, and it does so
   // SILENTLY. Plano has 1683 rows, so the guard was judging it against an arbitrary 1000-row
@@ -695,7 +697,7 @@ async function guardedUpsert(
     if (readErr) {
       // Can't compare against the current state → refuse rather than write blind.
       errors.push(`guard (${source}): could not read stored events (${readErr.message}) — refusing to write`)
-      return { upserted: 0, aborted: true, dropped: 0 }
+      return { upserted: 0, aborted: true, dropped: 0, purged: 0 }
     }
     stored.push(...((data ?? []) as StoredTime[]))
     if (!data || data.length < PAGE) break
@@ -705,6 +707,9 @@ async function guardedUpsert(
   // upcoming stored rows are evidence about it. See upcomingStored() for the outage this
   // fixes — past events accumulating into the denominator froze Frisco for three nights.
   const comparable = upcomingStored(stored, startOfTodayCtIso())
+
+  // Rows still in the future at this moment — the purge scope (see below).
+  const stillAhead = upcomingStored(stored, new Date().toISOString())
 
   const decision = screenBatch(events, comparable, {
     allowTimeShift: process.env.INGEST_ALLOW_TIME_SHIFT === '1',
@@ -716,15 +721,58 @@ async function guardedUpsert(
 
   if (decision.abort) {
     console.error(`[ingest] guard (${source}): BATCH REJECTED — ${comparable.length} upcoming stored events left untouched (${stored.length} total)`)
-    return { upserted: 0, aborted: true, dropped: decision.dropped.length }
+    return { upserted: 0, aborted: true, dropped: decision.dropped.length, purged: 0 }
+  }
+
+  // INGEST_DRY_RUN=1 — scrape, screen and report, but touch nothing. Added when the
+  // cancellation purge went in: "what would tonight delete?" is a question worth being able
+  // to ask without finding out the hard way, and it is the cheapest way to vet a source
+  // whose format has changed.
+  if (process.env.INGEST_DRY_RUN === '1') {
+    const wouldPurge = purgeCandidates(stillAhead, events)
+    console.warn(`[ingest] DRY RUN (${source}): would write ${decision.write.length}, drop ${decision.dropped.length}, purge ${wouldPurge.skipped ? 0 : wouldPurge.remove.length}${wouldPurge.skipped ? ' (purge would be SKIPPED — see reason)' : ''}`)
+    if (wouldPurge.reason) console.warn(`[ingest] DRY RUN (${source}): ${wouldPurge.reason}`)
+    for (const id of wouldPurge.remove.slice(0, 20)) console.warn(`[ingest] DRY RUN (${source}): would purge ${id}`)
+    return { upserted: 0, aborted: false, dropped: decision.dropped.length, purged: 0 }
   }
 
   const { error } = await db.from('events').upsert(decision.write, { onConflict: 'id' })
   if (error) {
     errors.push(`db upsert (${source}): ${error.message}`)
-    return { upserted: 0, aborted: true, dropped: decision.dropped.length }
+    return { upserted: 0, aborted: true, dropped: decision.dropped.length, purged: 0 }
   }
-  return { upserted: decision.write.length, aborted: false, dropped: decision.dropped.length }
+
+  // Cancellations: upcoming rows the source has stopped listing. Only reached on a batch we
+  // trusted enough to write — "everything not in this batch" is a dangerous sentence to act on
+  // against a batch we refused.
+  // The purge horizon is STRICTER than the guard's. The guard compares from the start of
+  // today, because a batch legitimately contains events earlier today. A listing, though,
+  // drops an event once it has finished — so a row that already started is absent for a
+  // reason that has nothing to do with cancellation. Using the guard's horizon here would
+  // have deleted two Frisco story times that were still live at the source, merely because
+  // they had already happened this morning.
+  let purged = 0
+  const purge = purgeCandidates(stillAhead, events)
+  if (purge.skipped) {
+    console.error(`[ingest] guard (${source}): ${purge.reason}`)
+    errors.push(`guard (${source}): ${purge.reason}`)
+  } else if (purge.remove.length > 0) {
+    // Delete by id in chunks: a `not.in` filter carrying 600 Plano ids rides in the URL and
+    // would eventually exceed what the server accepts, silently changing which rows match.
+    const CHUNK = 200
+    for (let i = 0; i < purge.remove.length; i += CHUNK) {
+      const chunk = purge.remove.slice(i, i + CHUNK)
+      const { error: delErr } = await db.from('events').delete().eq('source', source).in('id', chunk)
+      if (delErr) {
+        errors.push(`purge (${source}): ${delErr.message}`)
+        break
+      }
+      purged += chunk.length
+    }
+    console.warn(`[ingest] purge (${source}): removed ${purged} upcoming event(s) the source no longer lists`)
+  }
+
+  return { upserted: decision.write.length, aborted: false, dropped: decision.dropped.length, purged }
 }
 
 export async function runFriscoIngest(): Promise<SourceIngestResult> {
@@ -803,12 +851,9 @@ export async function runPlayFriscoIngest(): Promise<SourceIngestResult> {
       if (error) errors.push(`cleanup/${kw}: ${error.message}`)
     }
 
-    // Purge stale Play Frisco records — delete any play-frisco event not in this batch
-    if (playFrisco.events.length > 0) {
-      const currentIds = playFrisco.events.map((e: any) => e.id)
-      const { error } = await db.from('events').delete().eq('source', 'play-frisco').not('id', 'in', `(${currentIds.join(',')})`)
-      if (error) errors.push(`purge-stale-play-frisco: ${error.message}`)
-    }
+    // Cancellation purge now lives in guardedUpsert, shared by every source — see
+    // purgeCandidates(). It is narrower than the per-source version it replaces: upcoming
+    // rows only, and capped, so a silent scrape fault cannot delete the calendar.
   }
 
   await recordRun(db, { playFrisco: playFrisco.events.length, upserted, llmCalls, errors, t0 })
@@ -1069,15 +1114,8 @@ export async function runKaleidoscopeIngest(): Promise<SourceIngestResult> {
   const events = dedupeMerge(classifiable)
   markRecurring(events)
 
-  const { upserted, aborted } = await guardedUpsert(db, 'kaleidoscope-park', events, errors)
-
-  // Purge stale — delete any kaleidoscope-park event not in this batch (Tribe events can be
-  // removed). Skipped on a rejected batch, which would otherwise delete good rows.
-  if (!aborted && kaleidoscope.events.length > 0) {
-    const currentIds = kaleidoscope.events.map((e: any) => e.id)
-    const { error } = await db.from('events').delete().eq('source', 'kaleidoscope-park').not('id', 'in', `(${currentIds.join(',')})`)
-    if (error) errors.push(`purge-stale-kaleidoscope: ${error.message}`)
-  }
+  // The cancellation purge runs inside guardedUpsert now — shared by every source.
+  const { upserted } = await guardedUpsert(db, 'kaleidoscope-park', events, errors)
 
   // ingest_runs has no kaleidoscope column; log with upserted + llm_calls (per-source counts on the
   // dashboard come from the events table, so this is fine).

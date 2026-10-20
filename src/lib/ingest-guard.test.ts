@@ -1,5 +1,5 @@
 import type { Event } from './types'
-import { hasImplausibleStart, detectUniformShift, screenBatch, upcomingStored, DEFAULT_GUARD } from './ingest-guard'
+import { hasImplausibleStart, detectUniformShift, screenBatch, upcomingStored, purgeCandidates, DEFAULT_GUARD } from './ingest-guard'
 
 function ev(over: Partial<Event>): Event {
   return {
@@ -213,5 +213,93 @@ describe('upcomingStored', () => {
     const d = screenBatch(half, upcomingStored([...PAST, ...FUTURE], NOW))
     expect(d.abort).toBe(true)
     expect(d.reasons.join(' ')).toMatch(/partial scrape/)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// purgeCandidates — catching cancellations. Before 2026-10-20 the library
+// sources had no purge at all, so a cancelled event stayed forever.
+// ---------------------------------------------------------------------------
+describe('purgeCandidates', () => {
+  const upcoming = (n: number, prefix = 'e') =>
+    Array.from({ length: n }, (_, i) => ({ id: `${prefix}${i}`, start_datetime: '2026-11-01T15:00:00Z' }))
+  const batchOf = (ids: string[]) => ids.map(id => ev({ id }))
+
+  test('a batch that still lists everything purges nothing', () => {
+    const stored = upcoming(40)
+    const d = purgeCandidates(stored, batchOf(stored.map(s => s.id)))
+    expect(d.remove).toEqual([])
+    expect(d.skipped).toBe(false)
+  })
+
+  // The incident: three Frisco "Teen Anime Club" sessions stayed in our data after the
+  // library stopped listing them, one of them four days out.
+  test('REGRESSION: events the source stopped listing are removed', () => {
+    const stored = [...upcoming(163), { id: 'anime1', start_datetime: '2026-10-24T21:00:00Z' },
+      { id: 'anime2', start_datetime: '2026-11-24T22:00:00Z' }, { id: 'anime3', start_datetime: '2026-12-19T22:00:00Z' }]
+    const d = purgeCandidates(stored, batchOf(upcoming(163).map(s => s.id)))
+    expect(d.remove).toEqual(['anime1', 'anime2', 'anime3'])
+    expect(d.skipped).toBe(false)
+  })
+
+  test('a mass disappearance is reported, not executed', () => {
+    const stored = upcoming(100)
+    const d = purgeCandidates(stored, batchOf(upcoming(50).map(s => s.id))) // half gone
+    expect(d.remove).toEqual([])
+    expect(d.skipped).toBe(true)
+    expect(d.reason).toMatch(/PURGE SKIPPED/)
+  })
+
+  test('exactly at the cap still purges; one more skips', () => {
+    const atCap = purgeCandidates(upcoming(100), batchOf(upcoming(75).map(s => s.id)))
+    expect(atCap.skipped).toBe(false)
+    expect(atCap.remove).toHaveLength(25)
+    const overCap = purgeCandidates(upcoming(100), batchOf(upcoming(74).map(s => s.id)))
+    expect(overCap.skipped).toBe(true)
+  })
+
+  // An event the guard dropped for a bad time still EXISTS at the source. Refusing to publish
+  // this version of it is not grounds for deleting the copy we already have.
+  test('an event dropped for an unpublishable time is not treated as cancelled', () => {
+    const stored = upcoming(40)
+    const incoming = [...batchOf(stored.slice(0, 39).map(s => s.id)),
+      ev({ id: 'e39', start_datetime: '2026-11-01T10:00:00Z' })] // 5 AM CT — dropped, not absent
+    expect(purgeCandidates(stored, incoming).remove).toEqual([])
+  })
+
+  test('nothing stored → nothing to purge', () => {
+    expect(purgeCandidates([], batchOf(['a']))).toEqual({ remove: [], skipped: false })
+  })
+})
+
+// The purge scope is chosen by the caller: rows still ahead of *now*, not of midnight.
+// Dry-running the first purge caught this — two Frisco story times that had finished that
+// morning were absent from the listing and would have been deleted as "cancelled", while
+// the source still served both of them.
+describe('purge scope — events that already happened today', () => {
+  const NOW = '2026-10-20T18:00:00Z' // 1 PM CT
+  // Enough still-ahead rows that removing one stays well under the purge cap — this test is
+  // about which rows are in scope, not about the cap.
+  const ahead = Array.from({ length: 19 }, (_, i) => ({ id: `ahead${i}`, start_datetime: '2026-10-27T15:00:00Z' }))
+  const stored = [
+    { id: 'this-morning', start_datetime: '2026-10-20T15:00:00Z' }, // 10 AM CT — finished
+    ...ahead,
+    { id: 'cancelled', start_datetime: '2026-10-25T15:00:00Z' },
+  ]
+
+  test('an event that already started today is not a purge candidate', () => {
+    const scope = upcomingStored(stored, NOW)
+    expect(scope.map(s => s.id)).not.toContain('this-morning')
+    expect(scope).toHaveLength(20)
+
+    // The source lists everything still ahead except the cancelled one. The finished morning
+    // event is absent from the batch too — and must not be mistaken for a cancellation.
+    const d = purgeCandidates(scope, ahead.map(a => ev({ id: a.id })))
+    expect(d.remove).toEqual(['cancelled'])
+    expect(d.remove).not.toContain('this-morning')
+  })
+
+  test("the guard still compares from the start of today — a batch holds today's events", () => {
+    expect(upcomingStored(stored, '2026-10-20T05:00:00Z')).toHaveLength(21)
   })
 })

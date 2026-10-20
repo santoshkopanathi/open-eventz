@@ -32,6 +32,8 @@ export interface GuardThresholds {
   minShiftMinutes: number
   /** Reject the whole batch if it is this much smaller than what is already stored. */
   maxShrinkShare: number
+  /** Refuse to purge in one run if more than this share of upcoming rows went missing. */
+  maxPurgeShare: number
 }
 
 export const DEFAULT_GUARD: GuardThresholds = {
@@ -40,6 +42,7 @@ export const DEFAULT_GUARD: GuardThresholds = {
   minShiftAgreement: 0.8,
   minShiftMinutes: 30,
   maxShrinkShare: 0.5,
+  maxPurgeShare: 0.25,
 }
 
 const EARLIEST_PLAUSIBLE_HOUR_CT = 7
@@ -220,4 +223,58 @@ export function screenBatch(
   }
 
   return { write: abort ? [] : kept, dropped, abort, reasons, shift }
+}
+
+export interface PurgeDecision {
+  /** Stored event ids that the source no longer lists — safe to delete. */
+  remove: string[]
+  /** True when the purge was refused because too much vanished at once. */
+  skipped: boolean
+  reason?: string
+}
+
+/**
+ * Which stored events the source has stopped listing — i.e. cancellations.
+ *
+ * WHY THIS EXISTS. Play Frisco and Kaleidoscope deleted rows that fell out of their batch;
+ * the two library sources never did, so an event the library cancelled stayed in our data
+ * forever. On 2026-10-20 that was three Frisco "Teen Anime Club" sessions, one of them four
+ * days away — exactly the failure the whole pipeline is built to avoid, arrived by omission
+ * rather than by a bad write.
+ *
+ * TWO DELIBERATE NARROWINGS:
+ *
+ * 1. UPCOMING ONLY. A past event cannot be cancelled, and sources drop old events from their
+ *    listings as a matter of course — so absence from a batch says nothing about a past row.
+ *
+ * 2. COMPARED AGAINST THE WHOLE INCOMING BATCH, including events the guard individually
+ *    dropped for an unpublishable time. Those still exist at the source; refusing to publish
+ *    this version of one is not a reason to delete the version we already have.
+ *
+ * The cap is the second opinion. The shrink rule already rejects a batch that collapsed, but a
+ * source could plausibly lose a quarter of its listings to a silent scrape fault without
+ * tripping it; a mass disappearance is therefore reported for a human rather than executed.
+ * Below the cap we delete, because the product rule prefers a missing event to a wrong one —
+ * and a cancelled event left on the page is the wrong one.
+ */
+export function purgeCandidates(
+  storedUpcoming: StoredTime[],
+  incoming: Pick<Event, 'id'>[],
+  t: GuardThresholds = DEFAULT_GUARD,
+): PurgeDecision {
+  if (storedUpcoming.length === 0) return { remove: [], skipped: false }
+
+  const present = new Set(incoming.map(e => e.id))
+  const remove = storedUpcoming.filter(s => !present.has(s.id)).map(s => s.id)
+  if (remove.length === 0) return { remove: [], skipped: false }
+
+  const share = remove.length / storedUpcoming.length
+  if (share > t.maxPurgeShare) {
+    return {
+      remove: [],
+      skipped: true,
+      reason: `PURGE SKIPPED: ${remove.length} of ${storedUpcoming.length} upcoming events (${(share * 100).toFixed(0)}%) are missing from this batch (max ${(t.maxPurgeShare * 100).toFixed(0)}%) — that is a scrape fault more often than a mass cancellation, so nothing was deleted. Check the source.`,
+    }
+  }
+  return { remove, skipped: false }
 }

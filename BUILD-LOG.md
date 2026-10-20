@@ -1680,3 +1680,29 @@ Each route keeps its own `metadata`, canonical URL and structured data, so nothi
 **Verification.** 6 new unit tests, including the incident reproduced with its real numbers — asserting the *old* comparison aborts and the new one does not, so the bug is encoded, not just the fix — plus one asserting a genuinely halved batch still aborts, because narrowing a rule must not disable it. Then a read-only simulation against the live database reproducing the table above. Full gates: typecheck, 363 unit tests in both timezones, lint, doc-parity.
 
 **The lesson.** **A ratio is only a guardrail if both sides measure the same thing.** This one compared a window against an accumulation, which made it a clock, not a check — it was always going to fire, and the only question was which night. When a threshold is a ratio, say out loud what the denominator grows with; if the answer is "time", you have written a countdown. The second lesson is about the pattern that masked it: the same bug read as healthy on one source purely because a silent row cap cut the denominator down. **A limit you did not ask for is a limit you will not remember.**
+
+---
+
+## The cancellation we could never see
+
+*Date: 2026-10-20. Modules: [`src/lib/ingest-guard.ts`](src/lib/ingest-guard.ts), [`src/lib/ingest.ts`](src/lib/ingest.ts). See INGEST-DESIGN.md §8.*
+
+**Initial situation.** Asked how we would notice a cancelled event, the honest answer turned out to be: for two of four sources, we would not, ever. Play Frisco and Kaleidoscope deleted rows that fell out of their batch; **Frisco Library and Plano Library only ever upserted.** An event the library cancelled stayed in our data indefinitely, because nothing in the pipeline could express "this is gone".
+
+Diffing the live Frisco calendar against our rows found three **Teen Anime Club** sessions we still listed and the library did not — one of them four days away. Plano had three more, including a staff event titled **"test"** sitting on Christmas Day.
+
+**What changed.** `purgeCandidates` — pure, tested, shared by every source — returns the upcoming rows a batch no longer lists. Three deliberate narrowings, each of which cost something to learn:
+
+| Narrowing | Why |
+|---|---|
+| Upcoming rows only | A past event cannot be cancelled; sources drop finished events as a matter of course. |
+| Compared against the **whole** incoming batch | An event the guard dropped for a bad time still exists at the source. Refusing to publish *this version* is not grounds for deleting the version we hold. |
+| Capped at 25% of upcoming rows | The shrink rule rejects a collapsed batch, but a source could lose a fifth of its listings to a silent fault without tripping it. Above the cap we report for a human instead of deleting. |
+
+**The horizon that the dry run caught.** The first implementation reused the guard's "start of today" horizon and would have purged **five** Frisco events, not three. The two extras were story times that had finished that morning: absent from the listing because they were over, still served by the source, not cancelled at all. A listing drops an event once it has finished, so the purge horizon must be **now**, while the guard's stays at midnight — a batch legitimately contains events from earlier today. Two cutoffs, two different questions.
+
+**`INGEST_DRY_RUN=1`** went in alongside: scrape, screen, report what would be written and purged, touch nothing. It is what caught the horizon bug, before a single row was deleted. A delete path with no preview is a delete path you test in production.
+
+**Verification.** 8 new unit tests, including the Teen Anime Club incident, the cap boundary (exactly 25% purges, one more skips), the dropped-event case, and the finished-this-morning case the dry run exposed. Then dry runs against live data: Frisco 207 written / 3 purged, Plano 589 written / 3 purged, each candidate verified by hand against the source — the three Frisco ids return **HTTP 404**, the Plano pages say cancelled. Full gates: typecheck, 371 unit tests in both timezones, lint (down 2 problems), doc-parity.
+
+**The lesson.** **Absence is not a fact a system records unless you ask it to.** Every check we had was about the data that arrived — were the times plausible, had they shifted, was the batch too small. Nothing asked what *stopped* arriving, so the one failure mode that needs no bad data to happen was invisible: we published a cancelled event not because something broke, but because nothing was watching the gap where it used to be. The second lesson is quieter: two of four sources had the purge all along. **A guarantee that holds for some sources is a guarantee you do not have** — the same completeness problem as the freshness check that was global when it claimed to be per-source.
