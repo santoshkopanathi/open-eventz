@@ -1,4 +1,4 @@
-import { parseEventJsonLd, parseCadence, parseListedDates, weeklyOccurrences, centralDateTimeToUtc } from './kaleidoscope-parse'
+import { parseEventJsonLd, parseCadence, parseListedDates, weeklyOccurrences, centralDateTimeToUtc, centralDateKey, parseThroughDate, resolveOccurrenceCollisions } from './kaleidoscope-parse'
 import { saturyay, liveAfter5, concertSeries, shopLocal, oneOff, notAnEvent } from './__fixtures__/kaleidoscope-pages'
 
 const ct = (iso: string) =>
@@ -117,5 +117,79 @@ describe('weeklyOccurrences — inferred, for a page with a rule and no list', (
     expect(weeklyOccurrences(e().startIso, 'First Saturday of every month')).toEqual([])
     expect(weeklyOccurrences(e().startIso, 'Select dates')).toEqual([])
     expect(weeklyOccurrences(e().startIso, null)).toEqual([])
+  })
+})
+
+// ---------------------------------------------------------------------------
+// 2026-10-21: the park published six new pages overnight, three of which broke
+// assumptions the first version had baked in.
+// ---------------------------------------------------------------------------
+describe('centralDateKey — the id must name the day a human would say', () => {
+  test('an evening event is not pushed to the next day', () => {
+    // 2026-10-24T00:00Z is Friday 23 October, 7 PM Central. The UTC slice said the 24th.
+    expect(centralDateKey('2026-10-24T00:00:00.000Z')).toBe('2026-10-23')
+  })
+
+  test('a morning event is unaffected', () => {
+    expect(centralDateKey('2026-10-24T15:00:00.000Z')).toBe('2026-10-24')
+  })
+})
+
+describe('parseThroughDate — a cadence without its bound is half a sentence', () => {
+  const confirmed = '2026-11-21T16:00:00.000Z'
+
+  test('reads a bound with no year and places it ahead of the confirmed date', () => {
+    const through = parseThroughDate('<p>Every Saturday Next: Sat, Nov 21 · through Dec 19</p>', confirmed)!
+    expect(through.slice(0, 10)).toBe('2026-12-20') // end of 19 Dec, Central → 20th in UTC
+  })
+
+  test('reads an explicit year', () => {
+    const through = parseThroughDate('<p>through Dec 18, 2027</p>', '2026-10-24T15:00:00.000Z')!
+    expect(through.slice(0, 7)).toBe('2027-12')
+  })
+
+  test('no bound stated → null, which means no clipping', () => {
+    expect(parseThroughDate('<p>Every Saturday</p>', confirmed)).toBeNull()
+  })
+
+  // REGRESSION: the Holiday Edition runs "through Dec 19" and the first horizon generated
+  // Saturdays into January for a programme the park had already said ends in December.
+  test('inferred occurrences stop at the stated bound', () => {
+    const through = parseThroughDate('<p>through Dec 19</p>', confirmed)
+    const occ = weeklyOccurrences(confirmed, 'Every Saturday', 8, through)
+    expect(occ).toHaveLength(4) // Nov 28, Dec 5, 12, 19
+    expect(occ.every(d => d <= '2026-12-20')).toBe(true)
+  })
+})
+
+describe('resolveOccurrenceCollisions', () => {
+  const slot = (programKey: string, day: string, date_inferred: boolean) => ({
+    programKey, start_datetime: `2026-${day}T16:00:00.000Z`, location_name: 'Performance Lawn', date_inferred,
+  })
+
+  // REGRESSION: "SaturYay: Holiday Edition" took the same 10 AM Saturday slot as SaturYAY,
+  // and the app showed SaturYAY twice on 12 December.
+  test('a published occurrence beats an inferred one in the same slot', () => {
+    const kept = resolveOccurrenceCollisions([slot('saturyay', '11-21', true), slot('holiday', '11-21', false)])
+    expect(kept).toHaveLength(1)
+    expect(kept[0].programKey).toBe('holiday')
+  })
+
+  test('two programmes inferring into one slot cancel out — neither was announced', () => {
+    expect(resolveOccurrenceCollisions([slot('saturyay', '11-28', true), slot('holiday', '11-28', true)])).toEqual([])
+  })
+
+  test('published occurrences are never dropped, even two in one slot', () => {
+    const both = [slot('grinch', '12-05', false), slot('saturyay', '12-05', false)]
+    expect(resolveOccurrenceCollisions(both)).toHaveLength(2)
+  })
+
+  test('a different time or venue is not a collision', () => {
+    const kept = resolveOccurrenceCollisions([
+      slot('saturyay', '11-28', true),
+      { programKey: 'fitness', start_datetime: '2026-11-28T15:00:00.000Z', location_name: 'Performance Lawn', date_inferred: true },
+      { programKey: 'other', start_datetime: '2026-11-28T16:00:00.000Z', location_name: 'Great Lawn', date_inferred: true },
+    ])
+    expect(kept).toHaveLength(3)
   })
 })

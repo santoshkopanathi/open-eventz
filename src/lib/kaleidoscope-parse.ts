@@ -170,7 +170,7 @@ export function parseListedDates(html: string, confirmedStartIso: string): Liste
  * the park's own next date, and a skipped week is corrected within days instead of being
  * advertised for a year. Returns [] for any cadence other than a weekly one.
  */
-export function weeklyOccurrences(confirmedStartIso: string, cadence: string | null, horizonWeeks = 8): string[] {
+export function weeklyOccurrences(confirmedStartIso: string, cadence: string | null, horizonWeeks = 8, throughIso: string | null = null): string[] {
   if (!cadence || !/^Every [A-Z][a-z]+$/.test(cadence)) return []
   const confirmed = centralParts(confirmedStartIso)
   const out: string[] = []
@@ -182,7 +182,100 @@ export function weeklyOccurrences(confirmedStartIso: string, cadence: string | n
     // Re-applying the wall time can shift the UTC date across a DST boundary; verify the
     // occurrence still lands on the right weekday before publishing it.
     if (centralParts(when.toISOString()).weekday !== confirmed.weekday) continue
+    // Never past the end of the run the page states.
+    if (throughIso && when.getTime() > Date.parse(throughIso)) break
     out.push(when.toISOString())
   }
   return out
+}
+
+/** The Central-time calendar date of an instant, 'YYYY-MM-DD' — the date a human would say. */
+export function centralDateKey(iso: string): string {
+  const p = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago', year: 'numeric', month: '2-digit', day: '2-digit' })
+    .formatToParts(new Date(iso))
+  const get = (t: string) => p.find(x => x.type === t)?.value ?? '00'
+  return `${get('year')}-${get('month')}-${get('day')}`
+}
+
+export interface OccurrenceSlot {
+  programKey: string
+  start_datetime: string
+  location_name: string | null
+  date_inferred: boolean
+}
+
+/**
+ * Resolve collisions between occurrences before they are written.
+ *
+ * WHY (2026-10-21). The park published "SaturYay: Holiday Edition" — the same 10 AM Saturday
+ * slot as SaturYAY, running Nov 21 to Dec 19, evidently the seasonal rebrand of it rather
+ * than a second event. Both pages state "Every Saturday", so the inferred horizons of the two
+ * programmes landed on the same dates and the app showed SaturYAY twice.
+ *
+ * TWO RULES, both resolving toward what someone actually published:
+ *
+ *  1. A published occurrence beats an inferred one in the same slot. We were told this event
+ *     happens; the other is our extrapolation. Drop the inference.
+ *
+ *  2. When two different programmes INFER into the same slot, drop both. The pages disagree
+ *     about what runs that morning and neither said anything about that date; picking one
+ *     would be inventing an answer to a question the source left open. The published
+ *     occurrences of both programmes are untouched.
+ *
+ * A programme never collides with itself: a slot it has already published is its own.
+ */
+export function resolveOccurrenceCollisions<T extends OccurrenceSlot>(occurrences: T[]): T[] {
+  const slotKey = (o: OccurrenceSlot) => `${o.start_datetime}|${o.location_name ?? ''}`
+
+  const published = new Set<string>()
+  const inferringProgrammes = new Map<string, Set<string>>()
+  for (const o of occurrences) {
+    const key = slotKey(o)
+    if (o.date_inferred) {
+      const set = inferringProgrammes.get(key) ?? new Set<string>()
+      set.add(o.programKey)
+      inferringProgrammes.set(key, set)
+    } else {
+      published.add(key)
+    }
+  }
+
+  return occurrences.filter(o => {
+    if (!o.date_inferred) return true
+    const key = slotKey(o)
+    if (published.has(key)) return false                                  // rule 1
+    if ((inferringProgrammes.get(key)?.size ?? 0) > 1) return false       // rule 2
+    return true
+  })
+}
+
+/**
+ * The end of the run, as the page states it: "through Dec 18, 2027", "through Nov 19".
+ *
+ * WHY (2026-10-21). "SaturYay: Holiday Edition" runs "Every Saturday · through Dec 19" — and
+ * the first inferred horizon ignored that, generating Saturdays into January for a programme
+ * the park had already said ends in December. A cadence without its bound is half a sentence.
+ *
+ * The year is usually absent; the stated bound is always ahead of the confirmed occurrence,
+ * so the first candidate year that is not behind it wins. Returns null when no bound is
+ * stated, which means "no clipping", not "runs forever" — the horizon is short regardless.
+ */
+export function parseThroughDate(html: string, confirmedStartIso: string): string | null {
+  const text = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ')
+  const m = text.match(/through\s+([A-Z][a-z]{2,8})\.?\s+(\d{1,2})(?:,\s*(20\d\d))?/)
+  if (!m) return null
+
+  const monthIdx = MONTHS.findIndex(name => name.startsWith(m[1].toLowerCase()))
+  if (monthIdx < 0) return null
+  const day = +m[2]
+  if (day < 1 || day > 31) return null
+
+  const confirmed = new Date(confirmedStartIso)
+  const years = m[3] ? [+m[3]] : [confirmed.getUTCFullYear(), confirmed.getUTCFullYear() + 1]
+  for (const year of years) {
+    // End of that day in Central terms — an occurrence ON the bound date is still in the run.
+    const bound = centralDateTimeToUtc(year, monthIdx + 1, day, 23, 59)
+    if (bound.getTime() >= confirmed.getTime()) return bound.toISOString()
+  }
+  return null
 }

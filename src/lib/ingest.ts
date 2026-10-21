@@ -11,9 +11,10 @@ import { inferPlayFriscoEvent } from './age-inference'
 import { fallbackPriceClass, resolvePriceClass, priceClassToFields, interpretCostField } from './price'
 import { PER_INFERENCE_COST_USD } from './technical-metrics'
 import { markRecurring } from './recurring'
+import { parseFriscoEventLink } from './frisco-parse'
 import { centralWallTimeToUtc, parseCentralWallTime } from './datetime'
 import { screenBatch, upcomingStored, purgeCandidates, type StoredTime } from './ingest-guard'
-import { parseEventJsonLd, parseCadence, parseListedDates, weeklyOccurrences } from './kaleidoscope-parse'
+import { parseEventJsonLd, parseCadence, parseListedDates, weeklyOccurrences, resolveOccurrenceCollisions, centralDateKey, parseThroughDate } from './kaleidoscope-parse'
 import { startOfTodayCtIso } from './seo-indexable'
 import { createLlmBudget, type LlmBudget } from './llm-budget'
 
@@ -96,6 +97,7 @@ async function ingestFriscoLibrary() {
   const seenIds = new Set<string>()
   let ageResolved = 0
   let ageFallback = 0
+  let cardsSeen = 0 // listing cards encountered, to tell "source is empty" from "we parsed nothing"
 
   // Age source (2026-08-13): the JSON API `definition.audience_ids` mapped via this taxonomy.
   // Replaces the "Suitable for:" HTML scrape, which the client-side-rendered /v2 pages left empty.
@@ -126,12 +128,14 @@ async function ingestFriscoLibrary() {
 
       const cardChunks = html.split('<li><div class="cp-events-search-item">').slice(1)
       if (cardChunks.length === 0) break
+      cardsSeen += cardChunks.length
 
       for (const card of cardChunks) {
-        const linkMatch = card.match(/href="(https:\/\/friscolibrary\.bibliocommons\.com\/events\/([a-zA-Z0-9]+))"/)
-        if (!linkMatch) continue
-        const eventUrl = linkMatch[1]
-        const eventId = linkMatch[2]
+        // Both URL shapes — see frisco-parse.ts for the move that broke this silently.
+        const link = parseFriscoEventLink(card)
+        if (!link) continue
+        const eventUrl = link.url
+        const eventId = link.id
 
         if (seenIds.has(eventId)) continue
         seenIds.add(eventId)
@@ -240,6 +244,16 @@ async function ingestFriscoLibrary() {
       }
 
       page++
+    }
+
+    // A SILENT ZERO is the worst outcome available here, and on 2026-10-21 it happened: the
+    // listing still rendered 20 cards per page, the link format had changed underneath, every
+    // card failed to match, and the run reported `fetched: 0, errors: []`. The batch guard did
+    // its job (an empty batch writes nothing and purges nothing) but the log said the source
+    // was empty, which is a different problem with a different fix. "The page had cards and we
+    // understood none of them" must say so.
+    if (cardsSeen > 0 && events.length === 0) {
+      errors.push(`frisco-library: parsed 0 events from ${cardsSeen} listing card(s) — the card format has changed, not the calendar`)
     }
   } catch (err: any) {
     errors.push(`frisco-library: ${err.message}`)
@@ -1062,7 +1076,8 @@ async function ingestKaleidoscope() {
       if (listed.rejected) errors.push(`kaleidoscope-park (${slug}): ${listed.rejected}`)
 
       // Inferred dates only fill the gap a published list would otherwise have covered.
-      const inferred = listed.dates.length === 0 ? weeklyOccurrences(parsed.startIso, cadence) : []
+      const through = parseThroughDate(html, parsed.startIso)
+      const inferred = listed.dates.length === 0 ? weeklyOccurrences(parsed.startIso, cadence, 8, through) : []
 
       const occurrences: { startIso: string; inferred: boolean }[] = [
         { startIso: parsed.startIso, inferred: false },
@@ -1085,7 +1100,7 @@ async function ingestKaleidoscope() {
         const priceFields = priceClassToFields(resolved.price_class)
 
         events.push({
-          id: `kaleidoscope-park-${slug}-${occ.startIso.slice(0, 10)}`,
+          id: `kaleidoscope-park-${slug}-${centralDateKey(occ.startIso)}`,
           source: 'kaleidoscope-park',
           title,
           description,
@@ -1126,7 +1141,19 @@ async function ingestKaleidoscope() {
     errors.push(`kaleidoscope-park: ${err.message}`)
   }
 
-  return { events, errors }
+  // Collisions are resolved across the whole batch, because they happen BETWEEN programmes:
+  // "SaturYay: Holiday Edition" occupies the same 10 AM Saturday slot as SaturYAY. The
+  // programme key is the id without its date, so an occurrence never collides with itself.
+  const resolved = resolveOccurrenceCollisions(
+    events.map(e => ({ ...e, programKey: String(e.id).replace(/-\d{4}-\d{2}-\d{2}$/, '') })),
+  )
+  const dropped = events.length - resolved.length
+  if (dropped > 0) {
+    console.warn(`[ingest] kaleidoscope-park: dropped ${dropped} inferred occurrence(s) that collided with a published or ambiguous slot`)
+  }
+
+  // programKey is a local construct — it must not reach the row we write.
+  return { events: resolved.map(({ programKey: _programKey, ...row }) => row), errors }
 }
 
 export async function runKaleidoscopeIngest(): Promise<SourceIngestResult> {

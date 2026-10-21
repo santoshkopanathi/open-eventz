@@ -1744,3 +1744,44 @@ Three programmes publish such a list; one (SaturYAY) publishes only `Every Satur
 **A guard we wrote caught us too.** The structural `new Date(<arg>)` ban in the ingest — added after the 5 AM story-time incident — failed on two new lines. Both were genuinely safe (instant arithmetic, and a dry-run log that names its timezone), and both had to be justified on the allowlist before the suite would pass. **That friction is the feature**: the rule does not ask whether you were careful, it asks you to write down why.
 
 **The lesson.** **A source is not an endpoint; it is an agreement about shape, and the shape can change without anyone telling you.** We lost an API and gained better data in a worse form — richer per event, poorer per occurrence — and most of the work was not fetching, it was deciding what we are entitled to claim once the publisher stops enumerating. The split that fell out of it is worth keeping: *transcribe what they published, infer only what they stated, and never let an inference reach a machine-readable surface.*
+
+---
+
+## Two sources moved in one night
+
+*Date: 2026-10-21. Modules: [`src/lib/frisco-parse.ts`](src/lib/frisco-parse.ts), [`src/lib/kaleidoscope-parse.ts`](src/lib/kaleidoscope-parse.ts), [`src/lib/ingest.ts`](src/lib/ingest.ts).*
+
+**Initial situation.** The first unattended run after the guard fix, the cancellation purge and the Kaleidoscope rebuild: `ingest (frisco)` red in 39 seconds, three other jobs green, and the live site showing **SaturYAY twice on 12 December**.
+
+### Frisco: a silent zero
+
+The scrape returned `fetched: 0, errors: []`. Not an exception, not a block — BiblioCommons moved event links from `/events/<id>` to **`/v2/events/<id>`**. The listing still rendered 20 cards a page; our link pattern matched none of them; every card was skipped by a `continue`, and the run reported an empty calendar.
+
+Everything downstream behaved correctly. An empty batch writes nothing and purges nothing, so no data was harmed, and `upserted = 0` turned the job red. **But the log named the wrong problem.** "The library published no events" and "we no longer understand the library's HTML" need different responses, and the run could not tell them apart.
+
+So the counter is now explicit: cards seen versus events parsed, and `parsed 0 events from N listing card(s) — the card format has changed, not the calendar` when they disagree. The link parser moved to `frisco-parse.ts` with its own tests, accepting both URL shapes — the id is unchanged either way, so stored rows keep their identity across the move.
+
+### Kaleidoscope: six new pages, three broken assumptions
+
+The park published six event pages overnight — a birthday celebration, Diwali, Día de los Muertos, Fitness Fun Classes, a Grinch food drive, and **"SaturYay: Holiday Edition"**. The connector picked them all up, which is the good news, and each surfaced a flaw:
+
+**1. Two programmes, one slot.** The Holiday Edition runs "Every Saturday · through Dec 19" at 10 AM — the same slot as SaturYAY, evidently the seasonal rebrand of it rather than a second event. Both pages state a weekly cadence, so both inferred horizons landed on the same mornings and the app showed SaturYAY twice.
+
+`resolveOccurrenceCollisions` now settles these toward whatever someone published:
+
+| Case | Resolution |
+|---|---|
+| Published occurrence vs inferred, same slot | Keep the published one. We were told it happens; the other is our extrapolation. |
+| Two programmes **inferring** into one slot | Drop both. The pages disagree about that morning and neither announced it; choosing one would be inventing an answer the source left open. |
+
+Nine occurrences fell away, and the duplicate 12 December SaturYAY with it.
+
+**2. A cadence without its bound is half a sentence.** The Holiday Edition ends 19 December. The first horizon ignored that and generated Saturdays into January for a programme the park had already said was finished. `parseThroughDate` reads the stated end — with or without a year — and clips the horizon to it.
+
+**3. The id named the wrong day.** Row ids were built from the UTC date, so a 7 PM Central event (`00:00Z` the next day) was filed under tomorrow: "Our Birthday Celebration" is Friday 23 October and its id said the 24th. Cosmetic until two evening occurrences a day apart collide on one id and silently overwrite each other. Ids now use the Central calendar date.
+
+**Verification.** 15 new unit tests, each pinned to the incident that produced it: both Frisco link forms plus the "View all dates" link that must never be mistaken for an event; the collision rules in four shapes; the bound clipping; the evening-id case. Dry runs against both live sources: Frisco back to **205 events**, Kaleidoscope **28** with the January inferences gone and no duplicate slot. Full gates: typecheck, 406 unit tests in both timezones, lint, doc-parity.
+
+**One consequence to carry.** The id change plus the dropped collisions mean 44% of stored Kaleidoscope rows are absent from the new batch, so the purge cap refuses to act — correctly. Like the original rebuild, the cleanup is a human-run delete-and-reingest, not a nightly write.
+
+**The lesson.** **Shipping a source connector is not the end of the work; it is the beginning of a relationship with a publisher who will change things without telling you.** Both failures today were the source moving, not the code rotting, and the two guards that mattered were the ones that made the change *legible*: the batch guard, which refused to act on data it could not vouch for, and — the one we were missing — a count that could tell "nothing arrived" from "nothing was understood". **Fail-closed protects the data; it does not explain itself. Say which of the two silences you are in.**
