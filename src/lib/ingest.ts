@@ -17,6 +17,7 @@ import { screenBatch, upcomingStored, purgeCandidates, type StoredTime } from '.
 import { parseEventJsonLd, parseCadence, parseListedDates, weeklyOccurrences, resolveOccurrenceCollisions, centralDateKey, parseThroughDate, programFamily } from './kaleidoscope-parse'
 import { startOfTodayCtIso } from './seo-indexable'
 import { createLlmBudget, type LlmBudget } from './llm-budget'
+import { describeLlmFailure, needsHuman, type LlmFailureKind } from './llm-failure'
 
 // Adult programs that BiblioCommons incorrectly includes in children audience feeds
 const FRISCO_ADULT_KEYWORDS = [
@@ -851,6 +852,9 @@ export async function runPlayFriscoIngest(): Promise<SourceIngestResult> {
   // LLM-primary classification (age + price), fail-closed — the shared helper (also used by Kaleidoscope).
   const classified = await classifyEvents(db, 'play-frisco', playFrisco.events)
   const llmCalls = classified.llmCalls
+  if (classified.blocked) {
+    errors.push(describeLlmFailure(classified.blocked, 'play-frisco', classified.heldBack))
+  }
   if (classified.capped) {
     // Coverage was deliberately sacrificed to bound spend — that must not pass silently.
     errors.push('llm-budget (play-frisco): per-run LLM call cap reached; remaining events were hidden rather than classified. Raise MAX_LLM_CALLS_PER_RUN only if this volume is the new normal.')
@@ -913,9 +917,13 @@ export async function runAllIngest(): Promise<{
 // known events makes 0 calls). Low-confidence or explicitly-adult events are hidden
 // (`kid_relevant=false`). Returns the number of Claude calls made. See SOURCE-ONBOARDING.md.
 // ---------------------------------------------------------------------------
-async function classifyEvents(db: ReturnType<typeof supabaseAdmin>, source: EventSource, events: any[], budget: LlmBudget = createLlmBudget()): Promise<{ llmCalls: number; capped: boolean }> {
-  if (events.length === 0) return { llmCalls: 0, capped: false }
+async function classifyEvents(db: ReturnType<typeof supabaseAdmin>, source: EventSource, events: any[], budget: LlmBudget = createLlmBudget()): Promise<{ llmCalls: number; capped: boolean; blocked: LlmFailureKind | null; heldBack: number }> {
+  if (events.length === 0) return { llmCalls: 0, capped: false, blocked: null, heldBack: 0 }
   let llmCalls = 0
+  // Set when a failure means every remaining call would fail too — an exhausted balance or a
+  // rejected key. Carrying on would spend minutes to produce the same refusal per event, and
+  // bury the one line that says what to do.
+  let blocked: LlmFailureKind | null = null
   const ids = events.map((e: any) => e.id)
   const { data: priorRows } = await db
     .from('events')
@@ -960,8 +968,17 @@ async function classifyEvents(db: ReturnType<typeof supabaseAdmin>, source: Even
       e._skipWrite = true
       continue
     }
+    // Once the API has told us a human must act, stop asking. Every remaining event is held
+    // back by the same rule as a budget skip — excluded from the write, classified next run.
+    if (blocked) {
+      e._skipWrite = true
+      continue
+    }
     llmCalls++
-    const result = await inferPlayFriscoEvent({ title: e.title, description: e.description ?? '' })
+    const result = await inferPlayFriscoEvent(
+      { title: e.title, description: e.description ?? '' },
+      { onFailure: kind => { if (needsHuman(kind)) blocked = kind } },
+    )
     if (result) {
       e.kid_relevant = result.kid_relevant
       e.kid_confidence = result.kid_confidence
@@ -1015,7 +1032,14 @@ async function classifyEvents(db: ReturnType<typeof supabaseAdmin>, source: Even
   if (budget.wasCapped()) {
     console.error(`[ingest] LLM BUDGET CAP for ${source}: ${budget.describe()}`)
   }
-  return { llmCalls, capped: budget.wasCapped() }
+  // Truthy check on purpose. The structural guard in classify-skip.test.ts counts the strict
+  // comparisons to prove that every runner filters undecided events out before writing; this
+  // is a tally for an error message, not one of those filters, and must not inflate the count.
+  const heldBack = events.filter((e: { _skipWrite?: boolean }) => Boolean(e._skipWrite)).length
+  if (blocked) {
+    console.error(`[ingest] ${describeLlmFailure(blocked, source, heldBack)}`)
+  }
+  return { llmCalls, capped: budget.wasCapped(), blocked, heldBack }
 }
 
 // ---------------------------------------------------------------------------
@@ -1181,6 +1205,9 @@ export async function runKaleidoscopeIngest(): Promise<SourceIngestResult> {
   // LLM-primary classification (age + price), fail-closed — the shared helper.
   const classified = await classifyEvents(db, 'kaleidoscope-park', kaleidoscope.events)
   const llmCalls = classified.llmCalls
+  if (classified.blocked) {
+    errors.push(describeLlmFailure(classified.blocked, 'kaleidoscope-park', classified.heldBack))
+  }
   if (classified.capped) {
     // Coverage was deliberately sacrificed to bound spend — that must not pass silently.
     errors.push('llm-budget (kaleidoscope-park): per-run LLM call cap reached; remaining events were hidden rather than classified. Raise MAX_LLM_CALLS_PER_RUN only if this volume is the new normal.')

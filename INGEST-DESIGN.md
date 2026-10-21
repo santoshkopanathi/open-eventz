@@ -70,6 +70,7 @@ It's now a **thin wrapper** ([`src/app/api/ingest/route.ts`](src/app/api/ingest/
 | File | Role |
 |---|---|
 | [`src/lib/kaleidoscope-parse.ts`](src/lib/kaleidoscope-parse.ts) | Pure parsing for the rebuilt Kaleidoscope site: Event JSON-LD, cadence + `through` bound, transcribed dates, inferred horizons, programme families and slot collisions. |
+| [`src/lib/llm-failure.ts`](src/lib/llm-failure.ts) | Why a model call failed — billing / auth / rate-limit / overloaded / other, and the operator line for each. |
 | [`src/lib/frisco-parse.ts`](src/lib/frisco-parse.ts) | The BiblioCommons card link (both URL shapes) — extracted after a silent format change produced an empty batch. |
 | [`src/lib/ingest.ts`](src/lib/ingest.ts) | All scraper logic + the runners: `runFriscoIngest`, `runPlanoIngest`, `runPlayFriscoIngest`, and `runAllIngest`. **No Next.js import** — pure functions, so a plain Node/tsx runner can call them. |
 | [`scripts/ingest.ts`](scripts/ingest.ts) | CLI runner. `npm run ingest -- <frisco\|plano\|play-frisco\|all\|check>`. Loads `.env.local` locally (no-op in CI); exits non-zero when a source ingests nothing. |
@@ -180,6 +181,16 @@ Do **not** clear an `ABORT: uniform ...min shift` by re-running with `INGEST_ALL
 `notify` only runs on failure, so it is unproven until it has actually fired. Run **Actions → Ingest events → Run workflow → tick `simulate_failure`**: one matrix job fails on purpose and the real ingest step is **skipped for every source** — nothing scraped, classified or written. The alert fires under the separate `ingest-drill` label so a test issue can never absorb a real one. **Scheduled runs are unaffected** (`inputs` is undefined on a schedule event, so the drill step is skipped and the real ingest runs normally).
 
 **The proof is the email, not the issue** — if the issue only appears on GitHub, the job works but the notification path doesn't. Re-run the drill after any change to the alert. Three drills on 2026-08-17 found three separate bugs in it; see BUILD-LOG "The alert that couldn't alert."
+
+### 8.3b Why a model call failed — billing is not a data problem (2026-10-21)
+
+The Anthropic credit balance reached zero. Classification failed on every uncached event, each was correctly excluded from the write, and the run reported the shortfall as ordinary inference failures — one cryptic line per event and nothing naming the cause. The visible symptom was "some events are missing"; the fix was a billing page.
+
+[`src/lib/llm-failure.ts`](src/lib/llm-failure.ts) sorts a failed call by **who fixes it and how fast**: `billing` and `auth` need a human (retrying tonight is pointless), `rate-limit` and `overloaded` are transient, `other` is a genuine model or parsing problem. An unrecognised message stays `other` — guessing "billing" for a prompt bug sends someone to the wrong page.
+
+Two behaviours follow. The run record gets **one line** naming the cause, the remedy and how many events were held back. And on a human-needed failure the run **stops calling the API**, skipping the rest of the batch under the same `_skipWrite` rule as a spend-cap refusal, instead of collecting the same refusal once per event.
+
+**Standing risk:** the account runs on promotional credit expiring **2026-11-18**, then falls back to auto-reload. If that handover misfires this failure returns — announcing itself this time.
 
 ### 8.4 LLM spend ceiling — bounding the anomaly (2026-08-19)
 

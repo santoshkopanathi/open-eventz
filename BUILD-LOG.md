@@ -1816,3 +1816,38 @@ Family matching is deliberately crude: drop a sponsor suffix, drop anything afte
 **Verification.** 37 tests in the module. Against the live park: Nov 28 shows the Holiday Edition *and* the vendor market; Dec 5 shows the Holiday Edition *and* the Grinch drive; Dec 12 and 19 show the Holiday Edition; the standing SaturYAY holds Oct 31 to Nov 14 and resumes after the seasonal run. The dry run now prints up to 100 rows rather than 30 — truncation had hidden two rows and sent me looking for a bug that was not there.
 
 **The lesson.** **"Same time, same place" is not the same question as "same event".** The first rules encoded a structural fact about the data; the fix encoded a fact about the world, which only the person who knows the venue could supply. The model could see two pages claiming one morning; it took a human to say that a park runs several things at once on a Saturday and always has.
+
+---
+
+## The outage that was a billing page
+
+*Date: 2026-10-21. Modules: [`src/lib/llm-failure.ts`](src/lib/llm-failure.ts), [`src/lib/age-inference.ts`](src/lib/age-inference.ts), [`src/lib/ingest.ts`](src/lib/ingest.ts). See INGEST-DESIGN.md §8.4.*
+
+**Initial situation.** A Kaleidoscope dry run returned 27 events where the previous one had returned 32. The obvious suspect was the collision code written minutes earlier. The actual cause, five lines down the log:
+
+> `[age-inference] failed for "Chalk the Park": 400 … "Your credit balance is too low to access the Anthropic API."`
+
+The Anthropic credit balance had reached zero. Classification failed on every uncached event, each one excluded from the write by the fail-closed rule, and the run reported the shortfall as ordinary inference failures.
+
+**Everything behaved correctly and the log still misled.** Excluding an unclassified event is right — `false` poisons the cache and `null` fails open, both already reasoned through. But the operator-visible symptom was "some events are missing", and the cause was a thirty-second fix on a billing page. **A pipeline that degrades gracefully owes you a sentence about why.**
+
+**What changed.** `classifyLlmFailure()` sorts a failed call into five kinds by what the provider actually said, and the kinds are chosen by *who fixes it and how fast*:
+
+| Kind | Meaning | Retry tonight? |
+|---|---|---|
+| `billing` | the balance is exhausted | pointless — needs a human |
+| `auth` | the key was rejected | pointless — needs a human |
+| `rate-limit`, `overloaded` | upstream, transient | yes |
+| `other` | a real model or parsing problem | yes, and read it |
+
+Two behaviours hang off that split. The run record now carries one line naming the cause and the remedy (`console.anthropic.com/settings/billing` for billing; both homes of `ANTHROPIC_API_KEY` for auth) and how many events were held back. And on a human-needed failure the run **stops calling the API** — every remaining event is skipped by the same `_skipWrite` rule as a budget cap, rather than spending minutes collecting the same refusal once per event and burying the one line that matters.
+
+An unrecognised message stays `other`. Guessing "billing" for a parsing bug would send someone to a billing page while the fault sat in the prompt.
+
+**Verification.** 12 unit tests, including the exhausted-balance error copied verbatim from the run that prompted this. Then the path end to end, with a deliberately invalid key against the live source: **one** call instead of five, and the run record reading *"the Anthropic API key was rejected — classification stopped and 5 event(s) were held back rather than published unclassified. Check ANTHROPIC_API_KEY locally and in the GitHub Production environment secret."* Full gates: typecheck, 428 unit tests in both timezones, lint, doc-parity.
+
+**A guard we wrote caught us again.** `classify-skip.test.ts` counts the places that mark an event undecided — it expected two, found three, and failed. The new short-circuit is a legitimate third path, so the count moved to three with all three named in the test. A second, sillier catch: the first fix added a *comment* containing the exact string another guard counts, inflating it. Both took a minute, and both are the structural guards doing precisely their job — **noticing that the shape of the code changed and asking whether that was deliberate.**
+
+**The standing risk this leaves.** The account is running on promotional credit that **expires 2026-11-18**, after which it falls back to auto-reload. If that handover misfires, this exact failure returns — but now it announces itself. Noted here because the next person to see it will be reading this file, not this conversation.
+
+**The lesson.** **Fail-closed is a property of the data path; it says nothing about the operator path.** Every guard in this pipeline is designed so that uncertainty produces absence rather than error, and that is right. But absence is the least informative signal a system can emit, so each one needs a sentence attached: *what was withheld, why, and whose problem it is.* The question to ask of any graceful degradation is not "did we avoid serving something wrong" — it is "will the person who reads this at 6am know what to do".

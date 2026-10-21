@@ -39,8 +39,15 @@ describe('a classifier that produced no decision must write nothing', () => {
     expect(failureBranch).not.toMatch(/age_reasoning\s*=/)
   })
 
-  test('both no-decision paths use the same flag, so neither can drift from the other', () => {
-    expect([...src.matchAll(/_skipWrite = true/g)]).toHaveLength(2)
+  test('every no-decision path uses the same flag, so none can drift from the others', () => {
+    // Three paths now, all meaning "we made no decision about this event":
+    //   1. the per-run spend cap refused the call
+    //   2. the call failed
+    //   3. an earlier failure needs a human (exhausted credit, rejected key), so the rest of
+    //      the batch is skipped without calling an API that will refuse every one — added
+    //      2026-10-21, when an empty balance produced one failure line per event and no
+    //      statement of the cause.
+    expect([...src.matchAll(/_skipWrite = true/g)]).toHaveLength(3)
   })
 
   test('every runner filters the flag out before the write', () => {

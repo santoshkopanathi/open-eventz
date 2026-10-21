@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { PlayFriscoInference, AgeBucket, AgeConfidence, AgeBasis, PriceClass, PriceConfidence } from './types'
+import { classifyLlmFailure, type LlmFailureKind } from './llm-failure'
 
 // Model rationale (see BUILD-LOG Decision 4): Sonnet over Haiku. Cost difference is
 // operationally irrelevant (~$0.03 on the first run); the confidence tier is load-bearing
@@ -122,7 +123,16 @@ function extractJson(text: string): string {
  * Price is defensive: a missing/invalid price value degrades to "unknown" rather than
  * failing the whole inference, so age accuracy never depends on price parsing.
  */
-export async function inferPlayFriscoEvent(input: { title: string; description: string }): Promise<PlayFriscoInference | null> {
+/**
+ * `onFailure` reports WHY a call failed, so the caller can tell a transient model problem from
+ * an exhausted credit balance and stop hammering an API that will refuse every remaining
+ * event. The return stays `null` on failure — callers must keep treating that as
+ * "no decision was made", never as a decision.
+ */
+export async function inferPlayFriscoEvent(
+  input: { title: string; description: string },
+  opts: { onFailure?: (kind: LlmFailureKind, message: string) => void } = {},
+): Promise<PlayFriscoInference | null> {
   const title = (input.title ?? '').trim()
   const description = (input.description ?? '').trim()
   if (!title && !description) return null
@@ -200,7 +210,10 @@ export async function inferPlayFriscoEvent(input: { title: string; description: 
       reasoning: typeof parsed.reasoning === 'string' ? parsed.reasoning : '',
     }
   } catch (err) {
-    console.error(`[age-inference] failed for "${title.slice(0, 60)}":`, (err as Error).message)
+    const message = (err as Error).message
+    const kind = classifyLlmFailure(message)
+    console.error(`[age-inference] ${kind} failure for "${title.slice(0, 60)}":`, message)
+    opts.onFailure?.(kind, message)
     return null
   }
 }
