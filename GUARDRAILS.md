@@ -6,6 +6,15 @@ This is the single inventory of every control protecting Open Eventz data, where
 and what it catches. Started 2026-08-15 after the "5:00 AM story time" incident reached real
 users.
 
+**How to read it.** The **layer tables** below are the index — one line per control, grouped by
+where it sits in the pipeline. [**The catalogue**](#the-catalogue--every-control-with-a-worked-example)
+is the reference: each control's purpose, how it decides, a worked example, and the failure it
+was written for. Almost every entry there dates from the day after something got through.
+
+**Related documents.** `EVALS.md` covers the quality of the *model's judgment* (age, price,
+kid-relevance) — the one axis these controls barely touch, since a confidently-wrong
+classification passes every rule here. `INGEST-DESIGN.md` §8 is the implementation detail.
+
 ---
 
 ## Why this is not the testing document
@@ -57,7 +66,8 @@ Choices in the code that make the safe outcome the automatic one.
 | Events API gate is **source-aware** | an LLM-classified event with `kid_relevant = NULL` — never successfully classified — being served as if it were a library event, which legitimately has NULL | NULL passes **only** for non-LLM sources. Fired for real 2026-09-01: an excluded event left NULL on an existing row and was served unclassified |
 | Model call fails or returns an unusable shape | a transient API error being stored as a permanent decision | the event is **excluded from the write** and retried next run — never stored as `kid_relevant = false`, which the cache would read as a real answer and hide it forever |
 | LLM spend ceiling reached (`llm-budget.ts`) | a source anomaly (e.g. 10,000 events) running up unbounded cost | the event is **excluded from the write** — not shown, not cached, re-tried next run |
-| Account-level spend limit **(set: $5/month, email alert at $2, auto-reload off)** | our own cap being wrong, or any spend path we did not anticipate — including Claude Code and Playground usage, which our in-code cap does not see | API usage pauses at the limit; admins are emailed at $2. Console → Settings → Billing |
+| Account-level spend limit | our own cap being wrong, or any spend path we did not anticipate — including Claude Code and Playground usage, which our in-code cap does not see | API usage pauses at the limit. **Changed 2026-10-21:** the account now runs on **promotional credit expiring 2026-11-18**, with **auto-reload ON** ($15 when the balance falls below $5). The handover at expiry is the next live test of this row |
+| **A model call that needs a human** (`llm-failure.ts`, added 2026-10-21) | an exhausted balance or rejected key, which otherwise reads as ordinary inference failures — one cryptic line per event and no statement of cause | remaining calls **stopped**, events held back, and **one line** in the run record naming the cause and the fix |
 
 ## Layer 2 — Structural guards (architecture, enforced in CI)
 
@@ -69,6 +79,7 @@ These don't test behaviour; they make an unsafe *shape* of code impossible to me
 | Every `new Date(<arg>)` in ingest must be allowlisted with a reason | reintroducing the ambient-timezone bug | `no-ambient-timezone.test.ts` |
 | Every event detail surface must render `<SupervisionCallout>` | a surface shipping without the drop-off badge (has happened twice) | `supervision-surfaces.test.ts` |
 | `Record<EventSource, true>` completeness check | adding a source without a supervision policy | `supervision.test.ts` |
+| **Every no-decision path uses the same flag**, and every runner filters it | a classifier path that stores a value it never decided, or a source that forgets to exclude undecided events | `classify-skip.test.ts` |
 | Doc↔test parity | `TEST-SCENARIOS.md` claiming coverage that no longer exists | `scripts/check-doc-parity.mjs` |
 | **The failure alert still delivers under a flaky Issues API** | a regression in the alert itself — which only executes when something is already broken, so it would stay invisible until the night it mattered | `notify-alert.test.ts` |
 
@@ -94,7 +105,8 @@ published" a property rather than a hope.
 |---|---|---|
 | **Implausible start** — nothing between 12:01 and 7:00 AM CT (exact midnight allowed = all-day) | individually broken times | that event is **dropped** |
 | **Uniform shift** — ≥80% of ≥20 overlapping events moved by the *same* non-zero offset | any clock/timezone bug, **including shifts landing at plausible hours** | **whole batch rejected** |
-| **Shrink** — batch smaller than half the stored set | a partial/failed scrape being read as "events cancelled" | **whole batch rejected** |
+| **Shrink** — batch smaller than half the **upcoming** stored set *(upcoming-only since 2026-10-19)* | a partial/failed scrape being read as "events cancelled" | **whole batch rejected** |
+| **Cancellation purge** — upcoming rows the batch no longer lists, capped at 25% *(added 2026-10-20)* | an event cancelled upstream staying on our site forever | rows **deleted**; above the cap, reported instead |
 | **Cannot read stored events** | comparing against nothing and writing blind | **refuses to write** |
 
 On abort: nothing is written **and the purge/cleanup steps are skipped** — otherwise a rejected
@@ -191,6 +203,21 @@ Recorded openly so they're chosen rather than discovered.
 7. **Alerting is binary.** A run either fails or it doesn't. There is no threshold on cost
    spikes, guardrail hit-rate, or latency, so a slow degradation is invisible until it becomes
    a failure.
+8. **Inferred dates are not yet measured.** D7 publishes dates we worked out, and the nightly
+   re-anchor grades every one of them within days — but nothing records the verdict. "How often
+   was an inference right?" is answerable from the data and is currently answered by opinion.
+   The `date_inferred` flag exists precisely so this can be closed cheaply.
+9. **The sitemap has not regenerated in 24h** *(open, 2026-10-21)*. It still lists 189 deleted
+   Kaleidoscope URLs despite `revalidate = 3600`, and a cache-busted request still returns
+   `X-Vercel-Cache: HIT`. The dead links are the small problem; the open question is whether
+   **any** nightly-ingested event reaches the sitemap without a deploy. Undiagnosed — do not
+   change the route until it is understood.
+10. **Replacing a source is a human-run migration.** When a source legitimately collapses (189
+    Kaleidoscope occurrences → 19 real ones), C3 and C4 both refuse by design and someone must
+    delete and re-ingest by hand. Correct, and a real operational cost.
+11. **The billing handover on 2026-11-18 is untested.** Promotional credit expires and
+    auto-reload takes over. A9 means the failure would announce itself, but the handover itself
+    has never run.
 
 ---
 
@@ -205,6 +232,313 @@ Recorded openly so they're chosen rather than discovered.
 5. Run it against real data before trusting it — the start-time check went red on 11 legitimate
    all-day events the first time it met production.
 6. Add it to the table above and to `TEST-SCENARIOS.md` if it has an `[A]` test.
+
+---
+
+---
+
+# The catalogue — every control, with a worked example
+
+The layer tables above are the index. This is the reference: what each control is *for*, how it
+actually decides, a concrete example of it working, and the failure it exists to catch.
+
+Read it two ways. Top to bottom, it is the defence architecture. Entry by entry, it is a list of
+real incidents — almost every control here was written the day after something got through.
+
+**Status key:** ⬤ live · ◐ live but with a known limit · ○ designed, not yet built.
+
+---
+
+## A. Design-time defaults — the safe outcome is the automatic one
+
+### A1. Unparseable time → the event is skipped ⬤
+**Purpose.** Never store a time we had to guess at.
+**How it works.** `parseCentralWallTime()` returns `null` rather than a best effort, and the
+caller `continue`s past the event.
+**Example.** A Frisco card reads `Octobre 22` after a site edit. The parser returns `null`; the
+event is absent from tonight's batch and appears again when the format is fixed.
+**Catches.** Format drift, locale changes, half-rendered pages.
+**Cost, accepted.** A real event goes missing silently — which is why A9 exists.
+
+### A2. The venue's timezone, never the machine's ⬤
+**Purpose.** "10:00 AM" must mean the same thing on a laptop in Texas and a runner in UTC.
+**How it works.** Every source time is resolved explicitly as `America/Chicago`, DST-aware.
+**Example.** Live After 5 starts 5:30 PM Central. In October that is `22:30Z`; in November,
+`23:30Z`. The conversion is recomputed per date rather than copied forward.
+**Catches.** The 2026-08 incident: the nightly ingest moved to UTC runners and wrote every event
+5–6 hours early. Nothing in the code changed — only where it ran.
+
+### A3. Fail-closed classification ⬤
+**Purpose.** An uncertain call about *whether children belong here* must hide the event.
+**How it works.** `kid_confidence = 'low'` → `kid_relevant = false`, applied to cached results too.
+**Example.** A wine-tasting listing with vague wording scores low; it never reaches the app.
+**Catches.** Adult events leaking into a children's product.
+**Note.** This gates on *kid-relevance* confidence, not *age* confidence. Until v1.3 it gated on
+age, so an event plainly fit for families but vague about ages was deleted for the wrong reason.
+
+### A4. Hard adults-only override ⬤
+**Purpose.** One rule the model cannot overrule.
+**How it works.** `/adults? only|21\s*\+|18\s*\+/` on title and description → hidden, whatever the
+classifier said.
+**Example.** "Pop & Pour" (a wine event) — hidden, with the model's own reasoning recorded as
+*"explicitly requires guests to be 21+"*.
+**Catches.** A confidently-wrong model call on the highest-severity axis.
+
+### A5. No decision → no write ⬤
+**Purpose.** Never store a value we never decided.
+**How it works.** Three paths mark `_skipWrite`: the spend cap refused the call, the call failed,
+or an earlier failure means a human must act (A9). Each runner filters the flag before writing.
+**Example.** A transient 500 from the model: the event is excluded tonight and classified
+normally tomorrow.
+**Catches.** Cache poisoning. Writing `false` would read as a real stored answer on the next run
+(`prior.kid_relevant !== null`), hiding the event permanently; writing `null` would fail *open*,
+because NULL is how library events legitimately pass the API gate.
+**Guarded by** `classify-skip.test.ts`, which counts the paths — it failed when a third was added
+on 2026-10-21 and had to be updated deliberately.
+
+### A6. The events API gate is source-aware ⬤
+**Purpose.** `kid_relevant = NULL` means two different things depending on the source.
+**How it works.** NULL passes only for sources we do not classify; for LLM sources it is withheld.
+**Example.** Fired for real on 2026-09-01: an excluded event left NULL on an existing row and was
+being served unclassified.
+**Catches.** The gap between "not applicable" and "never decided".
+
+### A7. Unknown source → no supervision badge ⬤
+**Purpose.** Never reassure a parent about drop-off policy we do not know.
+**How it works.** `getSupervisionBadge` returns `null` for an unrecognised source; the UI omits
+the badge rather than defaulting.
+**Catches.** A new source inheriting another's policy by accident.
+
+### A8. LLM spend ceiling ⬤
+**Purpose.** Bound the *anomaly*, not the normal case — cost scales with new events, not users.
+**How it works.** `MAX_LLM_CALLS_PER_RUN` (default 300 ≈ $1.80 estimated). A refusal is fail-closed
+(A5), and a cap hit **fails the run** so it reaches a human.
+**Example.** A source whose pagination breaks and returns 10,000 events is classified 300 deep,
+then stops, red.
+**Catches.** Unbounded spend from a source-side change.
+
+### A9. Why a model call failed ⬤ *(2026-10-21)*
+**Purpose.** Distinguish failures by **who fixes them and how fast**.
+**How it works.** `classifyLlmFailure()` sorts on the provider's own wording into `billing`,
+`auth`, `rate-limit`, `overloaded`, `other`. For `billing`/`auth` the run stops calling the API
+and records one line naming the cause and the remedy. Unrecognised text stays `other`.
+**Example.** The credit balance hit zero. Before: five failing calls, five cryptic lines,
+`errors: []`, and 27 events where 32 were expected. After: one call, and
+*"the Anthropic credit balance is exhausted — classification stopped and 5 event(s) were held
+back… console.anthropic.com/settings/billing"*.
+**Catches.** An operational problem wearing a data problem's clothes.
+
+---
+
+## B. Structural guards — unsafe *shapes* of code cannot merge
+
+These assert against the source text, not behaviour. They exist because a reviewer cannot be
+relied on to notice an omission in a 1,200-line module.
+
+### B1. Exactly one `events.upsert` in the ingest ⬤
+Catches a future source writing around `guardedUpsert` entirely. Without it, every pre-write
+control in Layer C is optional for whoever adds the next source.
+
+### B2. Every `new Date(<arg>)` must be allowlisted with a reason ⬤
+Catches reintroduction of the ambient-timezone bug. Adding an entry is deliberate friction — the
+rule does not ask whether you were careful, it asks you to write down why. It fired twice during
+the Kaleidoscope rebuild; both additions were genuinely safe and both had to be justified.
+**Verified by breaking it:** the first version used a regex matching only string literals and
+would have passed while the live bug was running.
+
+### B3. Every detail surface renders `<SupervisionCallout>` ⬤
+Catches a new surface shipping without the drop-off badge — which had already happened twice.
+
+### B4. `Record<EventSource, true>` completeness ⬤
+Catches adding a source without a supervision policy: it becomes a *type error*, not a runtime gap.
+The same pattern now guards the data-quality source list.
+
+### B5. No-decision paths and their filters are counted ⬤
+See A5. Counts both the places that mark an event undecided and the places that filter it out.
+
+### B6. Doc↔test parity ⬤
+Catches `TEST-SCENARIOS.md` claiming coverage that no longer exists. Runs in CI.
+
+### B7. The alert's own regression suite ⬤
+`notify-alert.test.ts` extracts the `notify` script straight from `ingest.yml` (never a copy, so
+it cannot drift) and replays all three real drill failures plus a total outage.
+**The alert is a guardrail, so it gets a guardrail.**
+
+---
+
+## C. Pre-write — the strongest layer
+
+`guardedUpsert` → `screenBatch`. Nothing in this layer is detection; all of it is prevention.
+
+### C1. Implausible start time → drop the event ⬤
+**Example.** A 4:00 AM "story time" is dropped while the rest of the batch writes normally.
+**Catches.** Individually broken times. Exact midnight is allowed, because sources legitimately
+use 00:00 for all-day entries — a rule learned when the check first met production and went red
+on 11 genuine all-day events.
+
+### C2. Uniform shift → reject the whole batch ⬤
+**Purpose.** Catch the bug class that *looks* plausible.
+**How it works.** If ≥80% of ≥20 overlapping events moved by the **same** non-zero offset, the
+batch is systemically wrong, not rescheduled.
+**Example.** 2026-08-12, the first UTC-runner night: every Frisco and Plano event moved by exactly
+−300 minutes. A genuine reschedule moves *one* event by an arbitrary amount.
+**Catches.** DST errors, a source switching timezone, off-by-one-day parses — **including shifts
+that land at perfectly reasonable hours**, which no plausible-hours rule can see.
+**Escape hatch.** `INGEST_ALLOW_TIME_SHIFT=1` for an intended mass correction. It forgives only
+this rule; implausible times stay blocked.
+
+### C3. Shrink → reject the whole batch ◐ *(fixed 2026-10-19)*
+**Purpose.** A half-loaded scrape must not read as "these events were cancelled".
+**How it works.** Reject if the batch is under half the **upcoming** stored rows.
+**The bug this carries.** It originally compared against *every row ever written*, past events
+included. A scrape returns a forward window; the stored pile grows forever. The denominator grew
+nightly while the numerator did not, so the rule was a **countdown, not a check** — Frisco tripped
+on 210 events against 525 stored (357 of them past) and froze for three nights.
+**A second defect hid the first.** PostgREST silently caps an unpaginated select at 1,000 rows, so
+Plano (1,683 stored) was judged against an arbitrary slice and passed at a fake threshold of 500
+while Frisco failed on the same bug. The stored read now pages explicitly.
+**Lesson worth keeping.** *A ratio is only a guardrail if both sides measure the same thing.* If a
+threshold's denominator grows with time, you have written a timer.
+
+### C4. Cancellation purge ⬤ *(2026-10-20)*
+**Purpose.** Notice what **stopped** arriving — the only failure mode that needs no bad data.
+**How it works.** After a batch is written, delete upcoming rows the source no longer lists.
+Three narrowings, each one bought with a bug:
+- **upcoming only** — a past event cannot be cancelled;
+- **compared against the whole incoming batch**, including events C1 dropped, because those still
+  exist at the source;
+- **capped at 25%** — above that it reports for a human instead of deleting.
+**The horizon detail.** The purge's cutoff is **now**; the guard's is **midnight**. A listing drops
+an event the moment it finishes, so using midnight would delete events that had merely happened
+that morning. The dry run caught exactly this: 5 queued deletions, of which 3 were genuinely gone
+(HTTP 404) and 2 were live story times that had finished at 10 and 11 AM.
+**Caught in production.** Three "Teen Anime Club" sessions the library had deleted, one four days
+out, plus a Plano staff event titled **"test"** sitting on Christmas Day.
+
+### C5. Cannot read current state → refuse to write ⬤
+If the stored-events read fails, the guard has nothing to compare against and writes nothing.
+**Catches.** Writing blind during a database incident.
+
+---
+
+## D. Source-shape guards — "is this still the source we think it is?"
+
+Added across 2026-10-20/21, after two sources changed shape in three days. These sit between the
+fetch and the batch, and all of them fail closed.
+
+### D1. Cards seen vs events parsed ⬤
+**Purpose.** Tell "the source published nothing" from "we no longer understand the source".
+**How it works.** Count listing cards; if cards > 0 and parsed = 0, raise an error naming it.
+**Example.** BiblioCommons moved event links from `/events/<id>` to `/v2/events/<id>`. Twenty cards
+per page, zero understood, and the run reported `fetched: 0, errors: []`. The guards protected the
+data perfectly and the log named the wrong problem.
+**Catches.** Silent format drift — the failure that looks like an empty calendar.
+
+### D2. The absence of structured data is the filter ⬤
+**Purpose.** Decide what counts as an event using the publisher's own markup.
+**How it works.** A Kaleidoscope page with no schema.org `Event` JSON-LD is not an event.
+**Example.** "Host an event" and "Vendor opportunities" live under `/events/` and are excluded with
+no keyword list to maintain.
+
+### D3. Transcription checksum ⬤
+**Purpose.** Never trust our reading of marketing prose without a control value.
+**How it works.** Dates are scraped from copy ("September 10: Jade Nikol"), and the machine-readable
+next-occurrence date **must appear** in what we parsed. If it does not, the whole list is dropped
+and only the confirmed occurrence is published.
+**Catches.** A reformatted page producing a plausible-looking but wrong set of dates.
+
+### D4. The series weekday resolves the omitted year ⬤
+**Purpose.** The copy prints "September 10" with no year.
+**How it works.** Of the years either side of the confirmed date, at most one puts that date on the
+series' weekday; a date matching none is not an occurrence and is skipped.
+**Catches.** Off-by-one-year dates, and stray dates in unrelated copy.
+
+### D5. A cadence is clipped by its stated end ⬤
+**Purpose.** A rule without its bound is half a sentence.
+**Example.** "SaturYay: Holiday Edition — every Saturday **through Dec 19**". The first version read
+the rule, ignored the deadline printed beside it, and generated Saturdays into January.
+
+### D6. Published beats inferred; the seasonal variant beats the standing series; different families never compete ⬤
+**Purpose.** Decide what actually happens in one slot without inventing an answer.
+**How it works.** A slot is a time, a place **and a programme family**. Within a family: a published
+occurrence wins; otherwise the **shorter stated run** wins (four weeks beats fifty-five); if nothing
+distinguishes them, both are dropped.
+**Example.** SaturYAY and its Holiday Edition both claim 10 AM Saturdays — the Holiday Edition takes
+Nov 21 → Dec 19. A vendor market and a food drive the same morning are different families, so all of
+them show. **That last rule came from the product owner, not the data:** the first version treated
+any shared slot as a rivalry and emptied the December Saturdays.
+**Catches.** Duplicate listings of one event, and the opposite error of hiding real ones.
+
+### D7. Inference is bounded to 8 weeks ⬤
+**Purpose.** Dates we worked out ourselves have a short shelf life.
+**How it works.** A weekly programme with no published list gets a rolling 8-week horizon,
+re-anchored nightly on the venue's own "next date".
+**Why short.** Exposure to a wrong date is bounded by the horizon. The park's stated end date moved
+from "Dec 18 2027" to "Nov 13 2027" in two days — those claims are soft, and the horizon does not
+depend on them.
+
+---
+
+## E. Publication guards — what we are entitled to claim
+
+### E1. One indexability gate, shared ⬤
+**Purpose.** The sitemap, the page's `robots` tag and the city lists must never disagree about
+whether an event is public.
+**How it works.** `isIndexableEvent()` is the single definition; all three call it.
+**Catches.** A sitemap advertising a page that marks itself `noindex`.
+
+### E2. An inferred date never reaches a machine-readable surface ⬤ *(2026-10-20)*
+**Purpose.** Show a parent our best guess; never state it as fact to a search engine.
+**How it works.** `date_inferred = true` → excluded from the sitemap, `noindex`, and **no Event
+JSON-LD emitted**, while the page still renders.
+**Example.** SaturYAY on 31 October renders with the note *"Date expected from the organizer's
+'every saturday' schedule — only the next session is listed by the venue, so confirm before you
+go"*, and tells Google nothing.
+**Catches.** Publishing a structured claim about an occurrence nobody announced.
+
+### E3. The user is told which dates are expected ⬤
+The disclosure line above is a control, not decoration: it is the thing that makes D7 honest.
+
+---
+
+## F. Post-write — detection against real data
+
+`npm run validate`, run as the `data-quality` job after every nightly ingest. Already tabulated in
+Layer 4; the two worth narrating:
+
+### F1. Per-source freshness (≤48h) ⬤
+**The bug it replaced.** Freshness was one query for the newest write across the *whole* table.
+Plano writes ~600 rows a night, so that timestamp was always minutes old — the check was
+**mathematically incapable of failing** unless all four sources died at once. It had been
+documented as per-source since the day it was written.
+**Lesson.** *A guardrail whose input is an aggregate over healthy and unhealthy subjects cannot
+see the unhealthy one.* Ask the question per subject, or do not claim the guardrail.
+
+### F2. No unclassified LLM events stored ⬤
+Names the offending events rather than printing a count — a check you cannot act on is a check you
+will learn to ignore.
+
+---
+
+## G. Operating tools
+
+### G1. `INGEST_DRY_RUN=1` ⬤ *(2026-10-20)*
+**Purpose.** Ask "what would tonight do?" without finding out the hard way.
+**How it works.** Fetch, screen and decide exactly as normal; print the batch, the guard verdict
+and the purge list; write nothing.
+**What it has caught.** The purge horizon bug before a single row was deleted; two silent patch
+failures that the unit suite passed straight through; and the billing outage, by making the
+27-vs-32 discrepancy visible as a list rather than a number.
+**Principle.** *A delete path with no rehearsal is a delete path you test in production.*
+
+### G2. A run that writes nothing exits non-zero ⬤
+Keeps "the ingest succeeded and did nothing" from being a passing state.
+
+### G3. The weekly live-site read ◐
+Not automated, not optional. **Both** timezone bugs and the duplicate SaturYAY were found this way
+and none by a test. It is the most effective detector listed in this document and the least
+reliable, which is a standing argument for E-layer automation.
+
 
 ---
 
