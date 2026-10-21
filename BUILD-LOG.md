@@ -1785,3 +1785,34 @@ Nine occurrences fell away, and the duplicate 12 December SaturYAY with it.
 **One consequence to carry.** The id change plus the dropped collisions mean 44% of stored Kaleidoscope rows are absent from the new batch, so the purge cap refuses to act — correctly. Like the original rebuild, the cleanup is a human-run delete-and-reingest, not a nightly write.
 
 **The lesson.** **Shipping a source connector is not the end of the work; it is the beginning of a relationship with a publisher who will change things without telling you.** Both failures today were the source moving, not the code rotting, and the two guards that mattered were the ones that made the change *legible*: the batch guard, which refused to act on data it could not vouch for, and — the one we were missing — a count that could tell "nothing arrived" from "nothing was understood". **Fail-closed protects the data; it does not explain itself. Say which of the two silences you are in.**
+
+---
+
+## Who is actually competing for a Saturday morning
+
+*Date: 2026-10-21. Modules: [`src/lib/kaleidoscope-parse.ts`](src/lib/kaleidoscope-parse.ts), [`src/lib/ingest.ts`](src/lib/ingest.ts).*
+
+**Initial situation.** The collision rules shipped that morning said: a published occurrence beats an inferred one in the same slot, and two programmes inferring into one slot cancel out. Correct for the case that prompted them — SaturYAY and its Holiday Edition claiming the same 10 AM Saturday — and wrong about everything else sharing that morning.
+
+**What the rules actually did.** With the park's six new pages live, the December Saturdays emptied out. The vendor market took 28 November; the Grinch food drive took 5 December; the weekly kids' programme vanished from both. The rules had treated *every* event sharing a time and place as a rival, when the park plainly runs a market, a food drive and a storytime on the same lawn on the same morning.
+
+**The PM call** (the user's, and the right one): **these events are independent.** The only true rivalry is between a programme and its own seasonal rebrand.
+
+**What changed — two refinements, not a rewrite:**
+
+| Refinement | Effect |
+|---|---|
+| A slot is a time, a place **and a programme family** | "SaturYAY! Presented by Atmos Energy" and "SaturYay: Holiday Edition" normalise to `saturyay` and compete; a vendor market and a food drive are different families and simply coexist. |
+| Within a family, the **shorter stated run wins** | Both pages state an end date, so "has a bound" decides nothing. "Four weeks" against "fifty-five weeks" is the park saying the seasonal one replaces the standing one for that window — which is how a parent reads the two pages. |
+
+Family matching is deliberately crude: drop a sponsor suffix, drop anything after the first separator, compare what remains. Two titles must be nearly identical to merge, because **the failure modes are asymmetric** — wrongly merging hides a real event, wrongly splitting shows a duplicate. A duplicate is visible to the user and gets reported; a disappearance is not.
+
+**Two bugs found while building it, neither caught by tests:**
+
+1. **`undefined` is not `null`.** The run length was attached to each row but never passed through the mapping into the resolver, so it arrived as `undefined`. The bounded-ness check used `!== null`, `undefined` passed it, `Math.min` produced `NaN`, no winner could be found, and the old cancel-both rule fired. The behaviour was indistinguishable from "the new rule isn't implemented". The check is now `!= null`, with a regression test, and the lesson is that loosely-typed rows (`any[]` from the scrapers) will not tell you this.
+
+2. **Two shell patches reported success and changed nothing.** Both were string replacements that matched no text. One produced bug 1; the other made the family rule look broken after it had been written correctly. **A patch that cannot fail loudly is a patch you have to verify by reading the file** — and the only reason both were caught is the dry run, which shows what the live sources actually produce rather than what the tests assume.
+
+**Verification.** 37 tests in the module. Against the live park: Nov 28 shows the Holiday Edition *and* the vendor market; Dec 5 shows the Holiday Edition *and* the Grinch drive; Dec 12 and 19 show the Holiday Edition; the standing SaturYAY holds Oct 31 to Nov 14 and resumes after the seasonal run. The dry run now prints up to 100 rows rather than 30 — truncation had hidden two rows and sent me looking for a bug that was not there.
+
+**The lesson.** **"Same time, same place" is not the same question as "same event".** The first rules encoded a structural fact about the data; the fix encoded a fact about the world, which only the person who knows the venue could supply. The model could see two pages claiming one morning; it took a human to say that a park runs several things at once on a Saturday and always has.

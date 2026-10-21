@@ -14,7 +14,7 @@ import { markRecurring } from './recurring'
 import { parseFriscoEventLink } from './frisco-parse'
 import { centralWallTimeToUtc, parseCentralWallTime } from './datetime'
 import { screenBatch, upcomingStored, purgeCandidates, type StoredTime } from './ingest-guard'
-import { parseEventJsonLd, parseCadence, parseListedDates, weeklyOccurrences, resolveOccurrenceCollisions, centralDateKey, parseThroughDate } from './kaleidoscope-parse'
+import { parseEventJsonLd, parseCadence, parseListedDates, weeklyOccurrences, resolveOccurrenceCollisions, centralDateKey, parseThroughDate, programFamily } from './kaleidoscope-parse'
 import { startOfTodayCtIso } from './seo-indexable'
 import { createLlmBudget, type LlmBudget } from './llm-budget'
 
@@ -744,11 +744,11 @@ async function guardedUpsert(
     if (wouldPurge?.reason) console.warn(`[ingest] DRY RUN (${source}): ${wouldPurge.reason}`)
     // The batch itself, not just the counts — vetting a source whose format changed means
     // reading the rows, and a rejected batch is exactly when you most want to see them.
-    for (const e of events.slice(0, 30)) {
+    for (const e of events.slice(0, 100)) {
       const when = new Date(e.start_datetime).toLocaleString('en-US', { timeZone: 'America/Chicago', dateStyle: 'medium', timeStyle: 'short' })
       console.warn(`[ingest] DRY RUN (${source}):   ${when.padEnd(26)} ${String(e.title).slice(0, 46).padEnd(48)}${e.date_inferred ? ' [inferred date]' : ''}`)
     }
-    if (events.length > 30) console.warn(`[ingest] DRY RUN (${source}):   … and ${events.length - 30} more`)
+    if (events.length > 100) console.warn(`[ingest] DRY RUN (${source}):   … and ${events.length - 100} more`)
     for (const id of wouldPurge?.remove.slice(0, 20) ?? []) console.warn(`[ingest] DRY RUN (${source}): would purge ${id}`)
     return { upserted: 0, aborted: false, dropped: decision.dropped.length, purged: 0 }
   }
@@ -1128,6 +1128,7 @@ async function ingestKaleidoscope() {
           is_recurring: occurrences.length > 1,
           recurrence_label: occurrences.length > 1 ? cadence : null,
           date_inferred: occ.inferred,
+          _windowDays: through ? Math.round((Date.parse(through) - Date.parse(parsed.startIso)) / 86400000) : null,
           thumbnail_url: parsed.imageUrl ? encodeURI(parsed.imageUrl) : null,
           event_url: url,
           category: guessCategory(title, description ?? ''),
@@ -1143,17 +1144,30 @@ async function ingestKaleidoscope() {
 
   // Collisions are resolved across the whole batch, because they happen BETWEEN programmes:
   // "SaturYay: Holiday Edition" occupies the same 10 AM Saturday slot as SaturYAY. The
-  // programme key is the id without its date, so an occurrence never collides with itself.
+  // programme key is the id without its date, so an occurrence never collides with itself;
+  // the family is what makes the market and the food drive that morning NOT rivals of it.
   const resolved = resolveOccurrenceCollisions(
-    events.map(e => ({ ...e, programKey: String(e.id).replace(/-\d{4}-\d{2}-\d{2}$/, '') })),
+    events.map(e => ({
+      ...e,
+      programKey: String(e.id).replace(/-\d{4}-\d{2}-\d{2}$/, ''),
+      family: programFamily(String(e.title)),
+      windowDays: (e._windowDays ?? null) as number | null,
+    })),
   )
   const dropped = events.length - resolved.length
   if (dropped > 0) {
     console.warn(`[ingest] kaleidoscope-park: dropped ${dropped} inferred occurrence(s) that collided with a published or ambiguous slot`)
   }
 
-  // programKey is a local construct — it must not reach the row we write.
-  return { events: resolved.map(({ programKey: _programKey, ...row }) => row), errors }
+  // programKey/windowDays are local constructs — they must not reach the row we write.
+  return {
+    events: resolved.map(row => {
+      const written = { ...row } as Record<string, unknown>
+      for (const local of ['programKey', 'family', 'windowDays', '_windowDays']) delete written[local]
+      return written
+    }),
+    errors,
+  }
 }
 
 export async function runKaleidoscopeIngest(): Promise<SourceIngestResult> {

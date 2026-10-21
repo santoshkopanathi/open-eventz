@@ -69,6 +69,8 @@ It's now a **thin wrapper** ([`src/app/api/ingest/route.ts`](src/app/api/ingest/
 
 | File | Role |
 |---|---|
+| [`src/lib/kaleidoscope-parse.ts`](src/lib/kaleidoscope-parse.ts) | Pure parsing for the rebuilt Kaleidoscope site: Event JSON-LD, cadence + `through` bound, transcribed dates, inferred horizons, programme families and slot collisions. |
+| [`src/lib/frisco-parse.ts`](src/lib/frisco-parse.ts) | The BiblioCommons card link (both URL shapes) — extracted after a silent format change produced an empty batch. |
 | [`src/lib/ingest.ts`](src/lib/ingest.ts) | All scraper logic + the runners: `runFriscoIngest`, `runPlanoIngest`, `runPlayFriscoIngest`, and `runAllIngest`. **No Next.js import** — pure functions, so a plain Node/tsx runner can call them. |
 | [`scripts/ingest.ts`](scripts/ingest.ts) | CLI runner. `npm run ingest -- <frisco\|plano\|play-frisco\|all\|check>`. Loads `.env.local` locally (no-op in CI); exits non-zero when a source ingests nothing. |
 | [`.github/workflows/ingest.yml`](.github/workflows/ingest.yml) | Nightly + manual; one job per source. |
@@ -146,7 +148,13 @@ Every runner writes through **`guardedUpsert`** (in `ingest.ts`), which calls **
 |---|---|---|
 | Implausible start (12:01–7:00 AM CT; exact midnight allowed as all-day) | individually broken times | event **dropped** |
 | Uniform shift (≥80% of overlapping events moved by the same non-zero offset, ≥20 overlap) | any clock/timezone bug — **including shifts that land at plausible hours** | **batch rejected** |
-| Shrink (batch < half the stored set) | partial/failed scrape read as "events cancelled" | **batch rejected** |
+| Shrink (batch < half the **upcoming** stored set) | partial/failed scrape read as "events cancelled" | **batch rejected** |
+
+**The shrink rule compares like with like (fixed 2026-10-19).** It originally compared an incoming batch — a source's *forward window* — against every row ever written for that source, past events included. The denominator grew nightly while the numerator did not, so the rule was a countdown rather than a check; it fired on three consecutive Frisco nights and froze the source. `upcomingStored()` narrows the comparison to rows that could appear in a batch. A second defect hid the first: PostgREST silently caps an unpaginated select at 1000 rows, so Plano (1683 stored) was judged against an arbitrary slice and passed while Frisco failed on the same bug. The stored read now pages explicitly.
+
+**Cancellations — the purge (added 2026-10-20).** After a batch is written, `purgeCandidates()` removes upcoming rows the source has stopped listing. Before this, only Play Frisco and Kaleidoscope purged; the two library sources never did, so a cancelled event stayed in our data forever (three Frisco sessions, one four days out, and a Plano staff event titled "test" on Christmas Day). Three narrowings: **upcoming rows only** (a past event cannot be cancelled, and listings drop finished events as a matter of course — the purge horizon is *now*, while the guard's is midnight); **compared against the whole incoming batch** (an event dropped for an implausible time still exists at the source); and **capped at 25%** of upcoming rows, above which it reports for a human instead of deleting.
+
+**`INGEST_DRY_RUN=1`** runs the whole pipeline — fetch, screen, decide — and writes nothing, printing what would be written and purged. It caught the purge-horizon bug before a single row was deleted, and twice since has caught silent patch failures that the unit suite passed straight through. A delete path with no rehearsal is a delete path you test in production.
 
 On abort nothing is written **and the purge/cleanup steps are skipped** — a rejected batch must not delete rows either. `INGEST_ALLOW_TIME_SHIFT=1` permits an intended mass correction; it forgives only the shift rule, not implausible times. If stored events can't be read, the guard refuses to write rather than write blind.
 

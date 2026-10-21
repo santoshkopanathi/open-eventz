@@ -116,5 +116,12 @@ repaired — only replaced.
 - **Inferred dates:** for a weekly programme with no list we generate a short rolling horizon,
   flagged `date_inferred` (migration 008) — shown in the app, withheld from the sitemap and from
   Event rich data, because nobody published those dates.
+- **Collisions between programmes** (added 2026-10-21, after the park published a seasonal
+  variant): a slot is a time, a place **and a programme family** (`programFamily()`). Within a
+  family, a published occurrence beats an inferred one, and the **shorter stated run wins** —
+  "every Saturday through Dec 19" replaces "every Saturday through Nov 2027" for those four
+  weeks. Across families nothing competes: a park runs a vendor market, a food drive and its
+  weekly kids' programme on the same lawn on the same morning, and all of them happen.
+  *Generalisable rule: "same time, same place" is not the same question as "same event".*
 - **The guard did its job:** 189 stored occurrences → 19 real ones is a 90% collapse, and the
   shrink rule rejected it. Replacing a source is a **human-run migration**, not a nightly write.

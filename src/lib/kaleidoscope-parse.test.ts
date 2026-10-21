@@ -1,4 +1,4 @@
-import { parseEventJsonLd, parseCadence, parseListedDates, weeklyOccurrences, centralDateTimeToUtc, centralDateKey, parseThroughDate, resolveOccurrenceCollisions } from './kaleidoscope-parse'
+import { parseEventJsonLd, parseCadence, parseListedDates, weeklyOccurrences, centralDateTimeToUtc, centralDateKey, parseThroughDate, resolveOccurrenceCollisions, programFamily } from './kaleidoscope-parse'
 import { saturyay, liveAfter5, concertSeries, shopLocal, oneOff, notAnEvent } from './__fixtures__/kaleidoscope-pages'
 
 const ct = (iso: string) =>
@@ -163,8 +163,8 @@ describe('parseThroughDate — a cadence without its bound is half a sentence', 
 })
 
 describe('resolveOccurrenceCollisions', () => {
-  const slot = (programKey: string, day: string, date_inferred: boolean) => ({
-    programKey, start_datetime: `2026-${day}T16:00:00.000Z`, location_name: 'Performance Lawn', date_inferred,
+  const slot = (programKey: string, day: string, date_inferred: boolean, windowDays: number | null = null) => ({
+    programKey, family: 'saturyay', start_datetime: `2026-${day}T16:00:00.000Z`, location_name: 'Performance Lawn', date_inferred, windowDays,
   })
 
   // REGRESSION: "SaturYay: Holiday Edition" took the same 10 AM Saturday slot as SaturYAY,
@@ -187,9 +187,100 @@ describe('resolveOccurrenceCollisions', () => {
   test('a different time or venue is not a collision', () => {
     const kept = resolveOccurrenceCollisions([
       slot('saturyay', '11-28', true),
-      { programKey: 'fitness', start_datetime: '2026-11-28T15:00:00.000Z', location_name: 'Performance Lawn', date_inferred: true },
-      { programKey: 'other', start_datetime: '2026-11-28T16:00:00.000Z', location_name: 'Great Lawn', date_inferred: true },
+      { programKey: 'fitness', family: 'fitness', start_datetime: '2026-11-28T15:00:00.000Z', location_name: 'Performance Lawn', date_inferred: true, windowDays: null },
+      { programKey: 'other', family: 'other', start_datetime: '2026-11-28T16:00:00.000Z', location_name: 'Great Lawn', date_inferred: true, windowDays: null },
     ])
     expect(kept).toHaveLength(3)
+  })
+})
+
+// Rule 3 (2026-10-21, PM decision): a seasonal variant replaces the standing series inside
+// its own window. Both SaturYAY and its Holiday Edition state an end date, so "has a bound"
+// decides nothing — the SHORTER run is the more specific statement about that morning.
+describe('resolveOccurrenceCollisions — seasonal variant wins its window', () => {
+  const slot = (programKey: string, day: string, date_inferred: boolean, windowDays: number | null) => ({
+    programKey, family: 'saturyay', start_datetime: `2026-${day}T16:00:00.000Z`, location_name: 'Performance Lawn', date_inferred, windowDays,
+  })
+  const STANDING = 385  // SaturYAY: Oct 2026 → Nov 2027
+  const SEASONAL = 28   // Holiday Edition: Nov 21 → Dec 19
+
+  test('the four-week run beats the year-long one', () => {
+    const kept = resolveOccurrenceCollisions([
+      slot('saturyay', '12-05', true, STANDING),
+      slot('holiday', '12-05', true, SEASONAL),
+    ])
+    expect(kept).toHaveLength(1)
+    expect(kept[0].programKey).toBe('holiday')
+  })
+
+  test('outside the seasonal window the standing series is untouched', () => {
+    // No collision on 2 January: the Holiday Edition has ended, so nothing competes.
+    const kept = resolveOccurrenceCollisions([slot('saturyay', '12-26', true, STANDING)])
+    expect(kept).toHaveLength(1)
+    expect(kept[0].programKey).toBe('saturyay')
+  })
+
+  test('two open-ended series still cancel out — nothing distinguishes them', () => {
+    expect(resolveOccurrenceCollisions([
+      slot('a', '12-05', true, null),
+      slot('b', '12-05', true, null),
+    ])).toEqual([])
+  })
+
+  test('two runs of equal length cancel out rather than picking arbitrarily', () => {
+    expect(resolveOccurrenceCollisions([
+      slot('a', '12-05', true, 28),
+      slot('b', '12-05', true, 28),
+    ])).toEqual([])
+  })
+
+  test('a published occurrence still beats the seasonal winner', () => {
+    const kept = resolveOccurrenceCollisions([
+      slot('saturyay', '11-21', true, STANDING),
+      slot('holiday', '11-21', true, SEASONAL),
+      { programKey: 'holiday', family: 'saturyay', start_datetime: '2026-11-21T16:00:00.000Z', location_name: 'Performance Lawn', date_inferred: false, windowDays: 28 }, // the park announced this one
+    ])
+    expect(kept.map(k => k.programKey)).toEqual(['holiday'])
+  })
+})
+
+// REGRESSION: the first live run of rule 3 dropped both programmes anyway, because the
+// caller forgot to attach windowDays. undefined is not null, so both slots counted as
+// "bounded", Math.min produced NaN, and no winner could be found.
+test('a missing windowDays behaves as unbounded, not as a NaN comparison', () => {
+  const slots = [
+    { programKey: 'saturyay', family: 'saturyay', start_datetime: '2026-12-05T16:00:00.000Z', location_name: 'Lawn', date_inferred: true, windowDays: undefined as unknown as number | null },
+    { programKey: 'holiday', family: 'saturyay', start_datetime: '2026-12-05T16:00:00.000Z', location_name: 'Lawn', date_inferred: true, windowDays: 28 },
+  ]
+  const kept = resolveOccurrenceCollisions(slots)
+  expect(kept.map(k => k.programKey)).toEqual(['holiday'])
+})
+
+// PM decision (2026-10-21): the park's Saturday events are independent of each other. A
+// vendor market, a food drive and the weekly kids' programme all run that morning. Only a
+// programme and its own seasonal rebrand are rivals.
+describe('programFamily — who is actually competing for a slot', () => {
+  test('a programme and its seasonal rebrand share a family', () => {
+    expect(programFamily('SaturYAY! Presented by Atmos Energy')).toBe('saturyay')
+    expect(programFamily('SaturYay: Holiday Edition')).toBe('saturyay')
+  })
+
+  test('unrelated events do not', () => {
+    expect(programFamily('Shop Local Vendor Market Presented by Fifth Thirds Bank')).toBe('shop local vendor market')
+    expect(programFamily('How the Grinch Fights Hunger')).toBe('how the grinch fights hunger')
+    expect(programFamily('Live After 5 Presented by New York Life North Dallas')).toBe('live after 5')
+  })
+
+  test('REGRESSION: a published event of another family does not suppress an inferred one', () => {
+    const market = { programKey: 'shop-local', family: 'shop local vendor market', start_datetime: '2026-11-28T16:00:00.000Z', location_name: 'Lawn', date_inferred: false, windowDays: null }
+    const saturyay = { programKey: 'saturyay', family: 'saturyay', start_datetime: '2026-11-28T16:00:00.000Z', location_name: 'Lawn', date_inferred: true, windowDays: 386 }
+    const kept = resolveOccurrenceCollisions([market, saturyay])
+    expect(kept).toHaveLength(2) // both happen that morning
+  })
+
+  test('within one family, the published occurrence still wins', () => {
+    const published = { programKey: 'holiday', family: 'saturyay', start_datetime: '2026-11-21T16:00:00.000Z', location_name: 'Lawn', date_inferred: false, windowDays: 28 }
+    const inferred = { programKey: 'saturyay', family: 'saturyay', start_datetime: '2026-11-21T16:00:00.000Z', location_name: 'Lawn', date_inferred: true, windowDays: 386 }
+    expect(resolveOccurrenceCollisions([published, inferred]).map(k => k.programKey)).toEqual(['holiday'])
   })
 })

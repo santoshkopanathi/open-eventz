@@ -199,9 +199,18 @@ export function centralDateKey(iso: string): string {
 
 export interface OccurrenceSlot {
   programKey: string
+  /** Programme family (see programFamily) — only same-family occurrences can collide. */
+  family: string
   start_datetime: string
   location_name: string | null
   date_inferred: boolean
+  /**
+   * Length of the run this occurrence belongs to, in days, as the page states it — null when
+   * no end was given. It is how a seasonal variant is told from the standing series: both
+   * SaturYAY and its Holiday Edition state an end date, so "has a bound" decides nothing.
+   * "Runs for four weeks" against "runs for a year" decides it.
+   */
+  windowDays: number | null
 }
 
 /**
@@ -217,35 +226,56 @@ export interface OccurrenceSlot {
  *  1. A published occurrence beats an inferred one in the same slot. We were told this event
  *     happens; the other is our extrapolation. Drop the inference.
  *
- *  2. When two different programmes INFER into the same slot, drop both. The pages disagree
- *     about what runs that morning and neither said anything about that date; picking one
- *     would be inventing an answer to a question the source left open. The published
- *     occurrences of both programmes are untouched.
+ *  2. When two different programmes INFER into the same slot and nothing distinguishes them,
+ *     drop both. The pages disagree about that morning and neither announced that date;
+ *     picking one would invent an answer the source left open.
+ *
+ *  3. UNLESS one of them is clearly the seasonal variant — the programme with the SHORTER
+ *     stated run wins inside its window. "Every Saturday through Dec 19" against "every
+ *     Saturday through Nov 2027" is a park saying the first replaces the second for those
+ *     four weeks, which is how a parent reads the two pages. Rule 2 still covers the genuinely
+ *     ambiguous case: two open-ended series, or two runs of equal length, cancel out.
  *
  * A programme never collides with itself: a slot it has already published is its own.
  */
 export function resolveOccurrenceCollisions<T extends OccurrenceSlot>(occurrences: T[]): T[] {
-  const slotKey = (o: OccurrenceSlot) => `${o.start_datetime}|${o.location_name ?? ''}`
+  // A slot is a time, a place AND a programme family: a market and a storytime sharing a
+  // Saturday morning are not rivals, so they are not in the same slot.
+  const slotKey = (o: OccurrenceSlot) => `${o.start_datetime}|${o.location_name ?? ''}|${o.family}`
 
   const published = new Set<string>()
-  const inferringProgrammes = new Map<string, Set<string>>()
+  const inferred = new Map<string, OccurrenceSlot[]>()
   for (const o of occurrences) {
     const key = slotKey(o)
-    if (o.date_inferred) {
-      const set = inferringProgrammes.get(key) ?? new Set<string>()
-      set.add(o.programKey)
-      inferringProgrammes.set(key, set)
-    } else {
-      published.add(key)
-    }
+    if (o.date_inferred) inferred.set(key, [...(inferred.get(key) ?? []), o])
+    else published.add(key)
+  }
+
+  // Rule 3's winner per slot, decided once: the shortest stated run, and only when a single
+  // programme holds that distinction.
+  const seasonalWinner = new Map<string, string>()
+  for (const [key, slots] of inferred) {
+    const programmes = new Set(slots.map(s => s.programKey))
+    if (programmes.size < 2) continue
+    // `== null` on purpose: a caller that forgets the field passes undefined, and treating
+    // that as "bounded" makes every comparison NaN and silently drops both programmes —
+    // which is exactly what happened the first time this ran against the live park.
+    const bounded = slots.filter(s => s.windowDays != null)
+    if (bounded.length === 0) continue
+    const shortest = Math.min(...bounded.map(s => s.windowDays!))
+    const winners = new Set(bounded.filter(s => s.windowDays === shortest).map(s => s.programKey))
+    if (winners.size === 1) seasonalWinner.set(key, [...winners][0])
   }
 
   return occurrences.filter(o => {
     if (!o.date_inferred) return true
     const key = slotKey(o)
-    if (published.has(key)) return false                                  // rule 1
-    if ((inferringProgrammes.get(key)?.size ?? 0) > 1) return false       // rule 2
-    return true
+    if (published.has(key)) return false                                   // rule 1
+    const programmes = new Set((inferred.get(key) ?? []).map(s => s.programKey))
+    if (programmes.size < 2) return true
+    const winner = seasonalWinner.get(key)
+    if (winner) return o.programKey === winner                             // rule 3
+    return false                                                           // rule 2
   })
 }
 
@@ -278,4 +308,29 @@ export function parseThroughDate(html: string, confirmedStartIso: string): strin
     if (bound.getTime() >= confirmed.getTime()) return bound.toISOString()
   }
   return null
+}
+
+/**
+ * The programme FAMILY a title belongs to — "SaturYAY! Presented by Atmos Energy" and
+ * "SaturYay: Holiday Edition" are both `saturyay`.
+ *
+ * WHY (2026-10-21). The first collision rules treated any two occurrences sharing a time and
+ * place as rivals, which is wrong: the park runs a vendor market and a food drive on Saturday
+ * mornings *while* its weekly kids' programme is also on. Those events are independent and
+ * all of them happen. The only real rivalry is between a programme and its own seasonal
+ * rebrand, and that is what a shared family detects.
+ *
+ * Deliberately crude — a sponsor suffix and anything after the first separator are dropped —
+ * because the failure modes are asymmetric. Two families wrongly merged suppresses a real
+ * event; two wrongly split shows one event twice. Both are bad, but a title must be very
+ * close indeed to merge here, so splitting is the default.
+ */
+export function programFamily(title: string): string {
+  return title
+    .toLowerCase()
+    .split(/[:!|–—]/)[0]
+    .replace(/\bpresented by\b.*$/, '')
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
