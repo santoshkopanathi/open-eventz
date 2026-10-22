@@ -1,0 +1,46 @@
+name: Heartbeat
+
+# Did the pipeline run at all?
+#
+# Every other alert fires when a run FAILS. A run that never STARTS is silent, and silence looks
+# exactly like success — which happened on 2026-10-22: no run, no record, no alert. The
+# per-source freshness check would have caught the stale data, but it runs inside the workflow
+# that did not run.
+#
+# So this is a SEPARATE workflow with its own schedule, asking the database one question: has
+# every source written in the last 30 hours? A dropped schedule, a failed job, a silent zero and
+# a dead source all produce the same answer and need the same first response.
+#
+# It alerts by failing: a red run triggers GitHub's own workflow-failure email, the primary alert
+# channel that needs no code of ours (GUARDRAILS.md Layer 6).
+#
+# KNOWN LIMIT, recorded rather than hidden: this is scheduled by the same mechanism that drops
+# ingest runs, so it can be delayed or dropped too. It is not a hard guarantee — it is one more
+# independent chance to notice, and staleness persists, so tomorrow's heartbeat catches what
+# today's missed. A true dead-man's switch needs a service outside GitHub (BACKLOG.md #6).
+on:
+  schedule:
+    # 17:20 UTC — roughly midday Central, a few hours after even a badly delayed ingest. Minute
+    # 20 on purpose: scheduled runs cluster on :00 and are delayed worst there.
+    - cron: '20 17 * * *'
+  workflow_dispatch: # "is the pipeline alive right now?" on demand
+
+jobs:
+  heartbeat:
+    name: pipeline heartbeat
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: Production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Has every source written recently?
+        run: npm run heartbeat
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

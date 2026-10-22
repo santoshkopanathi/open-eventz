@@ -6,7 +6,21 @@ name: Ingest events
 # others, and each has isolated logs. See INGEST-DESIGN.md.
 on:
   schedule:
-    - cron: '0 11 * * *' # 11:00 UTC ≈ 6:00 AM Central — fresh before the daytime browse
+    # 03:40 UTC — nominally 10:40 PM Central the previous evening, which is NOT when it runs.
+    #
+    # GitHub's scheduler is best-effort, and this repo is hit hard: against the old `0 11 * * *`,
+    # twelve consecutive scheduled runs started between 13:59 and 20:02 UTC — delays of 3 to 9
+    # hours, averaging ~5 — and 2026-10-22 was dropped entirely. The owner's observation was
+    # "it runs at a different time every day"; it did.
+    #
+    # Two changes, for two separate reasons:
+    #   * minute 40, not 0 — runs cluster on the hour and are delayed worst there;
+    #   * early, to buy a delay budget — with the observed +3–9h this lands roughly 1–7 AM
+    #     Central, so even a badly delayed run is fresh before the morning browse.
+    #
+    # The timing is still not guaranteed, and a DROPPED run is invisible to this file — that is
+    # what the separate Heartbeat workflow is for.
+    - cron: '40 3 * * *'
   workflow_dispatch:
     inputs:
       simulate_failure:

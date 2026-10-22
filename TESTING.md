@@ -53,6 +53,14 @@ CI runs all three automatically on push / PR — see `.github/workflows/ci.yml`.
 | **Data-quality** | tsx + Supabase | `scripts/validate-data.ts`, `src/lib/data-quality.ts` (+`.test`) | **REAL-data** post-ingest gate: Frisco age variety, no adult-title leaks, Toddler-filter-narrows, per-source non-empty, freshness, + live-source canary. Runs as the `data-quality` job in `ingest.yml` (`needs: ingest`); `npm run validate` locally. Exits red on any violation. |
 | **Manual** | human | `../02-product/functional-test-scenarios-v1.2-price-analytics.md` (latest) | LLM classification/price accuracy (`npm run calibrate:price` + spot-checking Play Frisco `kid_relevant` reasoning), GA4 event firing (Realtime/DebugView), `/dashboard` with real data, map rendering |
 
+## Operational checks (not tests)
+
+| Command | Question it answers |
+|---|---|
+| `npm run validate` | Is the data we just wrote sound? (post-ingest gate, runs in CI) |
+| `npm run heartbeat` | **Did the pipeline run at all?** Fails if any source has not written in 30h. Runs as its own scheduled workflow, deliberately outside the ingest. |
+| `INGEST_DRY_RUN=1 npm run ingest -- <source>` | What would tonight write, drop and purge? Touches nothing. |
+
 ## Manual scenario docs (history + reference)
 
 - `functional-test-scenarios.md` — **v1.0 baseline**

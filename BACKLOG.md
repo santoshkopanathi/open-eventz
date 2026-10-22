@@ -21,12 +21,12 @@ Started 2026-10-22, consolidating the gaps recorded in `GUARDRAILS.md`, the park
 
 | # | Item | View | Priority | Status |
 |---|---|---|---|---|
-| 1 | Push the four pending commits | T · F | **P0** | open |
-| 2 | Kaleidoscope delete-and-reingest (human-run migration) | T | **P0** | blocked by #1 |
-| 3 | Did the nightly run today? No run record exists | T | **P0** | open |
+| 1 | Push the four pending commits | T · F | **P0** | done 10-22 |
+| 2 | Kaleidoscope delete-and-reingest (human-run migration) | T | **P0** | done 10-22 |
+| 3 | Did the nightly run today? No run record exists | T | **P0** | done 10-22 — answered |
 | 4 | Sitemap has not regenerated in 24h+ | F · T | **P0** | open |
 | 5 | Dry runs write `ingest_runs` records | T | P1 | open |
-| 6 | No heartbeat — a run that never starts is silent | T | P1 | open |
+| 6 | No heartbeat — a run that never starts is silent | T | P1 | done 10-22 (partial — see item) |
 | 7 | Classification quality has no eval on change | T | P1 | open |
 | 8 | Inferred dates are published but never graded | T | P1 | open |
 | 9 | No conversions since 2026-08-18 | F | P1 | open |
@@ -65,12 +65,21 @@ on that, which is the guard working — replacing a source is a human-run migrat
 produces ~32 rows, 11 of them `date_inferred`.
 **Blocked by** #1. **Size.** 10 minutes. Runbook: `supabase/migrations/008_date_inferred.sql`.
 
-### 3. Did the nightly run today? · T
-**Why.** `ingest_runs` holds no row for 2026-10-22 — not a success, not a failure. Either the
-schedule did not fire, or all four jobs died before recording. Both are possible; neither is known.
-**Done when.** The Actions history is checked and the cause named. If the schedule silently
-skipped, that escalates #6.
-**Size.** 5 minutes of looking.
+### 3. Did the nightly run today? · T · **answered 2026-10-22**
+**The answer: the schedule did not fire.** GitHub's Actions API shows no scheduled run for
+2026-10-22 at all, and the twelve before it started at wildly different times against a fixed
+`0 11 * * *`:
+
+```
+13:59  14:12  15:04  15:23  15:27  15:37  15:43  16:26  17:14  17:50  20:02   (UTC)
+```
+
+**Delays of 3 to 9 hours, averaging ~5, then a drop.** GitHub's scheduler is best-effort and
+most congested on the hour, which is exactly where we were scheduled.
+
+**What changed.** The cron moved to `40 3 * * *` — off the hour, and early enough that the
+observed delay still lands it roughly 1–7 AM Central. Timing is still not guaranteed, which is
+why the real answer is #6.
 
 ### 4. Sitemap has not regenerated in 24h+ · F · T
 **Why.** It still lists **189 deleted Kaleidoscope URLs** that now 404, despite `revalidate = 3600`,
@@ -90,12 +99,20 @@ A rehearsal that writes nothing to `events` still calls `recordRun`, so the Tech
 "last ingest" and cost figures include runs that never happened — five such rows exist already.
 **Done when.** `INGEST_DRY_RUN` skips the record, or marks it unmistakably. **Size.** 30 minutes.
 
-### 6. No heartbeat · T
+### 6. No heartbeat · T · **built 2026-10-22, partially closed**
 Every alert fires when a run **fails**. A run that never starts produces silence, which looks
-exactly like success. Per-source freshness would catch it — but that check runs inside the
-workflow that did not run. Item #3 may be this gap biting already.
-**Done when.** Something outside the workflow notices that no successful run has been recorded in
-30 hours. **Size.** Half a day. **The cheapest real gap on this list.**
+exactly like success — and #3 proved it was already happening.
+
+**Built.** A separate `Heartbeat` workflow on its own schedule asks the database one question:
+has every source written in the last 30 hours? A dropped schedule, a failed job, a silent zero
+and a dead source all produce the same answer and need the same first response. It alerts by
+failing, which triggers GitHub's own workflow-failure email — the channel that needs no code of
+ours. Run it any time with `npm run heartbeat`; it caught Frisco at 43.8h on its first run.
+
+**Why "partial".** It is scheduled by the same mechanism that drops ingest runs, so it can be
+delayed or dropped too. Staleness persists, so tomorrow's heartbeat catches what today's missed —
+but a true dead-man's switch needs a service *outside* GitHub (a scheduled ping with an external
+monitor). **Remaining work:** decide whether that external dependency is worth it. Keep at P1.
 
 ### 7. Classification quality has no eval on change · T
 The long-standing weak spot, and the one none of this month's work touched. Thirty-six controls

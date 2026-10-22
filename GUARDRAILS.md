@@ -160,6 +160,7 @@ exists as a backstop for whatever Layer 3 didn't anticipate.
 | **Ingest failure alert — PRIMARY: GitHub's own workflow-failure email** | When any job fails the run goes red and GitHub emails the repo owner ("Ingest events: Some jobs were not successful", with per-job status). It needs no code and **cannot be broken by our own logic** — which is the entire reason it is the primary channel. **Verified 2026-08-17, and verified in the strongest possible way: it arrived for drill #3, the run where our own issue-based alert failed.** The email listed `alert on failure — Failed`, so **a broken secondary channel is itself visible through the primary one.** Already enabled on this account; the setting lives at `github.com/settings/notifications` → Actions (**personal** settings, not repo settings) if it ever needs re-checking. |
 | **Ingest failure alert — SECONDARY: the `notify` job's GitHub Issue** | Best-effort **enhancement**, not the primary signal. It adds a durable, must-be-closed record with triage instructions, but three fire drills produced **three different failures** on GitHub's Issues API (`createLabel` 503; create-with-label rejected; `createComment` 503), so it is treated as a flaky dependency: every call retries, and delivery falls forward through comment → labelled issue → unlabelled issue. **For an alert, a duplicate beats a silence.** If every rung fails it logs which calls broke and fails the job — costing nothing, since the run was already red and the primary email already fired. |
 | **Fire drill** | **Three drills on 2026-08-17 produced three different bugs — none of them findable by reading the code.** (1) `createLabel` 503 was unhandled, killing the job before it opened the issue — a *cosmetic* step took down the alert. (2) The issue was delivered but **unlabelled** (GitHub rejected the label it had just created), while dedup looked issues up *by label* — so every future failure would have opened a duplicate. (3) `createComment` 503'd on the existing issue and delivery simply gave up. Each fix is in the row above. The standing lesson: **the alert's dependency is flaky, so fall forward rather than fail.** **How to run one:** Actions → Ingest events → Run workflow → tick **`simulate_failure`**. One job fails on purpose, the real ingest step is skipped for *every* source (nothing scraped, classified or written), and the alert fires under the separate `ingest-drill` label so a test issue can never absorb a real one. Scheduled runs are unaffected — `inputs` is undefined on a schedule event. **Re-run after any change to the alert.** All three drill failures are now permanent regression tests (`notify-alert.test.ts`, row in Layer 2), so a drill is no longer the only thing standing between a broken alert and a silent night. |
+| **Heartbeat — did the pipeline run at all?** *(2026-10-22)* | Every other alert fires when a run **fails**; a run that never **starts** is silent, and silence looks like success. A separate `Heartbeat` workflow, on its own schedule, asks the database whether every source has written in the last 30h and **fails** if not — which triggers the primary GitHub failure email. Built the day the schedule was found to have dropped a run entirely, with 3–9h delays on the eleven before it. **Known limit:** it is scheduled by the same mechanism it watches, so it can be delayed or dropped too; staleness persists, so the next day's run catches what today's missed. A true dead-man's switch needs a service outside GitHub — [BACKLOG.md](BACKLOG.md) #6. |
 | **Weekly live-site review** | Open the real site and read the event times. Not automated, and not optional — **both** timezone bugs were found this way and neither by a test. |
 
 ---
@@ -533,10 +534,21 @@ failures that the unit suite passed straight through; and the billing outage, by
 27-vs-32 discrepancy visible as a list rather than a number.
 **Principle.** *A delete path with no rehearsal is a delete path you test in production.*
 
-### G2. A run that writes nothing exits non-zero ⬤
+### G2. Heartbeat ⬤ *(2026-10-22)*
+**Purpose.** Notice a run that never happened.
+**How it works.** A separate workflow queries the database for each source's newest write and
+fails if any is older than 30h. Failing is the alert.
+**Example.** Its first run, against production: *frisco-library — last write 43.8h ago (max 30h)*,
+while the other three passed. The nightly had been silently dropped.
+**Catches.** A dropped schedule, a job that died before writing, a silent zero, a dead source —
+all of which need the same first response from a human.
+**Known limit.** Same scheduler, so it can be dropped too. It is one more independent chance to
+notice, not a guarantee.
+
+### G3. A run that writes nothing exits non-zero ⬤
 Keeps "the ingest succeeded and did nothing" from being a passing state.
 
-### G3. The weekly live-site read ◐
+### G4. The weekly live-site read ◐
 Not automated, not optional. **Both** timezone bugs and the duplicate SaturYAY were found this way
 and none by a test. It is the most effective detector listed in this document and the least
 reliable, which is a standing argument for E-layer automation.

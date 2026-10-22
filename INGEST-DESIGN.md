@@ -82,6 +82,10 @@ It's now a **thin wrapper** ([`src/app/api/ingest/route.ts`](src/app/api/ingest/
 
 ## 5. Operating it
 
+**When it runs — and when it actually runs.** The cron is `40 3 * * *` (03:40 UTC). GitHub's scheduler is best-effort: against the previous `0 11 * * *`, twelve consecutive runs started between **13:59 and 20:02 UTC** — delays of 3–9h — and 2026-10-22 was **dropped entirely**. The minute moved off `:00` (the most congested slot) and the hour moved early to buy a delay budget, so a late run still lands roughly 1–7 AM Central. A dropped run is invisible to the workflow itself; that is what the separate **Heartbeat** workflow (`npm run heartbeat`) exists for — it fails if any source has not written in 30h, which sends the primary GitHub failure email.
+
+**Note on DST:** a fixed UTC cron shifts an hour twice a year against Central time. Deliberate — the delay budget dwarfs the hour.
+
 ### Secrets (GitHub → Settings → Secrets and variables → Actions)
 Same values as `.env.local`:
 - `NEXT_PUBLIC_SUPABASE_URL`

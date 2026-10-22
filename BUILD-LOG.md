@@ -1851,3 +1851,38 @@ An unrecognised message stays `other`. Guessing "billing" for a parsing bug woul
 **The standing risk this leaves.** The account is running on promotional credit that **expires 2026-11-18**, after which it falls back to auto-reload. If that handover misfires, this exact failure returns — but now it announces itself. Noted here because the next person to see it will be reading this file, not this conversation.
 
 **The lesson.** **Fail-closed is a property of the data path; it says nothing about the operator path.** Every guard in this pipeline is designed so that uncertainty produces absence rather than error, and that is right. But absence is the least informative signal a system can emit, so each one needs a sentence attached: *what was withheld, why, and whose problem it is.* The question to ask of any graceful degradation is not "did we avoid serving something wrong" — it is "will the person who reads this at 6am know what to do".
+
+---
+
+## The run that never ran
+
+*Date: 2026-10-22. Modules: [`scripts/heartbeat.ts`](scripts/heartbeat.ts), [`.github/workflows/heartbeat.yml`](.github/workflows/heartbeat.yml), [`.github/workflows/ingest.yml`](.github/workflows/ingest.yml).*
+
+**Initial situation.** Two observations landed together. The owner noticed the nightly ingest arriving at a different time every day — 9:30, 10:30, 10:46, 12:30 — and `ingest_runs` held **no row at all** for 2026-10-22: not a success, not a failure.
+
+**What the API said.** The cron is a fixed time. The twelve scheduled runs before it started at:
+
+```
+13:59  14:12  15:04  15:23  15:27  15:37  15:43  16:26  17:14  17:50  20:02   (UTC, against 11:00)
+```
+
+**Delays of 3 to 9 hours, averaging about five — then a day with no run at all.** GitHub's scheduler is best-effort and most congested on the hour, which is exactly where the job sat. The owner's "it runs at a different time every day" was not a misreading; it was a measurement.
+
+**The part that mattered more than the timing.** A late run is an inconvenience. A *dropped* run was **invisible**: every alert in this project fires when a run fails, and a run that never starts cannot fail. The per-source freshness check would have caught the stale data — but it runs inside the workflow that did not run. **Silence was indistinguishable from success, and had been for at least a day.**
+
+**What changed.**
+
+| Change | Reason |
+|---|---|
+| Cron → `40 3 * * *` | Off `:00`, where runs cluster and are delayed worst; early enough that the observed +3–9h still lands roughly 1–7 AM Central |
+| New **Heartbeat** workflow | Asks the database, from outside the ingest, whether every source has written in the last 30h — and **fails** if not |
+
+The heartbeat alerts by failing, which triggers GitHub's own workflow-failure email: the primary channel precisely because it needs no code of ours and cannot be broken by our own logic. It does not care *why* a source is stale — a dropped schedule, a failed job, a silent zero and a dead source all produce the same answer and need the same first response from a human.
+
+**It earned its place on the first run**, against production: `frisco-library — last write 43.8h ago (max 30h)`, with the other three green. Frisco had been frozen since the schedule dropped and the fix sat unpushed.
+
+**Honest limit, recorded rather than hidden.** The heartbeat is scheduled by the same mechanism it watches, so it can be delayed or dropped too. It is one more *independent chance to notice*, not a guarantee. Staleness persists, so tomorrow's run catches what today's missed. A true dead-man's switch needs a service outside GitHub, and that remains BACKLOG #6.
+
+**Also done in the same pass.** The Kaleidoscope migration the purge cap had been correctly refusing: 41 rows deleted, 32 re-ingested, **zero duplicate same-family slots** — the double SaturYAY is gone from production — and 15 dates correctly flagged as inferred. Frisco re-ingested at 202 events, purging 2 the library had dropped.
+
+**The lesson.** **An alert that fires on failure cannot see absence.** Every control in this project had been built to answer "is what arrived correct?", and the question "did anything arrive at all?" had no owner — because the thing that would have asked it was downstream of the thing that stopped. When a check lives inside the process it checks, it inherits that process's failure modes. **Put the question somewhere that survives the answer being no.**
