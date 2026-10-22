@@ -660,6 +660,17 @@ async function recordRun(
   db: ReturnType<typeof supabaseAdmin>,
   o: { frisco?: number; plano?: number; playFrisco?: number; upserted: number; llmCalls?: number; errors: string[]; t0: number },
 ): Promise<void> {
+  // A rehearsal must leave no trace. INGEST_DRY_RUN writes nothing to `events`, but this
+  // function ran anyway, so five rehearsals on 2026-10-21 became five rows in the run history —
+  // including one reporting a billing failure that was a deliberate test with an invalid key.
+  // `ingest_runs` is the record of what the pipeline ACTUALLY did; it feeds the Technical
+  // dashboard and it is now also how we diagnose scheduling. A run that did not happen must
+  // not appear in it.
+  if (process.env.INGEST_DRY_RUN === '1') {
+    console.warn('[ingest] DRY RUN: no ingest_runs record written')
+    return
+  }
+
   const status = o.upserted === 0 ? 'err' : o.errors.length > 0 ? 'warn' : 'ok'
   const { error } = await db.from('ingest_runs').insert({
     ran_at: new Date().toISOString(),

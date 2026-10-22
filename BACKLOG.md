@@ -25,7 +25,7 @@ Started 2026-10-22, consolidating the gaps recorded in `GUARDRAILS.md`, the park
 | 2 | Kaleidoscope delete-and-reingest (human-run migration) | T | **P0** | done 10-22 |
 | 3 | Did the nightly run today? No run record exists | T | **P0** | done 10-22 — answered |
 | 4 | Sitemap has not regenerated in 24h+ | F · T | **P0** | open |
-| 5 | Dry runs write `ingest_runs` records | T | P1 | open |
+| 5 | Dry runs write `ingest_runs` records | T | P1 | done 10-22 |
 | 6 | No heartbeat — a run that never starts is silent | T | P1 | done 10-22 (partial — see item) |
 | 7 | Classification quality has no eval on change | T | P1 | open |
 | 8 | Inferred dates are published but never graded | T | P1 | open |

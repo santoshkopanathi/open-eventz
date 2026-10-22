@@ -7,20 +7,27 @@ import {
   weeklyActiveDiscoverers, computeFunnel, returnVisitRate, referral, topEvents,
   conversionActionBreakdown, filterUsage,
 } from '@/lib/measurement'
-import type { Event } from '@/lib/types'
+import { sourceFreshnessChecks } from '@/lib/data-quality'
+import type { Event, EventSource } from '@/lib/types'
 import DashboardTabs from './DashboardTabs'
 
 export const dynamic = 'force-dynamic'
+
+// Same window as the Heartbeat workflow: a single missed day is visible, a late run is not a
+// false alarm (GitHub's scheduler has been running 3-9h late).
+const HEARTBEAT_MAX_AGE_HOURS = 30
+const HEARTBEAT_SOURCES: EventSource[] = ['frisco-library', 'plano-library', 'play-frisco', 'kaleidoscope-park']
 
 export default async function DashboardPage() {
   const db = supabaseAdmin()
 
   // ---- Technical (Supabase) ----
-  const [total, frisco, plano, pf, free, paid, unknown, pfEventsRes, runsRes] = await Promise.all([
+  const [total, frisco, plano, pf, kal, free, paid, unknown, pfEventsRes, runsRes] = await Promise.all([
     db.from('events').select('*', { count: 'exact', head: true }),
     db.from('events').select('*', { count: 'exact', head: true }).eq('source', 'frisco-library'),
     db.from('events').select('*', { count: 'exact', head: true }).eq('source', 'plano-library'),
     db.from('events').select('*', { count: 'exact', head: true }).eq('source', 'play-frisco'),
+    db.from('events').select('*', { count: 'exact', head: true }).eq('source', 'kaleidoscope-park'),
     db.from('events').select('*', { count: 'exact', head: true }).eq('is_free', true),
     db.from('events').select('*', { count: 'exact', head: true }).eq('is_free', false),
     db.from('events').select('*', { count: 'exact', head: true }).is('is_free', null),
@@ -30,7 +37,30 @@ export default async function DashboardPage() {
   const pfEvents = (pfEventsRes.data ?? []) as unknown as Event[]
   const runs = (runsRes.data ?? []) as unknown as IngestRun[]
 
+  // Pipeline heartbeat — the same question the Heartbeat workflow asks, through the same pure
+  // function, so the dashboard and the alert can never disagree. It reads `events`, NOT
+  // `ingest_runs`: a dropped schedule leaves no run record at all, so a tile built on run
+  // history would show yesterday's success and look healthy. Staleness is visible in the data.
+  const lastWrites = await Promise.all(
+    HEARTBEAT_SOURCES.map(async source => {
+      const { data } = await db
+        .from('events')
+        .select('ingested_at')
+        .eq('source', source)
+        .order('ingested_at', { ascending: false })
+        .limit(1)
+      return { source, lastIngestedAt: (data?.[0]?.ingested_at as string | undefined) ?? null }
+    }),
+  )
+  const heartbeat = sourceFreshnessChecks(lastWrites, new Date(), HEARTBEAT_MAX_AGE_HOURS).map(c => ({
+    source: c.name.replace(': freshness', ''),
+    ok: c.pass,
+    detail: c.detail,
+  }))
+
   const technical = {
+    heartbeat,
+    heartbeatWindowHours: HEARTBEAT_MAX_AGE_HOURS,
     lastIngest: lastIngest(runs),
     totalEvents: total.count ?? 0,
     counts: {
@@ -38,6 +68,7 @@ export default async function DashboardPage() {
         { source: 'frisco-library', total: frisco.count ?? 0 },
         { source: 'plano-library', total: plano.count ?? 0 },
         { source: 'play-frisco', total: pf.count ?? 0 },
+        { source: 'kaleidoscope-park', total: kal.count ?? 0 },
       ],
       free: free.count ?? 0, paid: paid.count ?? 0, unknown: unknown.count ?? 0,
     },

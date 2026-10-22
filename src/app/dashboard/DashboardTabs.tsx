@@ -14,6 +14,8 @@ const pct = (x: number) => `${Math.round(x * 100)}%`
 const fmtTime = (iso: string | null) => iso ? new Date(iso).toLocaleString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—'
 
 type Technical = {
+  heartbeat: { source: string; ok: boolean; detail: string }[]
+  heartbeatWindowHours: number
   lastIngest: IngestRun | null
   totalEvents: number
   counts: { bySource: { source: string; total: number }[]; free: number; paid: number; unknown: number }
@@ -200,10 +202,54 @@ export default function DashboardTabs({ technical: t, functional: f }: { technic
         ) : (
           <>
             {/* Technical */}
+
+            {/* Heartbeat first, deliberately. Every tile below answers "how did the last run
+                go?" — which assumes a run happened. On 2026-10-22 the schedule was dropped
+                entirely and those tiles showed a healthy run from the day before. This reads
+                the events table, so a pipeline that stopped is visible as staleness. */}
+            <Section>Pipeline Heartbeat — did it run at all?</Section>
+            <Card>
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-[13px] font-semibold">
+                  {t.heartbeat.every(h => h.ok)
+                    ? 'All sources writing'
+                    : `${t.heartbeat.filter(h => !h.ok).length} source(s) have stopped writing`}
+                </div>
+                <div className="text-[11px]" style={{ color: 'var(--color-text-3,#9A9898)' }}>
+                  window {t.heartbeatWindowHours}h
+                </div>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {t.heartbeat.map(h => (
+                  <div
+                    key={h.source}
+                    className="px-3 py-2"
+                    style={{
+                      borderRadius: 'var(--radius-input)',
+                      border: `1px solid ${h.ok ? 'var(--color-border)' : ACCENT}`,
+                      backgroundColor: h.ok ? 'transparent' : 'var(--color-accent-tint, rgba(180,98,59,0.08))',
+                    }}
+                  >
+                    <div className="text-[11px] font-semibold flex items-center gap-1.5">
+                      <span aria-hidden="true">{h.ok ? '✅' : '❌'}</span>
+                      {SRC[h.source] ?? h.source}
+                    </div>
+                    <div className="text-[10px] mt-0.5" style={{ color: h.ok ? 'var(--color-text-3,#9A9898)' : ACCENT }}>
+                      {h.detail}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="text-[10px] mt-2" style={{ color: 'var(--color-text-3,#9A9898)' }}>
+                Read from the events table, not the run log — a schedule that never fired writes no run record.
+                The same check runs as the Heartbeat workflow and emails on failure.
+              </div>
+            </Card>
+
             <Section>Ingest Pipeline — Last Run</Section>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <Card><div className="text-[11px]" style={{ color: 'var(--color-text-3,#9A9898)' }}>Last ingest</div><div className="text-base font-bold">{fmtTime(t.lastIngest?.ran_at ?? null)}</div>{t.lastIngest && <div className="mt-1"><Pill status={t.lastIngest.status} /></div>}</Card>
-              <Card><div className="text-[11px]" style={{ color: 'var(--color-text-3,#9A9898)' }}>Total events in DB</div><div className="text-2xl font-extrabold">{t.totalEvents}</div><div className="text-[11px]" style={{ color: 'var(--color-text-3,#9A9898)' }}>all three sources</div></Card>
+              <Card><div className="text-[11px]" style={{ color: 'var(--color-text-3,#9A9898)' }}>Total events in DB</div><div className="text-2xl font-extrabold">{t.totalEvents}</div><div className="text-[11px]" style={{ color: 'var(--color-text-3,#9A9898)' }}>all four sources</div></Card>
               <Card><div className="text-[11px]" style={{ color: 'var(--color-text-3,#9A9898)' }}>Upserted (last run)</div><div className="text-2xl font-extrabold">{t.lastIngest?.total_upserted ?? 0}</div><div className="text-[11px]" style={{ color: 'var(--color-text-3,#9A9898)' }}>duration {t.lastIngest ? (t.lastIngest.duration_ms / 1000).toFixed(1) + 's' : '—'}</div></Card>
               <Card><div className="text-[11px]" style={{ color: 'var(--color-text-3,#9A9898)' }}>LLM calls (last run)</div><div className="text-2xl font-extrabold">{t.lastIngest?.llm_calls ?? 0}</div><div className="text-[11px]" style={{ color: 'var(--color-text-3,#9A9898)' }}>${(t.lastIngest?.llm_cost_usd ?? 0).toFixed(3)}</div></Card>
             </div>
