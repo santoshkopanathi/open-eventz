@@ -182,7 +182,9 @@ The habits that surround the automated controls. These are the part no CI job ca
 
 ## Known gaps — accepted, not solved
 
-Recorded openly so they're chosen rather than discovered.
+Recorded openly so they're chosen rather than discovered. **These are inputs to
+[`BACKLOG.md`](BACKLOG.md)**, which ranks them against the product work rather than listing them
+in isolation — a guardrail gap and a feature compete for the same afternoon.
 
 1. **A rejected batch needs a human.** If a source legitimately reschedules everything at once,
    Layer 3 rejects it and data goes stale until someone investigates. This is the deliberate
