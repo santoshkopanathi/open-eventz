@@ -94,10 +94,12 @@ corrected or the nightly job triggers revalidation on completion.
 
 ## P1 — next
 
-### 5. Dry runs write `ingest_runs` records · T
-A rehearsal that writes nothing to `events` still calls `recordRun`, so the Technical dashboard's
-"last ingest" and cost figures include runs that never happened — five such rows exist already.
-**Done when.** `INGEST_DRY_RUN` skips the record, or marks it unmistakably. **Size.** 30 minutes.
+### 5. Dry runs write `ingest_runs` records · T · **done 2026-10-22**
+**Problem.** A rehearsal wrote nothing to `events` but still called `recordRun`, so the run
+history contained runs that never happened — **11 of them**, one reporting a billing failure that
+was a deliberate test with an invalid key. That history feeds the Technical dashboard *and* is now
+how scheduling is diagnosed, so it has to mean "what the pipeline actually did".
+**Fixed.** `recordRun` returns early under `INGEST_DRY_RUN`; the 11 rows were deleted.
 
 ### 6. No heartbeat · T · **built 2026-10-22, partially closed**
 Every alert fires when a run **fails**. A run that never starts produces silence, which looks
@@ -184,6 +186,282 @@ credit after that date. **Date-bound — set a reminder, not a task.**
 | 22 | **Spend estimated, not metered** | `calls × $0.006` is a dashboard number, not a control. The account cap is the real backstop |
 | 23 | **Retention, deletion, guardrail hit-rate** | No retention schedule; hit-rate is never aggregated, so we cannot say which guard earns its keep |
 | 24 | **Source replacement tooling** | Accepted as human-run. Revisit if a third source is rebuilt |
+
+---
+
+---
+
+# Elaborations — problem, feature, effect, metric
+
+Each open item in one shape: **the problem** (what goes wrong today), **the feature** (what gets
+built), **how it helps** (the mechanism, not the hope), and **the metric it moves**. Items already
+closed are omitted; see the status column above.
+
+The discipline here is the fourth line. *An item whose metric is "it feels better" is a preference,
+not a backlog entry* — two items below are honest about having no measurable effect yet, and that is
+why they sit at P2.
+
+---
+
+## 4 · Sitemap has not regenerated · P0 · F · T
+
+**Problem.** `sitemap.xml` is served from a build-time snapshot. It still lists 189 Kaleidoscope
+URLs deleted two days ago, and a cache-busted request still returns a cache hit. The dead links are
+cosmetic; the open question is structural — **if the sitemap only changes when the site is
+rebuilt, then every event ingested overnight is invisible to Google until an unrelated deploy
+happens.** Roughly 200 events a day enter the database; the sitemap claims 802 URLs regardless.
+
+**Feature.** Diagnose first (ISR behaviour vs route config vs platform caching), then either
+correct the route or have the nightly ingest trigger revalidation when it finishes — the pipeline
+knows exactly when the content changed, which is the honest signal.
+
+**How it helps.** Google discovers event pages from the sitemap. An event published today and
+attended next Saturday has a one-week shelf life; a sitemap that updates weekly discovers it
+after it has happened. Closing this is the difference between per-event SEO working and merely
+existing.
+
+**Metrics.** Indexed pages in Search Console (should track the live event count, currently flat
+at 802) · impressions and clicks on `/events/*` · crawl errors, which should fall to zero as the
+dead URLs leave · time-to-index for a newly ingested event.
+
+---
+
+## 6 · Heartbeat, the external half · P1 · T
+
+**Problem.** The heartbeat built on 2026-10-22 shares a scheduler with the thing it watches. If
+GitHub drops both on the same day, the silence is unbroken.
+
+**Feature.** A dead-man's switch outside GitHub: the ingest pings an external monitor on success,
+and the monitor alerts when a ping does not arrive inside the window.
+
+**How it helps.** Removes the shared dependency. The current heartbeat is an independent *chance*
+to notice; this is a guarantee, because the alert fires on the absence of a signal rather than on
+the execution of code.
+
+**Metrics.** Mean time to detect a stopped pipeline (today: unbounded — the 2026-10-22 drop was
+found by a human reading a dashboard two days later) · false-alarm rate, which must stay at zero
+or the alert gets ignored.
+
+---
+
+## 7 · Classification quality has no eval on change · P1 · T
+
+**Problem.** Thirty-six controls protect times, volumes and absence. **Not one of them can see a
+confidently-wrong age range or kid-relevance call.** `calibrate:price` runs the real model against
+ground truth, but only when someone remembers, and kid-relevance has no golden set at all. Nothing
+notices when the prompt or the `MODEL` constant changes — the two edits most likely to move
+quality.
+
+**Feature.** A golden set per decision (age bucket, kid-relevance, price), scored in CI on any
+change to the prompt or model, failing the build below a threshold. Edge and adversarial cases
+included: empty descriptions, teen-vs-child boundaries, adult events written in family language.
+
+**How it helps.** Converts "the classifier seems fine" into a number that moves when something
+breaks. It also makes prompt changes *safe to attempt* — today, editing the prompt is scary
+precisely because nothing would catch a regression, so the prompt ossifies.
+
+**Metrics.** Agreement with ground truth per decision (target: a stated threshold, not a vibe) ·
+false-visible rate — adult or unsuitable events shown to parents, the one that matters most ·
+false-hidden rate — real kids' events suppressed, the cost of being cautious · eval runtime and
+cost per run, since an eval nobody can afford to run is not a control.
+
+---
+
+## 8 · Inferred dates are published but never graded · P1 · T
+
+**Problem.** We publish dates derived from a stated cadence (15 live right now). The venue's own
+"next date" grades every one of them within days — and nothing records the verdict. "How often is
+an inference right?" is currently answered by opinion.
+
+**Feature.** Record each inferred occurrence's fate: confirmed by the source, moved, or vanished.
+Surface the accuracy on the Technical dashboard.
+
+**How it helps.** Decides the horizon with evidence instead of instinct. At high accuracy, 8 weeks
+is timid and could be extended; at low accuracy, inference should shrink or stop. Today that
+number does not exist, so the horizon is a guess defended by a guess.
+
+**Metrics.** Inference accuracy (% of inferred occurrences the source later confirmed) · mean lead
+time between publishing a wrong date and correcting it · count of inferred rows live, which is the
+exposure.
+
+---
+
+## 9 · No conversions since 2026-08-18 · P1 · F
+
+**Problem.** 72 event detail views and **zero** Add-to-Calendar or Attending taps in two months.
+Tracking is verified intact, so this is behaviour, not instrumentation. **The North Star has been
+flat since before most of this month's engineering.**
+
+**Feature.** Not a feature yet — an investigation, then a decision. Does the detail page make the
+action obvious? Is the traffic arriving with intent, or landing from a search that did not match?
+Is "Attending" even the action a parent wants, versus "send this to my partner"?
+
+**How it helps.** Every other item on this list improves the *supply* of correct events. This is
+the only one that asks whether the product converts attention into use. Building more supply
+against a flat conversion rate is the expensive mistake available here.
+
+**Metrics.** Weekly Active Discoverers (the North Star, currently 0) · detail-view → conversion
+rate · share tap rate as an alternative intent signal · funnel drop-off between event-card click
+and detail view.
+
+---
+
+## 10 · Event archive / change log · P1 · T · F
+
+**Problem.** The system has no memory. Three consequences, all live:
+1. **Guard thresholds are guesses.** The shrink rule's 50% and freshness's 48h were typed by a
+   human. The right question — "is 210 events normal for Frisco in October?" — needs history.
+   The 2026-10-19 outage was exactly this: a rule with no sense of normal.
+2. **Inferred-date accuracy (#8) cannot be computed** without somewhere to record verdicts.
+3. **Analytics are going unreadable.** GA4 keeps 90 days of event ids; the live table now keeps
+   past events for days. Deleted event, unreadable dashboard row.
+
+**Feature.** A change **log**, not a copy: write a row when an event's content changes (hash-based,
+so a stable weekly storytime produces one row, not forty), each with a validity window. Read it
+through a view that collapses to "latest version per event" for ordinary joins, and raw for
+change analysis. **Analysis-only to start** — nothing user-facing reads it, so no latency or
+uptime budget — in the same database, written by a job *outside* the ingest so an archive failure
+cannot fail the pipeline.
+
+**How it helps.** It is the substrate three other items need. It also answers questions we cannot
+ask today: how far ahead does each source publish, how often do events move, which source is
+least reliable. Those are the inputs to replacing hand-set thresholds with measured ones.
+
+**Caution worth keeping.** Learned thresholds drift with a slowly degrading source — you adapt to
+decline instead of detecting it. The design keeps a hard floor and uses history for *context*.
+
+**Metrics.** Enables rather than moves: guard false-positive rate (how often a correct batch is
+rejected — currently unknown and the 10-19 outage was a 100% false positive for three nights) ·
+inference accuracy (#8) · dashboard rows resolvable to a title · source publishing lead time.
+
+---
+
+## 11 · Nothing checks the rendered page · P1 · T
+
+**Problem.** Both timezone incidents and the duplicate SaturYAY were found by a human opening the
+site. The weekly live read is the most effective detector in this project and the least reliable —
+it depends on someone remembering, on a Saturday.
+
+**Feature.** An automated read of the real rendered page: a handful of events whose displayed
+times are asserted against the source, plus a snapshot of the city pages that fails on unexpected
+change.
+
+**How it helps.** Everything else inspects data in transit or at rest. This inspects what a parent
+actually sees — the only place where a CSS bug, a hydration failure or a wrong local-time render
+becomes visible. It is the layer that would have caught both incidents without a human.
+
+**Metrics.** Defects caught before a human notices (today: zero) · mean time to detect a
+user-visible defect · false-failure rate, which decides whether anyone keeps it on.
+
+---
+
+## 12 · Alerting is binary · P1 · T
+
+**Problem.** A run fails or it does not. There is no threshold on cost, guardrail hit rate, or
+purge volume — so a *slow* degradation is invisible until it becomes a failure. A source quietly
+shedding 20% of its events every night never trips anything.
+
+**Feature.** Thresholds on the numbers already recorded: LLM cost per run, events purged, events
+dropped by the guard, batch size versus trailing average.
+
+**How it helps.** Converts the pipeline from pass/fail into something with a trend. Most of the
+failures in this project's history announced themselves as a drift first and a break later.
+
+**Metrics.** Alerts raised per week and their precision (an alert nobody trusts is worse than none)
+· mean time to detect a degradation, as distinct from a failure.
+
+---
+
+## 13 · No application error tracking · P1 · T
+
+**Problem.** Alerting covers the ingest only. A 500 on an event page, a client crash on the map,
+a failed API call in the browser — all invisible. The one user-facing error state we added was
+found by reading code, not by a report.
+
+**Feature.** Sentry (chosen, blocked on a DSN) for server and client errors, with release tagging.
+
+**How it helps.** Closes the gap between "the data is correct" and "the site works". The current
+blind spot is the entire runtime.
+
+**Metrics.** Error rate per session · time to detect a production error (today: until someone
+mentions it) · error-free session share.
+
+---
+
+## 14 · Search Console migration · P1 · F
+
+**Problem.** The domain move is in flight: event pages are indexed on the new domain, the city
+pages are not yet back, and the old `vercel.app` listing still appears. This is Google's clock, not
+ours — the work is watching, not building.
+
+**Feature.** Weekly check of Pages and Performance in the new property until the city pages return
+and the old host's entries are gone.
+
+**How it helps.** Confirms the migration completed rather than assuming it. **Interacts with #4:**
+if the sitemap is inert, the migration never fully lands and we would mistake one problem for the
+other.
+
+**Metrics.** Indexed pages on the new domain vs the old · impressions and clicks for city queries ·
+average position for "free kids events frisco".
+
+---
+
+## 15 · Billing handover on 2026-11-18 · P1 · T · date-bound
+
+**Problem.** Promotional credit expires that day and auto-reload takes over. The failure mode is
+already understood — it happened on 2026-10-21 and classification silently degraded for a run.
+
+**Feature.** No build. A reminder, and a verification that a classification runs on purchased
+credit after the date.
+
+**How it helps.** The detection exists now (A9 names billing failures explicitly); this is
+confirming the money path, which no code can test in advance.
+
+**Metrics.** Classified events per run across the boundary · one check that the first post-expiry
+run is green.
+
+---
+
+## P2 — elaborated briefly
+
+**16 · Phase 2 restyle** (map pins, legend, `/dashboard`) · F — *Problem:* three surfaces still
+carry pre-reskin styling. *Metric:* none measurable; it is consistency debt, which is exactly why
+it sits at P2.
+
+**17 · Phase 3 features** (search, saved events, distance) · F — *Problem:* browsing is the only
+way to find an event; a parent looking for "Saturday near me" must scan. *Feature:* search, saved
+list, distance sort. *Metric:* detail-view rate per session, return-visit rate. **Hold until #9
+explains why conversions are flat** — adding features on top of an unexplained zero is how you get
+two unexplained zeros.
+
+**18 · Venue pages, recurrence confidence** · F — *Problem:* every content-rich page expires, so
+the SEO surface is permanently thin. *Feature:* durable venue pages built from history, plus
+"usually happens weekly" confidence. *Metric:* indexed durable pages, organic entrances to
+non-event URLs. **Depends on #10.** Strong candidate for promotion once the archive exists.
+
+**19 · E2E against real data** · T — *Problem:* Playwright mocks every API, so nothing exercises
+real DB → real render. *Metric:* overlaps #11, which is cheaper and catches more.
+
+**20 · Scraped text as prompt input** · T — *Problem:* event descriptions enter the prompt
+unframed, and render verbatim under our masthead. *Feature:* instruct the model to treat source
+text as data, never instructions; basic content screening on what we republish. *Metric:* none
+until something happens — low likelihood, non-zero severity, documented so it is a choice.
+
+**21 · No rate limit on the public events API** · T — *Problem:* Supabase egress is unbounded per
+client. *Metric:* egress per day; cost per thousand sessions.
+
+**22 · Spend estimated, not metered** · T — *Problem:* `calls × $0.006` is a dashboard number, not
+a control; the real backstop is the account cap. *Metric:* variance between estimate and invoice.
+
+**23 · Retention, deletion, guardrail hit rate** · T — *Problem:* no retention schedule, and **no
+aggregate of which guards ever fire** — so we cannot say which of the 36 earns its keep. *Feature:*
+count guard trips per run into `ingest_runs`. *Metric:* trips per guard per month; guards with zero
+trips in a quarter are candidates for deletion or for suspicion.
+
+**24 · Source replacement tooling** · T — *Problem:* replacing a source is a manual
+delete-and-reingest, done twice this month. *Metric:* minutes of human time per replacement.
+Accepted until a third source is rebuilt.
+
 
 ---
 
