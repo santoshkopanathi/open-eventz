@@ -16,7 +16,8 @@
     "typecheck": "tsc --noEmit",
     "prepare": "git config core.hooksPath .githooks || exit 0",
     "icons": "node scripts/build-icons.mjs",
-    "heartbeat": "tsx scripts/heartbeat.ts"
+    "heartbeat": "tsx scripts/heartbeat.ts",
+    "redteam": "tsx scripts/red-team.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.110.0",
