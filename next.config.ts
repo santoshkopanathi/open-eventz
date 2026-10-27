@@ -8,6 +8,22 @@ const nextConfig: NextConfig = {
   //     NEXT_DIST_DIR=.next-check npm run build
   // Unset everywhere else — including Vercel — so production builds still use .next unchanged.
   distDir: process.env.NEXT_DIST_DIR || '.next',
+
+  // Short, sayable links to the engineering docs — for conversations where "let me send you the
+  // repo path" loses the thread. openeventz.com/guardrails is a URL you can say out loud.
+  async redirects() {
+    const repo = 'https://github.com/santoshkopanathi/open-eventz/blob/master'
+    return [
+      { source: '/guardrails', destination: `${repo}/GUARDRAILS.md`, permanent: false },
+      { source: '/build-log', destination: `${repo}/BUILD-LOG.md`, permanent: false },
+      { source: '/evals', destination: `${repo}/EVALS.md`, permanent: false },
+      {
+        source: '/backlog',
+        destination: 'https://github.com/santoshkopanathi/open-eventz-pm/blob/master/02-product/BACKLOG.md',
+        permanent: false,
+      },
+    ]
+  },
 };
 
 export default nextConfig;
