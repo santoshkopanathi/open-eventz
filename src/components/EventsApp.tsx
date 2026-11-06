@@ -292,45 +292,21 @@ export default function EventsApp({ initialCity }: { initialCity?: City } = {}) 
             a word of copy. The paper colour stays as the fallback behind it — if an image
             ever fails to load the panel degrades to what it looked like before. */}
         {!selected && !mapOn && (
-          <div
-            className="hidden lg:flex flex-1 flex-col overflow-hidden"
-            style={{
-              backgroundColor: 'var(--color-paper-raised)',
-              backgroundImage: `url(/hero-${city}.webp)`,
-              // 56% horizontally, not 50%: the children sit right of centre, and a narrow
-              // panel (520px at a 1280 window) crops to the middle ~57% of the image.
-              backgroundPosition: '56% 50%',
-              backgroundSize: 'cover',
-              backgroundRepeat: 'no-repeat',
-            }}
-          >
-            {/* Upper LEFT, not centred. Two things in this illustration must survive: the
-                children's faces (mid-frame) and the water tower that names the city (upper
-                centre). A centred card covered the faces; a centred card moved up covered the
-                tower. Left of the tower is the only quiet corner — sky and stylised trees. */}
-            <div className="flex-1 flex flex-col items-start justify-start text-left px-8 pt-[7%]">
-              {/* Scrim. The illustration is light and hazy in the middle, but how light depends
-                  on where it crops, which changes with the window. Ink text directly on it is
-                  legible at some sizes and not others — so the text carries its own surface
-                  rather than depending on the picture behind it. */}
-              <div
-                className="max-w-xs"
-                style={{
-                  backgroundColor: 'rgba(251, 247, 241, 0.82)',
-                  backdropFilter: 'blur(3px)',
-                  WebkitBackdropFilter: 'blur(3px)',
-                  borderRadius: '18px',
-                  padding: '32px 28px',
-                  boxShadow: '0 2px 20px rgba(31, 27, 22, 0.08)',
-                }}
-              >
+          <div className="hidden lg:flex flex-1 flex-col overflow-hidden" style={{ backgroundColor: 'var(--color-paper-raised)' }}>
+            {/* Text ABOVE the picture, not on top of it. Overlaying it meant choosing which
+                subject to cover: centred it hid the children's faces, raised it hid the water
+                tower that names the city. Stacking them means neither is cropped — and the
+                image area that remains is close to the artwork's own 1.38 ratio, so it is
+                shown almost whole rather than cover-cropped to a slice. */}
+            <div className="flex flex-col items-center text-center px-8 pt-10 pb-6">
+              <div className="max-w-md">
                 <div className="font-display mb-4" style={{ fontSize: '38px', lineHeight: 1.12, letterSpacing: '-0.01em', color: 'var(--color-ink)' }}>
-                  Discover free fun for your kids
+                  Discover free fun for your kids in Plano and Frisco Cities
                 </div>
                 <p className="mb-8" style={{ fontSize: '16px', lineHeight: 1.65, color: 'var(--color-ink-70)' }}>
                   Upcoming events across Frisco Library, Plano Libraries, and Play Frisco — all in one place. Select any event to see the details.
                 </p>
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap justify-center">
                   {['Frisco Library', 'Plano Libraries', 'Play Frisco'].map(label => (
                     <span
                       key={label}
@@ -343,6 +319,22 @@ export default function EventsApp({ initialCity }: { initialCity?: City } = {}) 
                 </div>
               </div>
             </div>
+
+            {/* The illustration takes whatever height is left — and `contain`, not `cover`.
+                The panel's shape swings from portrait at a 1280 window to wide and short at
+                1920, so cover crops a different part at every size: at 1920 it ate the water
+                tower's lettering, which is the one element that names the city. Contain shows
+                the whole scene at every size and lets the paper colour show at the edges,
+                which reads as a framed illustration rather than a broken crop. */}
+            <div
+              className="flex-1"
+              style={{
+                backgroundImage: `url(/hero-${city}.webp)`,
+                backgroundPosition: 'center bottom',
+                backgroundSize: 'contain',
+                backgroundRepeat: 'no-repeat',
+              }}
+            />
           </div>
         )}
 
