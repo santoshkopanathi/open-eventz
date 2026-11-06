@@ -298,7 +298,7 @@ export default function EventsApp({ initialCity }: { initialCity?: City } = {}) 
                 tower that names the city. Stacking them means neither is cropped — and the
                 image area that remains is close to the artwork's own 1.38 ratio, so it is
                 shown almost whole rather than cover-cropped to a slice. */}
-            <div className="flex flex-col items-center text-center px-8 pt-10 pb-6">
+            <div className="flex flex-col items-center text-center px-8 pt-8 pb-5">
               <div className="max-w-md">
                 {/* Heading only. The paragraph and the source chips went with the redesign:
                     they restated what the list beside them already shows, and the chip list had
@@ -315,12 +315,14 @@ export default function EventsApp({ initialCity }: { initialCity?: City } = {}) 
                 1920, so cover crops a different part at every size: at 1920 it ate the water
                 tower's lettering, which is the one element that names the city. Contain shows
                 the whole scene at every size and lets the paper colour show at the edges,
-                which reads as a framed illustration rather than a broken crop. */}
+                which reads as a framed illustration rather than a broken crop. Anchored to the TOP so
+                it sits directly under the heading — contain leaves slack, and the slack belongs
+                at the bottom edge rather than as a gap between the words and the picture. */}
             <div
               className="flex-1"
               style={{
                 backgroundImage: `url(/hero-${city}.webp)`,
-                backgroundPosition: 'center bottom',
+                backgroundPosition: 'center top',
                 backgroundSize: 'contain',
                 backgroundRepeat: 'no-repeat',
               }}
