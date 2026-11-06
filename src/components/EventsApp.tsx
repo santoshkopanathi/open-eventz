@@ -304,13 +304,17 @@ export default function EventsApp({ initialCity }: { initialCity?: City } = {}) 
               backgroundRepeat: 'no-repeat',
             }}
           >
-            <div className="flex-1 flex flex-col items-center justify-center text-center px-10">
+            {/* Upper LEFT, not centred. Two things in this illustration must survive: the
+                children's faces (mid-frame) and the water tower that names the city (upper
+                centre). A centred card covered the faces; a centred card moved up covered the
+                tower. Left of the tower is the only quiet corner — sky and stylised trees. */}
+            <div className="flex-1 flex flex-col items-start justify-start text-left px-8 pt-[7%]">
               {/* Scrim. The illustration is light and hazy in the middle, but how light depends
                   on where it crops, which changes with the window. Ink text directly on it is
                   legible at some sizes and not others — so the text carries its own surface
                   rather than depending on the picture behind it. */}
               <div
-                className="max-w-md"
+                className="max-w-xs"
                 style={{
                   backgroundColor: 'rgba(251, 247, 241, 0.82)',
                   backdropFilter: 'blur(3px)',
@@ -320,13 +324,13 @@ export default function EventsApp({ initialCity }: { initialCity?: City } = {}) 
                   boxShadow: '0 2px 20px rgba(31, 27, 22, 0.08)',
                 }}
               >
-                <div className="font-display mb-4" style={{ fontSize: '44px', lineHeight: 1.1, letterSpacing: '-0.01em', color: 'var(--color-ink)' }}>
+                <div className="font-display mb-4" style={{ fontSize: '38px', lineHeight: 1.12, letterSpacing: '-0.01em', color: 'var(--color-ink)' }}>
                   Discover free fun for your kids
                 </div>
                 <p className="mb-8" style={{ fontSize: '16px', lineHeight: 1.65, color: 'var(--color-ink-70)' }}>
                   Upcoming events across Frisco Library, Plano Libraries, and Play Frisco — all in one place. Select any event to see the details.
                 </p>
-                <div className="flex gap-2 justify-center flex-wrap">
+                <div className="flex gap-2 flex-wrap">
                   {['Frisco Library', 'Plano Libraries', 'Play Frisco'].map(label => (
                     <span
                       key={label}
