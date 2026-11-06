@@ -300,22 +300,12 @@ export default function EventsApp({ initialCity }: { initialCity?: City } = {}) 
                 shown almost whole rather than cover-cropped to a slice. */}
             <div className="flex flex-col items-center text-center px-8 pt-10 pb-6">
               <div className="max-w-md">
-                <div className="font-display mb-4" style={{ fontSize: '38px', lineHeight: 1.12, letterSpacing: '-0.01em', color: 'var(--color-ink)' }}>
+                {/* Heading only. The paragraph and the source chips went with the redesign:
+                    they restated what the list beside them already shows, and the chip list had
+                    silently gone stale — it still named three sources months after Kaleidoscope
+                    Park became the fourth. Copy that repeats the screen is copy nobody updates. */}
+                <div className="font-display" style={{ fontSize: '38px', lineHeight: 1.12, letterSpacing: '-0.01em', color: 'var(--color-ink)' }}>
                   Discover free fun for your kids in Plano and Frisco Cities
-                </div>
-                <p className="mb-8" style={{ fontSize: '16px', lineHeight: 1.65, color: 'var(--color-ink-70)' }}>
-                  Upcoming events across Frisco Library, Plano Libraries, and Play Frisco — all in one place. Select any event to see the details.
-                </p>
-                <div className="flex gap-2 flex-wrap justify-center">
-                  {['Frisco Library', 'Plano Libraries', 'Play Frisco'].map(label => (
-                    <span
-                      key={label}
-                      className="font-mono uppercase"
-                      style={{ fontSize: '11px', letterSpacing: '0.1em', color: 'var(--color-ink-35)', border: '1px solid var(--color-border)', borderRadius: '999px', padding: '4px 12px' }}
-                    >
-                      {label}
-                    </span>
-                  ))}
                 </div>
               </div>
             </div>
