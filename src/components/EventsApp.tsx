@@ -286,11 +286,40 @@ export default function EventsApp({ initialCity }: { initialCity?: City } = {}) 
           )}
         </main>
 
-        {/* Welcome panel — shown on desktop when no event selected and map off */}
+        {/* Welcome panel — shown on desktop when no event selected and map off.
+            The background is the selected city's illustration: Frisco and Plano each have
+            their own water tower, so the panel answers "which city am I looking at?" without
+            a word of copy. The paper colour stays as the fallback behind it — if an image
+            ever fails to load the panel degrades to what it looked like before. */}
         {!selected && !mapOn && (
-          <div className="hidden lg:flex flex-1 flex-col overflow-hidden" style={{ backgroundColor: 'var(--color-paper-raised)' }}>
+          <div
+            className="hidden lg:flex flex-1 flex-col overflow-hidden"
+            style={{
+              backgroundColor: 'var(--color-paper-raised)',
+              backgroundImage: `url(/hero-${city}.webp)`,
+              // 56% horizontally, not 50%: the children sit right of centre, and a narrow
+              // panel (520px at a 1280 window) crops to the middle ~57% of the image.
+              backgroundPosition: '56% 50%',
+              backgroundSize: 'cover',
+              backgroundRepeat: 'no-repeat',
+            }}
+          >
             <div className="flex-1 flex flex-col items-center justify-center text-center px-10">
-              <div className="max-w-md">
+              {/* Scrim. The illustration is light and hazy in the middle, but how light depends
+                  on where it crops, which changes with the window. Ink text directly on it is
+                  legible at some sizes and not others — so the text carries its own surface
+                  rather than depending on the picture behind it. */}
+              <div
+                className="max-w-md"
+                style={{
+                  backgroundColor: 'rgba(251, 247, 241, 0.82)',
+                  backdropFilter: 'blur(3px)',
+                  WebkitBackdropFilter: 'blur(3px)',
+                  borderRadius: '18px',
+                  padding: '32px 28px',
+                  boxShadow: '0 2px 20px rgba(31, 27, 22, 0.08)',
+                }}
+              >
                 <div className="font-display mb-4" style={{ fontSize: '44px', lineHeight: 1.1, letterSpacing: '-0.01em', color: 'var(--color-ink)' }}>
                   Discover free fun for your kids
                 </div>
