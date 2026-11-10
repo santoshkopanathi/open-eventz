@@ -1912,11 +1912,23 @@ Not partial. **Total.** Every event the nightly ingest added between releases wa
 
 **The option I did not take, and why.** The original card proposed having the nightly ingest trigger revalidation when it finishes — the pipeline knows exactly when the content changed, which is the honest signal. It was the more sophisticated option and the wrong one. **A sitemap is a few hundred URLs read by crawlers a handful of times a day.** Caching it saves one Supabase query per crawl and costs a revalidation hook that itself needs monitoring — a second moving part, in a system whose last three incidents were all moving parts failing silently. Correct by construction beat clever by design.
 
-**The scope check that kept the fix small.** `/frisco` and `/plano` carry the same `revalidate = 3600` and were the obvious next suspects. Before changing them I compared production: `/frisco` was serving **13 events the sitemap did not have**. Hourly ISR *does* fire for those pages; the fault was specific to the sitemap metadata route. One line changed instead of three, and the difference was one `curl` and a `comm`.
+**The scope check that I got wrong first, which is the more useful half of this entry.** `/frisco` and `/plano` carry the same `revalidate = 3600` and were the obvious next suspects. I compared them against production, found `/frisco` serving **13 events the sitemap did not have**, and concluded that hourly ISR *does* fire for the city pages — fault specific to the sitemap route, one line changed instead of three.
+
+**That conclusion was wrong, and the comparison is why.** It measured which of two stale artifacts was staler. Both were out of date; `/frisco` was merely *less* out of date, and "fresher than the broken thing" reads as "fine" if you let it.
+
+What settled it was an absolute check instead of a relative one. The pre-deploy `/frisco` HTML listed events dated **Nov 7**, three days earlier. `getIndexableEvents()` filters on `start_datetime >= today`, so **a current render cannot produce a Nov 7 event at all.** That page had not regenerated in three days, with an hourly window configured.
+
+**The mechanism.** ISR regeneration is *request-driven*: when a request arrives after the window expires, Next serves the **stale** copy and rebuilds in the background. On a site with crawler-sparse traffic, almost every visit is that first post-expiry visit, so almost every visit gets the old render. `revalidate` promises an interval and delivers a function of traffic you do not have.
+
+**So the fix widened to every crawler-facing route** — `/frisco`, `/plano`, `/events/[id]` and the sitemap. The event page was included even though its content is genuinely stable, and that is the reason worth keeping: **the content is stable but the indexability decision is not.** `isIndexableEvent()` is evaluated at render time against the clock; it emits `noindex` and gates the Event JSON-LD. A render cached from before an event finished keeps telling Google the page is indexable and keeps publishing rich data for an event that has already happened. The general rule: **a time-dependent decision must not be cached past the time it depends on.**
 
 **What this does not fix.** Publication, not indexing. Whether Google acts on a correct sitemap shows up in Search Console over the following weeks, and that measurement belongs to BACKLOG #14. And nothing watches the sitemap even now: it was found by hand twice, which is BACKLOG #11 restated with evidence.
 
-**The lesson.** **A failure that a deploy temporarily fixes will be systematically under-rated.** Our instinct is to classify by frequency — intermittent means less urgent — but intermittent-looking symptoms with a deploy-shaped period are not intermittent at all; they are continuous failures sampled at the only moments they are healthy. The diagnostic question is not "how often does it look broken?" It is **"what makes it look fine, and does that thing have anything to do with the user?"**
+**Two lessons, and the second one cost me three weeks and a wrong scope call.**
+
+**A failure that a deploy temporarily fixes will be systematically under-rated.** Our instinct is to classify by frequency — intermittent means less urgent — but intermittent-looking symptoms with a deploy-shaped period are not intermittent at all; they are continuous failures sampled at the only moments they are healthy. The diagnostic question is not "how often does it look broken?" It is **"what makes it look fine, and does that thing have anything to do with the user?"**
+
+**Never scope a fix by comparing one suspect against another.** Comparing `/frisco` to the sitemap felt like evidence and was not: both were stale, so the comparison could only rank them. A relative check can tell you which thing is worse; **only an absolute check against ground truth — the clock, the database, the thing the page claims — can tell you whether either is right.** The 13-event gap I found was real and my inference from it was wrong, which is the dangerous shape: a correct measurement answering a question I had not actually asked.
 
 ---
 

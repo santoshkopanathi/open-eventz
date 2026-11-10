@@ -217,12 +217,19 @@ in isolation — a guardrail gap and a feature compete for the same afternoon.
 9. ~~**The sitemap has not regenerated in 24h**~~ *(closed 2026-11-10)*. Diagnosed and fixed. The
    open question — whether **any** nightly-ingested event reaches the sitemap without a deploy —
    answered **no**: of the 18 events created since the previous deploy, 14 were indexable and all
-   14 were absent. `revalidate = 3600` never fired for this metadata route; the route is now
-   `dynamic = 'force-dynamic'`. `/frisco` and `/plano` carry the same config and were checked
-   against production before widening the fix — they *are* fresh, so the fault was specific to
-   the sitemap route. **The guardrail gap it leaves open is backlog #11, "nothing checks the
-   rendered page"**: no instrument watches the sitemap, which is why a month of inert SEO was
-   found by hand — twice — rather than reported once.
+   14 were absent. It was not specific to the sitemap, either. `/frisco` was found serving events
+   from three days earlier — dates a current render cannot produce, since `getIndexableEvents()`
+   filters on today — so the city pages were stale too. ISR regeneration is request-driven and
+   serves the stale copy while rebuilding, which on a low-traffic site means a crawler-facing
+   page is almost always served the old render. All four crawler-facing routes (`/sitemap.xml`,
+   `/frisco`, `/plano`, `/events/[id]`) are now `dynamic = 'force-dynamic'`.
+   **The rule this establishes:** every one of those pages decides indexability against the
+   current clock, and **a time-dependent decision must not be cached past the time it depends
+   on.** A cached event page keeps emitting `noindex`-free HTML and Event rich data for an event
+   that has already happened.
+   **The guardrail gap it leaves open is backlog #11, "nothing checks the rendered page"**: no
+   instrument watches any of this, which is why a month of inert SEO was found by hand — twice —
+   rather than reported once.
 10. **Replacing a source is a human-run migration.** When a source legitimately collapses (189
     Kaleidoscope occurrences → 19 real ones), C3 and C4 both refuse by design and someone must
     delete and re-ingest by hand. Correct, and a real operational cost.
