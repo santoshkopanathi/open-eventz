@@ -420,6 +420,35 @@ adults-only regex**, which cannot tell who said the words it matched. A toddler 
 have been deleted, silently, with every alert green. Full account in BUILD-LOG, "The guard was the
 attack surface"; the control is GUARDRAILS A10.
 
+### How much was this worth? The question an eval has to answer about itself
+
+A fixture I wrote myself is not evidence of exposure. So the finding was graded against
+production before being written up as a win — and **the first write-up overstated it**, which is
+corrected here and in the four other documents that repeated it.
+
+> **2,371 production rows: 0 HTML comments. 0 markup tags of any kind. 1 stray zero-width
+> character**, in an ESL program the library already excludes as 18+.
+
+**Verdict: a design weakness closed as cheap insurance, not a live exposure.** The eval proved our
+*rule* was fragile. It did not prove our *pipeline* was reachable. Those are different claims and
+only the first one is supported.
+
+Two things keep it from being busywork, and the second is the real argument:
+
+1. **The protection we had was incidental.** Three of four scrapers strip tags before storing, so
+   a comment is removed as a *side effect* — nobody designed that, and it breaks on a comment
+   containing a `>`. The fourth source stores its description verbatim.
+2. **The zero-width case fails open.** A hidden instruction that *hides* an event is fail-closed
+   and low severity. A zero-width space inside "adults only" makes the regex **miss**, showing an
+   adults-only event to a parent — the highest-severity error available to this product. One such
+   character already exists in our data, from ordinary untidy CMS output rather than an attacker.
+
+**Why this grading belongs in the eval doc and not just the commit message.** An eval that only
+reports what it caught will inflate its own value over time; every finding looks load-bearing in
+hindsight. **Recording the measured exposure next to the finding is what keeps the eval honest
+about its own return** — and in an interview it is the difference between "we found an injection
+path" and "we found a design weakness and can tell you exactly how exposed we were".
+
 **What this changes about how I read eval results.** A passing eval on honest data told us the
 model was good at its job, which was true and not the risk. The risk was in the deterministic
 machinery around it — the part that looks least like AI and therefore least like something

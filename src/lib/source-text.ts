@@ -13,12 +13,32 @@
 //
 // The fix is not to weaken the regex. It is to stop invisible text reaching any decision: if a
 // parent cannot read it on the page, it has no business deciding whether their child can
-// attend. That keeps the belt-and-braces rule intact for text a source genuinely published,
-// and removes the vector that let a third party steer it.
+// attend. That keeps the belt-and-braces rule intact for text a source genuinely published.
+//
+// HOW EXPOSED WERE WE, ACTUALLY? Measured 2026-11-10, because the fixture was synthetic and a
+// synthetic finding proves the rule is fragile, not that the pipeline is reachable.
+//
+//   2,371 production rows: 0 HTML comments. 0 markup tags of any kind. 1 stray zero-width
+//   character (in an ESL program the library itself marks age_min 18, so already excluded).
+//
+// So this is a DESIGN WEAKNESS CLOSED AS CHEAP INSURANCE, not a live exposure. Two things still
+// make it worth having:
+//
+// 1. Three of the four scrapers strip tags before storing, so a comment is removed only AS A
+//    SIDE EFFECT of removing `<...>` — an incidental control, not an intentional one, and an
+//    incomplete one: a comment containing a `>` leaves its tail in the stored text. The fourth
+//    (Kaleidoscope) stores the source's own description field verbatim with entity decoding and
+//    no stripping, which is the one architecturally open path — and schema.org `description` is
+//    exactly where a CMS dumps post-body HTML.
+// 2. **The zero-width case fails OPEN, which is the direction that matters.** Everything above
+//    describes an event wrongly HIDDEN: safe for the child, invisible to us. Reverse it — a
+//    zero-width space inside "adults only" makes the regex MISS, and an adults-only event is
+//    shown to someone browsing for a 4-year-old. That is the highest-severity error this
+//    product can make, and one such character is already in production data. Not planted;
+//    civic CMS output is simply untidy.
 //
 // Scope note: this cleans text on the way INTO a decision. What we store and display is
-// untouched — a separate question, and a cosmetic one, since civic sources do not publish
-// hidden markup on purpose.
+// untouched — a separate question, and a cosmetic one.
 
 /**
  * Zero-width and bidi control characters: invisible to a reader, meaningful to a matcher.

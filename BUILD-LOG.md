@@ -1950,6 +1950,24 @@ The **model read it and rejected it.** Its reasoning said the instruction was no
 
 A hidden comment on a civic events page would have deleted a real toddler event from a product aimed at parents, and **no alert would have fired**, because fail-closed looks identical to correct from the outside.
 
+**How exposed were we really? — measured after the fact, and the first version of this entry overstated it.**
+
+The fixture was synthetic. I wrote it. A synthetic finding proves the *rule* is fragile; it does not prove the *pipeline* is reachable, and I wrote this up as though it did. So I went and counted:
+
+| Checked across 2,371 production rows | Found |
+|---|---|
+| HTML comments in a stored description | **0** |
+| Markup tags of any kind | **0** |
+| Stray zero-width / bidi characters | **1** — in an ESL program the library itself marks 18+, already excluded |
+
+**The honest grading: a design weakness closed as cheap insurance, not a live exposure.** The backlog card had speculated we might find "a live injection path in a product aimed at parents." We did not.
+
+The prompt that forced this correction was a good question from the owner — *we only pass title and description to the model, so where would hidden text even come from?* The premise is right, and the answer is that hidden text would arrive **inside** the description, because we build that field by cutting it out of the source page's HTML. Which led to the part worth knowing:
+
+**Three of the four scrapers were protected by accident.** They strip tags before storing (`replace(/<[^>]+>/g, …)`), and a comment happens to start with `<` and end with `>`, so it is usually removed as a **side effect**. Nobody designed that. It is an *incidental* control, not an intentional one, and it is incomplete — a comment containing a `>` character leaves its tail behind in the stored text. **Kaleidoscope strips nothing**: it stores the park's own schema.org `description` verbatim with entity decoding only, which is the one architecturally open path, and that field is exactly where a CMS dumps post-body HTML.
+
+**And the argument I should have led with is the other direction entirely.** Everything above concerns an event being wrongly *hidden* — annoying, invisible to us, but safe for the child, and fail-closed. Invert it: **a zero-width space inside the words "adults only" makes the regex miss**, so an adults-only event is shown to someone browsing for a 4-year-old. That is fail-**open** on the highest-severity axis this product has. We already hold one such character in production data — not planted, just ordinary untidy civic CMS output. *That* is what justifies the work, not the comment case.
+
 **The inversion worth keeping.** The usual framing of this trade-off is that deterministic rules are the trustworthy part and the model is the risk. Here it ran precisely the other way: **the probabilistic component exercised judgment about the provenance of the instruction, and the deterministic component could not.** A regex has no concept of who is speaking. That is normally its virtue.
 
 **What changed.** Not a weaker regex — a visible "21+" that a source genuinely published must still hide the event. The fix is to stop invisible text reaching any decision at all. `visibleText()` strips HTML comments, CDATA, `<script>`/`<style>` blocks with their contents, remaining markup and zero-width/bidi characters. Every decision point now reads through it.
@@ -1960,7 +1978,11 @@ That list includes one the fixtures had not thought to probe: **`resolvePriceCla
 
 **Result.** 20/20, with `inj-06` correctly **shown** to parents.
 
-**The lesson.** **A deterministic guard inherits the trust level of whatever text you feed it.** "Fail closed" describes the direction of the error, not its correctness — and a guard that fails closed on forged input is being operated by the forger. Sanitise before the rule, not after it; and when you write down a prediction before an experiment, the value is not in being right, it is in finding out which of your assumptions was load-bearing.
+**Two lessons.**
+
+**A deterministic guard inherits the trust level of whatever text you feed it.** "Fail closed" describes the direction of the error, not its correctness — and a guard that fails closed on forged input is being operated by the forger. Sanitise before the rule, not after it; and when you write down a prediction before an experiment, the value is not in being right, it is in finding out which of your assumptions was load-bearing.
+
+**Grade your own finding against production before you write it up as a win.** A red-team fixture is a hypothesis, not an incident, and every finding looks load-bearing in hindsight. The counting took ten minutes and changed the claim from "we found an injection path" to "we found a design weakness and can say exactly how exposed we were — zero instances in 2,371 rows, one open source path, and one fail-open character class that genuinely does occur." **The second statement is weaker and far more useful**, because it is the one that survives being questioned. The question that produced it came from outside the work, which is its own lesson about who to show a finding to before committing it to a document.
 
 ---
 

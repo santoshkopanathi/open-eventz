@@ -205,6 +205,8 @@ Scraped text reaches three decisions: the classifier call, the adults-only overr
 
 The price resolver was included for the same reason, not because a fixture caught it: it regexes the same string, so a hidden "free admission" could have flipped a paid event to free.
 
+**Exposure, measured rather than assumed (2026-11-10).** 2,371 production rows: **0 HTML comments, 0 markup tags, 1 stray zero-width character** (in an ESL program already excluded as 18+). This is a **design weakness closed as cheap insurance, not a live exposure** — the red-team fixture was synthetic. What justifies it: three of the four scrapers strip tags before storing, so a comment is removed only as a *side effect* (incidental, and incomplete — a comment containing a `>` leaves a tail), while **Kaleidoscope stores `parsed.description` verbatim with entity decoding and no stripping**, which is the one open path. And the zero-width case is the one that fails **open**: a zero-width space inside "adults only" makes the override **miss**, showing an adult event to a parent.
+
 Two structural guards keep it closed (`source-text.test.ts`): every `inferPlayFriscoEvent` call site must pass sanitised text, and `red-team.ts`'s duplicated `ADULT_OVERRIDE` is asserted equal to the pipeline's — a promise its comment had been making without an assertion behind it.
 
 **Scope.** This cleans text on the way *into* a decision. What we store and display is untouched; civic sources do not publish hidden markup on purpose, so that remains a cosmetic question rather than a safety one.

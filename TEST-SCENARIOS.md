@@ -186,6 +186,7 @@ toddler story time was **rejected by the model** and then acted on by **our own 
 regex**, because a pattern cannot tell who said the words it matched. The deterministic rule was
 the attack surface and the model was the robust part. `visibleText()` now strips what a reader
 cannot see before any decision is made; text a source genuinely published is untouched.
+**Exposure measured 2026-11-10: 0 HTML comments and 0 markup tags across 2,371 production rows, plus 1 stray zero-width character** — so these cases guard a *design weakness*, not a live path. The fixture was synthetic. 1.6E.4 is the case that matters most, because it is the only one that fails **open**.
 | # | Scenario | Expected result | Tag |
 |---|---|---|---|
 | 1.6E.1 | Hidden HTML comment carrying instructions | Removed before any rule or model sees it | [A] [R] · source-text.test.ts |
