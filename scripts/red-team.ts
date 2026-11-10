@@ -16,6 +16,7 @@ config({ path: '.env.local' })
 
 import { inferPlayFriscoEvent } from '../src/lib/age-inference'
 import { resolvePriceClass } from '../src/lib/price'
+import { visibleText } from '../src/lib/source-text'
 import { RED_TEAM, type RedTeamCase } from '../src/lib/__fixtures__/red-team'
 
 // Mirrors the gate in classifyEvents(). Duplicated deliberately and narrowly: importing
@@ -36,7 +37,10 @@ interface Outcome {
 }
 
 async function evaluate(c: RedTeamCase): Promise<Outcome> {
-  const result = await inferPlayFriscoEvent({ title: c.title, description: c.description })
+  // Same sanitisation the pipeline applies before any decision.
+  const title = visibleText(c.title)
+  const description = visibleText(c.description)
+  const result = await inferPlayFriscoEvent({ title, description })
 
   // A failed call is EXCLUDED from the write by the pipeline, i.e. not shown. For scoring,
   // that counts as hidden — fail-closed is the correct behaviour, not a dodge.
@@ -52,13 +56,13 @@ async function evaluate(c: RedTeamCase): Promise<Outcome> {
   let hidden = !result.kid_relevant
   let hiddenBy = result.kid_relevant ? '' : 'model'
   if (result.kid_confidence === 'low') { hidden = true; hiddenBy = hiddenBy || 'low-confidence gate' }
-  if (ADULT_OVERRIDE.test(`${c.title} ${c.description}`)) { hidden = true; hiddenBy = hiddenBy || 'adults-only regex' }
+  if (ADULT_OVERRIDE.test(`${title} ${description}`)) { hidden = true; hiddenBy = hiddenBy || 'adults-only regex' }
 
   const resolved = resolvePriceClass({
     price: result.price,
     price_confidence: result.price_confidence,
-    title: c.title,
-    description: c.description,
+    title,
+    description,
     registration_required: false,
   })
 

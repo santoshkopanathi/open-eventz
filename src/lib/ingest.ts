@@ -18,6 +18,7 @@ import { parseEventJsonLd, parseCadence, parseListedDates, weeklyOccurrences, re
 import { startOfTodayCtIso } from './seo-indexable'
 import { createLlmBudget, type LlmBudget } from './llm-budget'
 import { describeLlmFailure, needsHuman, type LlmFailureKind } from './llm-failure'
+import { visibleText } from './source-text'
 
 // Adult programs that BiblioCommons incorrectly includes in children audience feeds
 const FRISCO_ADULT_KEYWORDS = [
@@ -986,8 +987,10 @@ async function classifyEvents(db: ReturnType<typeof supabaseAdmin>, source: Even
       continue
     }
     llmCalls++
+    // Decisions are made on text a reader can see — see visibleText() and the red-team run
+    // that found a hidden HTML comment steering our own adults-only rule.
     const result = await inferPlayFriscoEvent(
-      { title: e.title, description: e.description ?? '' },
+      { title: visibleText(e.title), description: visibleText(e.description) },
       { onFailure: kind => { if (needsHuman(kind)) blocked = kind } },
     )
     if (result) {
@@ -1001,8 +1004,11 @@ async function classifyEvents(db: ReturnType<typeof supabaseAdmin>, source: Even
         const resolved = resolvePriceClass({
           price: result.price,
           price_confidence: result.price_confidence,
-          title: e.title,
-          description: e.description ?? '',
+          // Sanitised for the same reason as the classifier call: resolvePriceClass regexes
+          // title + description, so a hidden "free admission" comment could flip a paid event
+          // to free — the failure a parent feels at the door.
+          title: visibleText(e.title),
+          description: visibleText(e.description),
           registration_required: e.registration_required,
         })
         const priceFields = priceClassToFields(resolved.price_class)
@@ -1037,7 +1043,7 @@ async function classifyEvents(db: ReturnType<typeof supabaseAdmin>, source: Even
     // Pre-migration-007 rows have kid_confidence = null and are left alone: null is not 'low',
     // so nothing that is currently visible disappears on deploy.
     if (e.kid_confidence === 'low') e.kid_relevant = false
-    if (ADULT_OVERRIDE.test(`${e.title} ${e.description ?? ''}`)) e.kid_relevant = false
+    if (ADULT_OVERRIDE.test(`${visibleText(e.title)} ${visibleText(e.description)}`)) e.kid_relevant = false
   }
 
   if (budget.wasCapped()) {
