@@ -61,6 +61,44 @@ const INVISIBLE = new RegExp(
 )
 
 /**
+ * Remove invisible characters from text we are about to STORE. Applied once, in `guardedUpsert`
+ * — the single write path — so no source can be onboarded without it.
+ *
+ * Why only the invisible characters, and not markup. **The two mean different things.**
+ *
+ *   - A zero-width or bidi character has no legitimate purpose in an event title or description,
+ *     ever. It is junk, it is invisible to whoever would have to spot it, and leaving it in is
+ *     the case that fails OPEN: a zero-width space inside "adults only" makes the override MISS
+ *     and shows an adult event to a parent. Normalise it silently, at the earliest layer that
+ *     can see it. Prevention beats detection.
+ *   - **Markup means the SOURCE CHANGED SHAPE**, which is a thing a human should look at, not a
+ *     thing to quietly clean up. It is in the same family as D1–D6. So markup is deliberately
+ *     left for the post-ingest gate to fail on.
+ *
+ * That split is also what stops the gate's check from becoming vacuous: if this function
+ * cleaned everything the check looks for, the check could never fail and would report a
+ * comfortable green forever (see GUARDRAILS S, "a check that could not fail").
+ */
+export function normaliseStoredText(input: string | null | undefined): string | null {
+  if (input == null) return null
+  return input.replace(INVISIBLE, '')
+}
+
+/**
+ * Does this text contain anything a reader could not see? Exported so the post-ingest gate can
+ * COUNT what this module STRIPS, using the same character set — see data-quality.ts
+ * `sourceTextHygieneCheck`.
+ *
+ * Two separate definitions of "invisible" would be worse than none: the gate would report zero
+ * while the stripper was quietly working, or report a problem the stripper had already handled.
+ */
+export function hasHiddenContent(input: string | null | undefined): boolean {
+  const s = input ?? ''
+  if (!s) return false
+  return /<!--|<!\[CDATA\[|<[a-zA-Z/!][^>]*>/.test(s) || new RegExp(INVISIBLE.source).test(s)
+}
+
+/**
  * Strip what a reader cannot see: HTML comments, script/style blocks, any remaining tags, and
  * invisible characters. Whitespace is collapsed so the result reads like one paragraph.
  */

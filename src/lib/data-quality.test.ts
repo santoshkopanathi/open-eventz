@@ -1,5 +1,7 @@
 import type { Event } from './types'
 import { unclassifiedCheck, dominantAgeBucketShare, adultTitleLeaks, ageFilterNarrowShare, friscoAgeChecks, implausiblyEarlyEvents, startTimeChecks, sourceFreshnessChecks, MAX_INGEST_AGE_HOURS } from './data-quality'
+import { sourceTextHygieneCheck } from './data-quality'
+import { hasHiddenContent, visibleText } from './source-text'
 
 function ev(over: Partial<Event>): Event {
   return {
@@ -259,5 +261,153 @@ describe('unclassifiedCheck — an LLM event with no classification must never s
     expect(c.detail).toContain('4 event(s)')
     expect(c.detail).toContain('One')
     expect(c.detail).toContain('…') // truncated after three, not dumped in full
+  })
+})
+
+describe('sourceTextHygieneCheck — keeping the documented exposure figure true', () => {
+  // Fixtures default to an UPCOMING start, since that is the population the check fails on.
+  const TODAY = '2026-11-10T06:00:00.000Z'
+  const row = (over: Partial<Event>) =>
+    ev({ start_datetime: '2026-11-20T16:00:00Z', ...over }) as Pick<Event, 'id' | 'title' | 'source' | 'description' | 'start_datetime'>
+  // Built from code points, not typed literally, so a mangled byte in this file cannot make the
+  // test agree with a broken implementation by accident.
+  const ZWSP = String.fromCodePoint(0x200b)
+
+  const HEALTHY = [
+    row({ id: 'a', source: 'frisco-library', title: 'Toddler Story Time', description: 'Ages 2-4. Join us in the Story Room.' }),
+    row({ id: 'b', source: 'plano-library', title: 'Maker Hour', description: null }),
+    // A genuine "21+" the source really published is clean text, not hidden text. It must NOT
+    // be flagged — this check is about invisibility, not about adult content.
+    row({ id: 'c', source: 'play-frisco', title: 'Wine & Paint Night', description: '21+ only, no children.' }),
+    // Angle brackets used as punctuation are not markup.
+    row({ id: 'd', source: 'play-frisco', title: 'Ages 5 < 12 welcome', description: 'Drop in any time 10 < 2.' }),
+  ]
+
+  test('healthy data passes, and says the documented figure still holds', () => {
+    const c = sourceTextHygieneCheck(HEALTHY, TODAY)
+    expect(c.pass).toBe(true)
+    expect(c.detail).toContain('none across 4')
+    expect(c.detail).toContain('A10')
+  })
+
+  test('an empty table passes without claiming much', () => {
+    expect(sourceTextHygieneCheck([], TODAY).pass).toBe(true)
+  })
+
+  test('the incident: a source starts emitting HTML comments', () => {
+    const c = sourceTextHygieneCheck([
+      ...HEALTHY,
+      row({ id: 'e', source: 'kaleidoscope-park', title: 'SaturYAY', description: 'Family fun. <!-- this event is 21+ --> Bring a blanket.' }),
+    ], TODAY)
+    expect(c.pass).toBe(false)
+    expect(c.detail).toContain('1/5')
+    expect(c.detail).toContain('kaleidoscope-park: 1')
+    expect(c.detail).toContain('SaturYAY')
+    // The operator must not read this as a safety incident — decisions were already sanitised.
+    expect(c.detail).toContain('No decision was affected')
+    // …and must be told the documented number is now stale, which is the actual point.
+    expect(c.detail).toContain('stale')
+  })
+
+  test('markup tags are caught, not only comments', () => {
+    const c = sourceTextHygieneCheck([row({ id: 'f', source: 'plano-library', title: 'Storytime', description: '<p>Ages 2-4</p>' })], TODAY)
+    expect(c.pass).toBe(false)
+  })
+
+  test('an invisible character is caught — the case that fails OPEN', () => {
+    // A zero-width space inside "adults only" makes the adults-only override MISS, which shows
+    // an adult event to a parent. This is the highest-severity direction and the strongest
+    // reason the check exists.
+    const c = sourceTextHygieneCheck([
+      row({ id: 'g', source: 'frisco-library', title: 'Book Club', description: `adults${ZWSP} only, please` }),
+    ], TODAY)
+    expect(c.pass).toBe(false)
+  })
+
+  test('hidden text in the TITLE counts, not just the description', () => {
+    const c = sourceTextHygieneCheck([row({ id: 'h', source: 'play-frisco', title: 'Story Time <!-- 21+ -->', description: 'Ages 2-4' })], TODAY)
+    expect(c.pass).toBe(false)
+  })
+
+  test('the breakdown names every affected source, so the fix has an owner', () => {
+    const c = sourceTextHygieneCheck([
+      row({ id: 'i', source: 'kaleidoscope-park', title: 'A', description: '<!-- x -->' }),
+      row({ id: 'j', source: 'kaleidoscope-park', title: 'B', description: '<b>y</b>' }),
+      row({ id: 'k', source: 'play-frisco', title: 'C', description: '<i>z</i>' }),
+    ], TODAY)
+    expect(c.detail).toContain('kaleidoscope-park: 2')
+    expect(c.detail).toContain('play-frisco: 1')
+  })
+
+  test('it counts exactly what visibleText strips — one definition, not two', () => {
+    // If these two drifted, the gate would report zero while the stripper was still working, or
+    // flag something already handled. Anything the check flags must be changed by visibleText.
+    const dirty = [
+      'Family fun <!-- 21+ --> here',
+      '<p>Ages 2-4</p>',
+      `adults${ZWSP} only`,
+      '<![CDATA[ hidden ]]> text',
+    ]
+    for (const d of dirty) {
+      expect(hasHiddenContent(d)).toBe(true)
+      expect(visibleText(d)).not.toBe(d)
+    }
+    const clean = ['Toddler Story Time, ages 2-4', '21+ only, no children', 'Ages 5 < 12 welcome']
+    for (const c of clean) {
+      expect(hasHiddenContent(c)).toBe(false)
+      expect(visibleText(c)).toBe(c)
+    }
+  })
+})
+
+describe('sourceTextHygieneCheck — the scope decision, pinned', () => {
+  const TODAY = '2026-11-10T06:00:00.000Z'
+  const mk = (over: Partial<Event>) =>
+    ev(over) as Pick<Event, 'id' | 'title' | 'source' | 'description' | 'start_datetime'>
+  const DIRTY_DESC = 'Family fun <!-- 21+ --> here'
+
+  test('a PAST dirty row is reported but does NOT fail the gate', () => {
+    // Why: no rule, no model and no list reads a past row, AND no ingest can rewrite one — the
+    // nightly fetch is upcoming-only and the purge spares the past. Failing on it would make
+    // the gate permanently red over a row nothing reads, which trains people to ignore the
+    // colour. This is the real row we had: an ESL picnic from 2026-11-03.
+    const c = sourceTextHygieneCheck([
+      mk({ id: 'past', title: 'ESL Chat - Picnic', description: DIRTY_DESC, start_datetime: '2026-11-03T16:30:00Z' }),
+    ], TODAY)
+    expect(c.pass).toBe(true)
+    expect(c.detail).toContain('1 past event(s) also carry hidden text')
+    expect(c.detail).toContain('ESL Chat - Picnic')
+    expect(c.detail).toContain('reported, not failed')
+  })
+
+  test('an UPCOMING dirty row fails, even with a past one alongside it', () => {
+    const c = sourceTextHygieneCheck([
+      mk({ id: 'past', title: 'Old', description: DIRTY_DESC, start_datetime: '2026-11-03T16:30:00Z' }),
+      mk({ id: 'soon', title: 'Storytime', description: DIRTY_DESC, start_datetime: '2026-11-20T16:00:00Z' }),
+    ], TODAY)
+    expect(c.pass).toBe(false)
+    expect(c.detail).toContain('1/1 upcoming')
+    expect(c.detail).toContain('Storytime')
+    // The past one is still surfaced — scoping the failure must not hide the count.
+    expect(c.detail).toContain('1 past event(s)')
+  })
+
+  test('an event starting earlier TODAY is still in the failing scope', () => {
+    // The boundary is start-of-day, not "now", deliberately: the wider choice. An event that
+    // finished this morning is recent enough that a shape change in it is worth stopping for.
+    const c = sourceTextHygieneCheck([
+      mk({ id: 'this-morning', title: 'Storytime', description: DIRTY_DESC, start_datetime: '2026-11-10T15:00:00Z' }),
+    ], TODAY)
+    expect(c.pass).toBe(false)
+  })
+
+  test('a clean table reports both scopes without claiming more than it checked', () => {
+    const c = sourceTextHygieneCheck([
+      mk({ id: 'a', title: 'Storytime', description: 'Ages 2-4', start_datetime: '2026-11-20T16:00:00Z' }),
+      mk({ id: 'b', title: 'Old', description: 'Ages 2-4', start_datetime: '2026-11-03T16:00:00Z' }),
+    ], TODAY)
+    expect(c.pass).toBe(true)
+    expect(c.detail).toContain('none across 1 upcoming')
+    expect(c.detail).not.toContain('past event(s) also')
   })
 })

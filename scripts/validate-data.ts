@@ -115,6 +115,32 @@ async function main() {
     .is('kid_relevant', null)
   checks.push(dq.unclassifiedCheck(unclassifiedRows ?? [], LLM_CLASSIFIED_SOURCES))
 
+  // Hidden text in stored event text. This does not protect a decision — visibleText() already
+  // strips this before any rule or model reads it (GUARDRAILS A10). It protects the CLAIM: the
+  // measured exposure of zero that five documents now quote, and that nothing was keeping true.
+  //
+  // PAGED EXPLICITLY. PostgREST caps an unpaginated select at 1000 rows and says nothing about
+  // it, which this project has already been bitten by once — an unpaged read made a guard
+  // compare today's full batch against a truncated "stored" count. A hygiene check that silently
+  // examined the first 1000 of 2,400 rows would report a comfortable zero while missing most of
+  // the table, which is worse than not having the check.
+  const textRows: Parameters<typeof dq.sourceTextHygieneCheck>[0] = []
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await db
+      .from('events')
+      .select('id, title, source, description, start_datetime')
+      .order('id', { ascending: true })
+      .range(from, from + 999)
+    if (error) throw new Error(`reading event text: ${error.message}`)
+    textRows.push(...(data ?? []))
+    if (!data || data.length < 1000) break
+  }
+    // Boundary: start of today, Central — the same helper the SEO surfaces use, so "current"
+  // means one thing in this repo rather than two. Deliberately the WIDER choice: it keeps an
+  // event that finished this morning inside the failing scope.
+  const { startOfTodayCtIso } = await import('../src/lib/seo-indexable')
+  checks.push(dq.sourceTextHygieneCheck(textRows, startOfTodayCtIso()))
+
   // Live-source canary
   checks.push(await friscoCanary())
 

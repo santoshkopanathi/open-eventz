@@ -18,7 +18,7 @@ import { parseEventJsonLd, parseCadence, parseListedDates, weeklyOccurrences, re
 import { startOfTodayCtIso } from './seo-indexable'
 import { createLlmBudget, type LlmBudget } from './llm-budget'
 import { describeLlmFailure, needsHuman, type LlmFailureKind } from './llm-failure'
-import { visibleText } from './source-text'
+import { visibleText, normaliseStoredText } from './source-text'
 
 // Adult programs that BiblioCommons incorrectly includes in children audience feeds
 const FRISCO_ADULT_KEYWORDS = [
@@ -709,6 +709,18 @@ async function guardedUpsert(
   // An empty batch is a failed scrape, not "everything was cancelled" — nothing is written,
   // and nothing is purged either.
   if (events.length === 0) return { upserted: 0, aborted: false, dropped: 0, purged: 0 }
+
+  // Strip invisible characters from stored text. Here, in the one write path, so a new source
+  // cannot be onboarded without it — the same reason B1 insists there is exactly one upsert.
+  //
+  // Zero-width and bidi characters have no legitimate use in an event title or description, and
+  // leaving one in is the case that fails OPEN: inside "adults only" it makes the override MISS
+  // and an adult event reaches a parent. Markup is deliberately NOT stripped here — markup means
+  // the source changed shape, which the post-ingest gate should fail on rather than tidy away.
+  for (const e of events) {
+    e.title = normaliseStoredText(e.title) ?? e.title
+    e.description = normaliseStoredText(e.description)
+  }
 
   // Page explicitly: PostgREST caps an unpaginated select at 1000 rows, and it does so
   // SILENTLY. Plano has 1683 rows, so the guard was judging it against an arbitrary 1000-row

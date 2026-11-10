@@ -1,5 +1,6 @@
 import type { Event } from './types'
 import { passesAgeFilter } from './age-filter'
+import { hasHiddenContent } from './source-text'
 
 // Pure data-quality checks run against REAL ingested events (post-ingest gate). These exist
 // because the unit/E2E suites are logic-only (mocked) and never see real data — so an upstream
@@ -226,5 +227,68 @@ export function unclassifiedCheck(
     detail: bad.length === 0
       ? 'none'
       : `${bad.length} event(s) with kid_relevant = null from an LLM-classified source — never classified, and only the API gate is keeping them hidden: ${names}${bad.length > 3 ? ' …' : ''}`,
+  }
+}
+
+/**
+ * Is any stored title or description still carrying text a reader could not see?
+ *
+ * WHY THIS EXISTS, and it is not the obvious reason. `visibleText()` already strips hidden text
+ * before any classification decision (GUARDRAILS A10), so this check does not protect a decision
+ * — the decision is already safe. **It protects a CLAIM.**
+ *
+ * When A10 shipped we measured the exposure and wrote the number into five documents: 0 HTML
+ * comments and 0 markup tags across 2,371 production rows, which is what downgraded the red-team
+ * finding from "a live injection path" to "a design weakness". That number is the whole basis of
+ * the honest version of the story — and nothing was keeping it true. Sources change shape; one
+ * connector had already been rebuilt that month, and one source stores its description verbatim.
+ * So the claim could quietly become false while every document went on asserting it.
+ *
+ * **A measurement written into a document is a snapshot. This is the instrument behind it.** If
+ * the count stops being zero we want to know on the next nightly run, not the next time somebody
+ * happens to re-count by hand.
+ *
+ * It is a WARNING in spirit but a FAILURE in mechanism, on purpose: a source that has started
+ * emitting markup is a source whose shape changed, which is the same family as D1–D6 and worth a
+ * red pipeline. The remedy is usually a one-line strip in that connector, not an incident.
+ */
+export function sourceTextHygieneCheck(
+  events: Pick<Event, 'id' | 'title' | 'source' | 'description' | 'start_datetime'>[],
+  todayIso: string,
+): QualityCheck {
+  // SCOPE: fail on events that can still reach a parent or a decision; REPORT the rest.
+  //
+  // This is the one judgement call in the check, and it is worth stating plainly because the
+  // lazy version of it is how checks get quietly weakened. Classification runs on upcoming
+  // events, and every read path in the app and the SEO surfaces filters to upcoming — so a past
+  // row is inert: no rule reads it, no model reads it, no parent is shown it in a list.
+  //
+  // It also cannot be CLEANED. The nightly ingest fetches upcoming events only, so a past row
+  // never passes through the write path again, and the cancellation purge deliberately spares
+  // past rows. A historical row with hidden text would therefore fail this check every night
+  // forever, for a row nothing reads. **A permanently red check trains people to ignore the
+  // colour**, which costs more than the row.
+  //
+  // So historical rows are counted and named in the detail line rather than failing the gate.
+  // Nothing is hidden; it simply does not stop the pipeline.
+  const current = events.filter(e => e.start_datetime >= todayIso)
+  const historical = events.filter(e => e.start_datetime < todayIso)
+  const dirty = (rows: typeof events) => rows.filter(e => hasHiddenContent(e.title) || hasHiddenContent(e.description))
+
+  const bad = dirty(current)
+  const oldBad = dirty(historical)
+  const bySource = new Map<string, number>()
+  for (const e of bad) bySource.set(e.source, (bySource.get(e.source) ?? 0) + 1)
+  const breakdown = [...bySource].map(([s, n]) => `${s}: ${n}`).join(', ')
+  const historicalNote = oldBad.length
+    ? ` (${oldBad.length} past event(s) also carry hidden text, e.g. "${oldBad[0].title}" — reported, not failed: nothing reads a past row and no ingest can rewrite one)`
+    : ''
+
+  return {
+    name: 'no hidden text in stored event text',
+    pass: bad.length === 0,
+    detail: bad.length === 0
+      ? `none across ${current.length} upcoming event(s)${historicalNote} — the exposure figure quoted in GUARDRAILS A10 still holds`
+      : `${bad.length}/${current.length} upcoming event(s) carry markup, a comment or an invisible character (${breakdown}), e.g. "${bad[0].title}"${historicalNote}. **No decision was affected** — visibleText() strips this before any rule or model reads it. What this means instead: a source has changed shape, and the exposure figure of 0 quoted in GUARDRAILS A10 and four other documents is now stale. Markup is expected to reach here (it is deliberately not stripped at the write path, because it is a source-shape signal a human should see); an INVISIBLE character reaching here is stranger, since guardedUpsert removes those — that would mean a row arrived outside the one write path. Fix the connector, then re-ingest that source.`,
   }
 }

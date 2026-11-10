@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs'
 import { join } from 'path'
-import { visibleText } from './source-text'
+import { visibleText, normaliseStoredText } from './source-text'
 
 // Code points spelled out here too, so a mangled byte in either file cannot make this test
 // agree with a broken implementation by accident.
@@ -91,5 +91,43 @@ describe('decisions are made on visible text only', () => {
     const inHarness = extract(redTeamSrc)
     expect(inPipeline).toBeTruthy()
     expect(inHarness).toBe(inPipeline)
+  })
+})
+
+describe('normaliseStoredText — prevention at the write path', () => {
+  const ZWSP = String.fromCodePoint(0x200b)
+  const RLO = String.fromCodePoint(0x202e)
+
+  it('removes invisible characters from text we are about to store', () => {
+    expect(normaliseStoredText(`adults${ZWSP} only`)).toBe('adults only')
+    expect(normaliseStoredText(`Story${RLO} Time`)).toBe('Story Time')
+  })
+
+  it('leaves markup alone — that is a source-shape signal, not junk to tidy away', () => {
+    // If this stripped markup too, the post-ingest hygiene check could never fail and would
+    // report green forever. See GUARDRAILS S, "a check that could not fail".
+    expect(normaliseStoredText('Family fun <!-- 21+ --> here')).toBe('Family fun <!-- 21+ --> here')
+    expect(normaliseStoredText('<p>Ages 2-4</p>')).toBe('<p>Ages 2-4</p>')
+  })
+
+  it('preserves a genuine visible 21+ exactly', () => {
+    expect(normaliseStoredText('21+ only, no children')).toBe('21+ only, no children')
+  })
+
+  it('passes null through rather than inventing an empty string', () => {
+    expect(normaliseStoredText(null)).toBeNull()
+    expect(normaliseStoredText(undefined)).toBeNull()
+  })
+})
+
+describe('the write path applies it', () => {
+  it('guardedUpsert normalises title and description before writing', () => {
+    // Structural: B1 guarantees exactly one upsert, so normalising there covers every source
+    // including ones not yet written. A runner that bypassed it would reintroduce the fail-open
+    // case silently, and no behavioural test can see a call site that does not exist yet.
+    const src = readFileSync(join(__dirname, 'ingest.ts'), 'utf8')
+    const body = src.split('async function guardedUpsert(')[1]?.slice(0, 2000) ?? ''
+    expect(body).toContain('normaliseStoredText(e.title)')
+    expect(body).toContain('normaliseStoredText(e.description)')
   })
 })
