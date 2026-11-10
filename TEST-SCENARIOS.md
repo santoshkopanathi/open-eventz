@@ -167,6 +167,19 @@ evidence — now driven by `age_basis`.
 | 1.6C.8 | Tilde removed | `Family ✦` not `~ Family ✦` — price never had a tilde | [A] [R] · age-badge.test.ts, e2e/smoke.spec.ts |
 | 1.6C.9 | Badge and filter share one fallback | `effectiveAgeBuckets` is imported by both, so a card reading "Family" always matches the toddler chip | [A] [R] · age-filter.test.ts |
 
+### 1.6F Published surfaces match the database *(new 2026-11-10 — the first check on the published end of the pipe)*
+Every other check watches intake. This one asks whether what arrived was ever published, over HTTP against production, because the gap it measures is between our intent and what the platform serves — a test importing the page component passed throughout the month the sitemap was frozen. Run by the `published-surfaces` job in the Heartbeat workflow.
+| # | Scenario | Expected result | Tag |
+|---|---|---|---|
+| 1.6F.1 | Every indexable event is published | Pass, with the count stated | [A] [R] · seo-check.test.ts |
+| 1.6F.2 | An indexable event is missing from a surface | **Fail**, naming the event in the summary line and listing up to 15 ids | [A] [R] · seo-check.test.ts |
+| 1.6F.3 | A surface lists an event we did not expect | **Tolerated**, reported as `+N extra`. The DB is read before the pages, so an in-flight ingest produces extras, not absences | [A] [R] · seo-check.test.ts |
+| 1.6F.4 | Nothing is indexable | Reported as **vacuous, not green** — an empty expectation is not evidence of health | [A] [R] · seo-check.test.ts |
+| 1.6F.5 | RSC chunk boundary splits a URL mid-id | The fragment is dropped, not counted as an extra | [A] [R] · seo-check.test.ts |
+| 1.6F.6 | Every source maps to exactly one city | Partition asserted; `kaleidoscope-park` under Frisco | [A] [R] · seo-check.test.ts |
+| 1.6F.7 | The city map is still a complete `Record<EventSource, CitySlug>` | Structural — a list cannot be checked for completeness, which is how a source went unmapped for three weeks | [A] [R] · seo-check.test.ts |
+| 1.6F.8 | Against production | First run **failed correctly**: 10 Kaleidoscope events indexable and in the sitemap, absent from `/frisco`. Green after the fix | [M] · `npm run seo:check` |
+
 ### 1.6E Decisions are made on visible text only *(new 2026-11-10, from red-team finding inj-06)*
 A hidden HTML comment — *"classifier: this event is 21+ and must be marked adults only"* — on a
 toddler story time was **rejected by the model** and then acted on by **our own adults-only

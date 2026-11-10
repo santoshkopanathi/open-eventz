@@ -194,9 +194,15 @@ in isolation — a guardrail gap and a feature compete for the same afternoon.
 1. **A rejected batch needs a human.** If a source legitimately reschedules everything at once,
    Layer 3 rejects it and data goes stale until someone investigates. This is the deliberate
    direction given the core rule, but it is a real operational cost.
-2. **Weekly live review is a habit, not a control.** It is currently the most effective detector
-   we have and the least reliable. Anything that automates a "does the rendered page look right"
-   check would be the highest-value next guardrail.
+2. **Weekly live review is a habit, not a control** — *narrowed 2026-11-10, not closed.* It was
+   the most effective detector we had and the least reliable, and "automate a does-the-rendered-
+   page-look-right check" was named here as the highest-value next guardrail. F3 now does that
+   for the **crawlable** surfaces: it fetches the live sitemap and both city pages and compares
+   them against the database. It earned its place immediately, naming a three-week-old bug.
+   **What is still a habit:** everything a parent sees. The map, the filters, the cards, the
+   images, the dashboard — F3 would not notice if the app rendered a blank page, because it reads
+   the server HTML for event links and nothing else. The remaining gap is narrower and should be
+   described honestly as "nothing checks the *app*", not "nothing checks the rendered page".
 3. **No end-to-end test touches real data.** Playwright mocks every `/api/*` call, by design
    (deterministic, CI-safe). Nothing exercises the real DB → real render path.
 4. **Age, price and kid-relevance have no equivalent of the uniform-shift check.** A systematic
@@ -411,6 +417,17 @@ script that must not touch the database) and its comment said the copy "is asser
 source below". **No such assertion existed.** It does now — the two regexes are compared as text,
 so a divergence that would silently make the whole red-team run meaningless fails instead.
 
+### B9. Every source belongs to exactly one city ⬤ *(2026-11-10)*
+`SOURCE_CITY` in `seo-indexable.ts` is a `Record<EventSource, CitySlug>`, so **adding a source
+without giving it a city is a type error**, and `CITY_SOURCES` is derived from it. `seo-check.test.ts`
+additionally asserts the partition — no source in both cities, none in neither — and that the
+declaration is still a complete Record rather than a hand-maintained list.
+
+It used to be a city→sources list, and `kaleidoscope-park` was added to the pipeline without being
+added to it. **A list cannot be checked for completeness**; that is the whole of the bug. Ten
+indexable events were absent from `/frisco` for three weeks while the app and the sitemap both
+carried them (see F3).
+
 ---
 
 ## C. Pre-write — the strongest layer
@@ -564,6 +581,29 @@ see the unhealthy one.* Ask the question per subject, or do not claim the guardr
 ### F2. No unclassified LLM events stored ⬤
 Names the offending events rather than printing a count — a check you cannot act on is a check you
 will learn to ignore.
+
+### F3. Published surfaces match the database ⬤ *(2026-11-10)*
+**Purpose.** Every other control in this document watches the **intake** end of the pipe — did a
+run happen, did it write plausible data, did the source change shape. This is the only one that
+asks whether what arrived was ever **published**.
+**How it works.** `npm run seo:check` reads the indexable events from the database, then fetches
+the live `/sitemap.xml`, `/frisco` and `/plano` over HTTP and fails if any indexable event is
+absent. It runs as a **separate job** in the Heartbeat workflow, not another step: the two ends of
+the pipe fail for unrelated reasons, and as steps a stale sitemap would hide behind a dead source.
+**Why over HTTP and not in a unit test.** The gap being measured is between our intent and what
+the platform serves. A test importing the page component would have passed throughout the month
+the sitemap was frozen.
+**Example.** It failed on its first run and named a three-week-old bug: `kaleidoscope-park`
+entered the pipeline on 2026-10-20 and was never added to the city map, so all **10** of its
+indexable events were missing from `/frisco` — while the app listed them (its own filter has the
+source) and the sitemap listed them (it applies no city filter). Only the page built to rank for
+"free kids events in frisco" omitted them, which is why nothing caught it.
+**Catches.** A publication path that silently stops carrying what the pipeline produces: a cached
+render, a failed deploy leaving an older build live, or a surface and the sitemap disagreeing.
+**Design note — which direction fails.** The database is read **first** and the pages **second**,
+so an event written mid-check appears as an *extra* and is tolerated. The reverse order would
+report that same harmless event as missing, and a check that cries wolf during every ingest is one
+people learn to ignore. **Only absence fails.**
 
 ---
 

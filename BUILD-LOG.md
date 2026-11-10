@@ -1961,3 +1961,37 @@ That list includes one the fixtures had not thought to probe: **`resolvePriceCla
 **Result.** 20/20, with `inj-06` correctly **shown** to parents.
 
 **The lesson.** **A deterministic guard inherits the trust level of whatever text you feed it.** "Fail closed" describes the direction of the error, not its correctness — and a guard that fails closed on forged input is being operated by the forger. Sanitise before the rule, not after it; and when you write down a prediction before an experiment, the value is not in being right, it is in finding out which of your assumptions was load-bearing.
+
+---
+
+## Nobody was watching the other end of the pipe
+
+*Date: 2026-11-10. Modules: [`src/lib/seo-check.ts`](src/lib/seo-check.ts), [`scripts/seo-check.ts`](scripts/seo-check.ts), [`src/lib/seo-indexable.ts`](src/lib/seo-indexable.ts), [`.github/workflows/heartbeat.yml`](.github/workflows/heartbeat.yml). Closes BACKLOG #11 for the crawlable surfaces. See GUARDRAILS.md F3, B9.*
+
+**Initial situation.** The two entries above it in this log are both publication failures found by hand: a sitemap frozen for a month, and city pages running three days behind. Read the guardrails catalogue and the reason is plain — **every one of the 38 controls watched the intake end of the pipe.** Did a run happen. Did it write plausible times. Did the source change shape. Did the model refuse. Not one asked whether anything that arrived was ever *published*. The question had no owner, so it was answered by a human noticing, twice, a fortnight apart.
+
+**What we built.** `npm run seo:check` reads the indexable events from the database, then fetches the live `/sitemap.xml`, `/frisco` and `/plano` over HTTP and fails if any indexable event is absent. It runs as a second job in the Heartbeat workflow.
+
+Three design choices, each one the thing that makes it work rather than a detail:
+
+**Over HTTP, against production.** The gap being measured is between our intent and what the platform actually serves. A test that imported the page component would have passed cheerfully throughout the month the sitemap was frozen — the component was never wrong. **The bug lived entirely in the space between the code and the response.**
+
+**A separate job, not another step.** The heartbeat asks whether data is still arriving; this asks whether it is being published. They fail for unrelated reasons and need different first responses. As sequential steps, the first failure skips the second and **a stale sitemap hides behind a dead source** — which is the same masking that let two of these bugs run for weeks.
+
+**Database first, pages second — and only absence fails.** An event written between the two reads appears on the page but not in our expected set: an *extra*, which is reported and tolerated. Reverse the order and that same harmless event is reported as *missing*. The check would then go red during every ingest, and a check that cries wolf is a check people learn to route to a folder. **Choosing which direction of skew is allowed to fail is a product decision, not an implementation detail.**
+
+**It failed on its first run, and found a three-week-old bug nobody could have seen.** `kaleidoscope-park` entered the pipeline on 2026-10-20. It was never added to the source→city map, so **all 10 of its indexable events were missing from `/frisco`** — the page built to rank for "free kids events in frisco" and to link them with context.
+
+What makes this one worth recording is **how thoroughly invisible it was**. The app listed the events, because `EventsApp` has its own source list and that one included Kaleidoscope. The sitemap listed them, because it applies no city filter at all. The event pages existed and were indexable. Every surface a person would think to check was correct. **The only wrong surface was the one nobody looks at, because its entire audience is a crawler.**
+
+**The structural fix, which matters more than the ten events.** `CITY_SOURCES` was a city→sources list:
+
+```ts
+const CITY_SOURCES = { frisco: ['frisco-library', 'play-frisco'], plano: ['plano-library'] }
+```
+
+**A list cannot be checked for completeness.** Nothing about that shape can notice an absence. It is now derived from the other direction — `Record<EventSource, CitySlug>` — so adding a source without giving it a city is a **type error** (B9). This is the fourth time this project has reached for that pattern; it is becoming the house answer to "how do we stop the next source from being half-wired".
+
+**What is still a habit, stated honestly.** This covers the crawlable surfaces only. It reads server HTML for event links and nothing else, so it would not notice if the app itself rendered a blank page. The weekly live read remains the only check on what a parent sees, and the remaining gap is now narrower and better named: not "nothing checks the rendered page" but **"nothing checks the app"**.
+
+**The lesson.** **Instrument the output, not just the input — and notice which end your controls cluster at.** Thirty-eight controls, every one of them upstream, is not a coincidence: the pipeline is where the interesting engineering is, so that is where attention goes. The failures that actually reached users came from the dull half — a cache setting, a lookup table — and were found by eye rather than by instrument. **A catalogue of guardrails is also a map of where you have been looking.** Read it that way occasionally and the blank region is the finding.

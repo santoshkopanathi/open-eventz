@@ -59,6 +59,8 @@ CI runs all three automatically on push / PR — see `.github/workflows/ci.yml`.
 |---|---|
 | `npm run validate` | Is the data we just wrote sound? (post-ingest gate, runs in CI) |
 | `npm run heartbeat` | **Did the pipeline run at all?** Fails if any source has not written in 30h. Runs as its own scheduled workflow, deliberately outside the ingest. |
+| `npm run seo:check` | **Is what Google can see what we would publish right now?** Reads the DB, then fetches the live `/sitemap.xml`, `/frisco` and `/plano` over HTTP; fails on any indexable event that is absent. Runs as the `published-surfaces` job in `heartbeat.yml` — a separate job from the heartbeat, so a stale sitemap cannot hide behind a dead source. `SEO_CHECK_BASE` overrides the host. |
+| `npm run redteam [group]` | **Does the classifier fail closed on hostile input?** 20 adversarial fixtures through the production classifier *and the pipeline's own gates*. Costs ~20 model calls; writes nothing. Not in CI yet (BACKLOG #7). |
 | `INGEST_DRY_RUN=1 npm run ingest -- <source>` | What would tonight write, drop and purge? Touches nothing. |
 
 ## Manual scenario docs (history + reference)
