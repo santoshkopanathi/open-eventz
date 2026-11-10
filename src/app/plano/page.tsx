@@ -3,7 +3,10 @@ import EventsApp from '@/components/EventsApp'
 import CityEventIndex from '@/components/CityEventIndex'
 import { cityUrl } from '@/lib/site'
 
-export const revalidate = 3600
+// Rendered per request — same reasoning as /frisco and sitemap.ts: `revalidate = 3600` served a
+// three-day-old render on a low-traffic site, and every decision on this page is a function of
+// the clock. See src/app/frisco/page.tsx for the measurement.
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Free Kids Events in Plano, TX — This Week',

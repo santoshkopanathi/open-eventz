@@ -11,9 +11,18 @@ import { detailAgeBadge } from '@/lib/age-badge'
 import { inferenceDisclosure } from '@/lib/inference-disclosure'
 import SupervisionCallout from '@/components/SupervisionCallout'
 
-// Event content changes rarely once ingested; revalidate hourly so freshly-ingested
-// events appear and past ones drop without a redeploy.
-export const revalidate = 3600
+// Rendered per request. The old comment here said "event content changes rarely once ingested;
+// revalidate hourly so freshly-ingested events appear and past ones drop without a redeploy" —
+// which was the right intent and the wrong mechanism, for the reason recorded in
+// src/app/frisco/page.tsx: ISR regeneration is request-driven, so sparse traffic serves a stale
+// render almost every time.
+//
+// The content is indeed stable. **The indexability decision is not.** `isIndexableEvent()` is
+// evaluated here against the current clock, and it is what emits `noindex` and gates the Event
+// JSON-LD. A render cached from before the event finished keeps telling Google this page is
+// indexable and keeps publishing rich data for an event that has already happened. One row
+// fetched by primary key is not worth that.
+export const dynamic = 'force-dynamic'
 
 const TZ = 'America/Chicago'
 
