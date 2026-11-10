@@ -2017,3 +2017,44 @@ const CITY_SOURCES = { frisco: ['frisco-library', 'play-frisco'], plano: ['plano
 **What is still a habit, stated honestly.** This covers the crawlable surfaces only. It reads server HTML for event links and nothing else, so it would not notice if the app itself rendered a blank page. The weekly live read remains the only check on what a parent sees, and the remaining gap is now narrower and better named: not "nothing checks the rendered page" but **"nothing checks the app"**.
 
 **The lesson.** **Instrument the output, not just the input — and notice which end your controls cluster at.** Thirty-eight controls, every one of them upstream, is not a coincidence: the pipeline is where the interesting engineering is, so that is where attention goes. The failures that actually reached users came from the dull half — a cache setting, a lookup table — and were found by eye rather than by instrument. **A catalogue of guardrails is also a map of where you have been looking.** Read it that way occasionally and the blank region is the finding.
+
+---
+
+## Writing a number into a document is not the same as knowing it
+
+*Date: 2026-11-10. Modules: [`src/lib/source-text.ts`](src/lib/source-text.ts), [`src/lib/data-quality.ts`](src/lib/data-quality.ts), [`src/lib/ingest.ts`](src/lib/ingest.ts), [`scripts/validate-data.ts`](scripts/validate-data.ts). See GUARDRAILS.md A11, F4.*
+
+**Initial situation.** Earlier the same day we corrected the red-team write-up from "a live injection path" down to "a design weakness", on the strength of one measurement: **0 HTML comments and 0 markup tags across 2,371 production rows.** That number went into five documents. It is the load-bearing fact in the honest version of the story.
+
+Then I noticed what I had just done. **I had written a claim into permanent documents with nothing keeping it true.**
+
+Sources change shape. One connector had already been rebuilt that month. One source stores its description verbatim, with no stripping at all. If any of them starts emitting markup, the number silently stops being zero while every document goes on asserting it — and the next person to find out would be whoever happens to re-count by hand, which is exactly the failure mode the measurement was documenting.
+
+This project's own rule is that **a claim with no instrument is an opinion.** I had just made one.
+
+**What we built — and the split is the whole design.**
+
+| In scraped text | At the write path | Why |
+|---|---|---|
+| Zero-width / bidi characters | **Stripped** | Junk, always. And it is the case that fails **open** |
+| Markup, comments, CDATA | **Left alone** | It means the source changed shape — a human should see that |
+
+**Prevention, for the characters that can never be legitimate.** `normaliseStoredText()` strips zero-width and bidi characters inside `guardedUpsert` — the single write path, which is why B1 insists there is only one. A new source cannot be onboarded without it. These characters have no honest use in an event title, and leaving one in is the direction that fails open: inside "adults only" it makes the override **miss**, and an adult event reaches a parent.
+
+**Detection, for markup — deliberately not prevented.** Markup arriving in stored text is a *signal about a source*, not litter to sweep up. Cleaning it silently would discard the information. So it reaches the post-ingest gate, which fails and names the connector. The remedy is usually one line in that scraper.
+
+**That asymmetry is also what keeps the check honest.** If the write path cleaned everything the check looks for, **the check could never fail.** It would report a comfortable green forever. We have audited for exactly that pattern before — Section S of the guardrails doc is called "a check that could not fail" — so building a new one would have been a poor joke.
+
+**The check earned its place immediately, and then taught me something.** Run against production, it found the one row we already knew about: an invisible character in *"ESL Chat - Picnic at Frisco Commons Park"*.
+
+And it would have failed on it **every night, forever.** That row starts on 2026-11-03 — in the past. The nightly fetch only retrieves upcoming events, so a past row never passes through the write path again. The cancellation purge deliberately spares past rows. **The row can never be cleaned and never stops failing.**
+
+A permanently red check is worse than no check, because the first thing people learn is to stop reading the colour. The temptation at that point is a threshold — *fail above two* — which is just the same surrender with arithmetic on top.
+
+**The honest resolution was to scope the failure to the population that can still matter.** A past row is inert: no rule reads it, no model reads it, no list shows it. So the check **fails on upcoming events and reports past ones**, naming them in the detail line. Nothing is concealed; it simply does not stop the pipeline. Verified against production: green across 623 upcoming events, with that one past row surfaced.
+
+Two details worth keeping. The gate uses `hasHiddenContent()` exported from the stripper itself, so **the thing counting and the thing cleaning share one definition of "invisible"** — two definitions would be worse than one, since the gate could report zero while the stripper was quietly working. And the query pages explicitly, because PostgREST caps an unpaginated select at 1000 rows and says nothing about it; a hygiene check that silently examined the first 1000 of 2,400 rows would report a reassuring zero while missing most of the table.
+
+**The lesson.** **A measurement is a snapshot; a check is a guarantee — and the moment you publish the snapshot you have created an obligation to maintain it.** The gap here was not in the fix, which was sound. It was in the write-up: quoting a number in five documents quietly converted a one-off observation into a standing claim, and standing claims decay. Worth asking of any number you put in a document: *what will tell me when this stops being true, and will it reach me before the next reader does?*
+
+A second, smaller one. **Scoping a check to make it green is usually a smell, and occasionally it is the correct answer** — the difference is whether you can say why the excluded population cannot hurt anyone. Here it is sayable in one line: nothing reads a past row. If that sentence had needed a paragraph of hedging, the right move would have been to fix the row instead.

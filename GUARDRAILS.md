@@ -352,6 +352,27 @@ and records one line naming the cause and the remedy. Unrecognised text stays `o
 back… console.anthropic.com/settings/billing"*.
 **Catches.** An operational problem wearing a data problem's clothes.
 
+### A11. Invisible characters never reach storage ⬤ *(2026-11-10)*
+**Purpose.** Remove the one thing in scraped text that can never be legitimate, at the earliest
+layer that can see it.
+**How it works.** `normaliseStoredText()` strips zero-width and bidi characters from title and
+description inside `guardedUpsert` — **the single write path**, which is why B1 insists there is
+exactly one. A new source cannot be onboarded without it.
+**Why this is separate from A10.** A10 cleans text on the way *into a decision*. This cleans text
+on the way *into the table*, because the fail-open case survives A10's scope: A10 protects
+tonight's classification, but the stored row is what every later rule, re-classification and
+display reads.
+**Why only the invisible characters — the deliberate asymmetry.**
+- A zero-width or bidi character has **no legitimate purpose** in an event title, ever. It is
+  junk, invisible to anyone who would have to spot it, and it is the case that fails **open**: a
+  zero-width space inside "adults only" makes A4 **miss**, and an adult event reaches a parent.
+  Normalise it silently. **Prevention beats detection** (see "Adding a guardrail", step 1).
+- **Markup means the source changed shape**, which is a thing a human should look at — not a
+  thing to quietly tidy. It is left for F4 to fail on.
+**And that asymmetry is what stops F4 from being vacuous.** If this function cleaned everything
+F4 looks for, F4 could never fail and would report green forever — the exact pattern audited in
+Section S, "a check that could not fail".
+
 ### A10. Decisions are made on visible text only ⬤ *(2026-11-10)*
 **Purpose.** A rule may only act on text a parent could actually read on the page.
 **How it works.** `visibleText()` (`src/lib/source-text.ts`) strips HTML comments, CDATA,
@@ -375,6 +396,10 @@ the failure a parent feels at the door, and one the fixture set had not thought 
 
 > 2,371 production rows: **0 HTML comments, 0 markup tags of any kind, 1 stray zero-width
 > character** — in an ESL program the library itself marks `age_min 18`, so already excluded.
+
+**That figure is now watched rather than merely recorded — see A11 (prevention) and F4 (detection).**
+Writing a measurement into a document and leaving it unattended was its own small gap, and it is
+closed.
 
 **This is a design weakness closed as cheap insurance, not a live exposure.** The red-team
 fixture proved the *rule* was fragile. It did not prove the *pipeline* was reachable, and the
@@ -602,6 +627,31 @@ see the unhealthy one.* Ask the question per subject, or do not claim the guardr
 ### F2. No unclassified LLM events stored ⬤
 Names the offending events rather than printing a count — a check you cannot act on is a check you
 will learn to ignore.
+
+### F4. No hidden text in stored event text ⬤ *(2026-11-10)*
+**Purpose.** Not to protect a decision — A10 already does that. **To protect a claim.**
+**The problem it solves.** When A10 shipped we measured the exposure and wrote the number into
+five documents: *0 HTML comments and 0 markup tags across 2,371 production rows*. That number is
+the entire basis of the honest version of the story — it is what downgrades the red-team finding
+from "a live injection path" to "a design weakness". **And nothing was keeping it true.** Sources
+change shape; one connector had already been rebuilt that month, and one source stores its
+description verbatim. The claim could have quietly become false while every document went on
+asserting it. **A measurement written into a document is a snapshot. This is the instrument.**
+**How it works.** `sourceTextHygieneCheck()` runs in the post-ingest gate, over every row (paged
+explicitly — the 1000-row cap has bitten this project once already). It counts titles and
+descriptions still carrying markup, a comment or an invisible character, and names the sources.
+It uses `hasHiddenContent()`, exported from `source-text.ts`, so **the gate counts exactly what
+the stripper strips.** Two definitions of "invisible" would be worse than one: the gate would
+report zero while the stripper was quietly working, or flag what the stripper had handled.
+**Catches.** A source that has started emitting markup — the same family as D1–D6, and usually a
+one-line fix in that connector. The remedy is not an incident response.
+**Why its failure scope stops at upcoming events.** A past row is inert: no rule, no model and no
+list reads it. It also **cannot be cleaned** — the nightly fetch is upcoming-only and C4
+deliberately spares past rows — so failing on one would make the gate **permanently red over a
+row nothing reads**, which trains people to ignore the colour. Past rows are therefore counted
+and named in the detail line instead. We have exactly one, an ESL picnic from 2026-11-03.
+**First run against production:** green across 623 upcoming events, with that one past row
+surfaced.
 
 ### F3. Published surfaces match the database ⬤ *(2026-11-10)*
 **Purpose.** Every other control in this document watches the **intake** end of the pipe — did a

@@ -167,6 +167,25 @@ evidence — now driven by `age_basis`.
 | 1.6C.8 | Tilde removed | `Family ✦` not `~ Family ✦` — price never had a tilde | [A] [R] · age-badge.test.ts, e2e/smoke.spec.ts |
 | 1.6C.9 | Badge and filter share one fallback | `effectiveAgeBuckets` is imported by both, so a card reading "Family" always matches the toddler chip | [A] [R] · age-filter.test.ts |
 
+### 1.6G Hidden text never reaches storage, and the exposure figure is watched *(new 2026-11-10)*
+The A10 correction wrote a measurement into five documents — *0 HTML comments, 0 markup tags across 2,371 rows* — and nothing kept it true. **A measurement in a document is a snapshot.** Two halves: invisible characters are *prevented* at the single write path (they can never be legitimate, and they are the fail-open case), while markup is *detected* by the post-ingest gate (markup means a source changed shape, which a human should see rather than have tidied away). The asymmetry is also what stops the gate check from being vacuous.
+| # | Scenario | Expected result | Tag |
+|---|---|---|---|
+| 1.6G.1 | Invisible character in scraped title/description | Stripped before the write, in `guardedUpsert` — the one write path | [A] [R] · source-text.test.ts |
+| 1.6G.2 | Markup in scraped text | **Deliberately NOT stripped at the write path.** If it were, the gate check could never fail | [A] [R] · source-text.test.ts |
+| 1.6G.3 | A genuine visible "21+" | Preserved exactly — prevention must not weaken A4 | [A] [R] · source-text.test.ts |
+| 1.6G.4 | `null` description | Passes through as `null`, not an invented empty string | [A] [R] · source-text.test.ts |
+| 1.6G.5 | Every write goes through the normalisation | Structural assert on `guardedUpsert` — a runner that bypassed it would silently reopen the fail-open case | [A] [R] · source-text.test.ts |
+| 1.6G.6 | Clean table | Gate passes, and says the figure quoted in GUARDRAILS A10 still holds | [A] [R] · data-quality.test.ts |
+| 1.6G.7 | A source starts emitting HTML comments | Gate **fails**, names the source and the event, and states that **no decision was affected** | [A] [R] · data-quality.test.ts |
+| 1.6G.8 | Hidden text in the **title**, not the description | Also counted | [A] [R] · data-quality.test.ts |
+| 1.6G.9 | Several affected sources | Per-source breakdown, so the fix has an owner | [A] [R] · data-quality.test.ts |
+| 1.6G.10 | A **past** dirty row | **Reported, not failed.** Nothing reads a past row and no ingest can rewrite one, so failing would make the gate permanently red over a row nobody reads | [A] [R] · data-quality.test.ts |
+| 1.6G.11 | A past dirty row *and* an upcoming one | Fails on the upcoming one; the past count is still surfaced, not hidden by the scoping | [A] [R] · data-quality.test.ts |
+| 1.6G.12 | An event that started earlier **today** | Still inside the failing scope — the boundary is start-of-day, the wider choice | [A] [R] · data-quality.test.ts |
+| 1.6G.13 | The gate counts exactly what the stripper strips | One definition of "invisible", not two — asserted both directions | [A] [R] · data-quality.test.ts |
+| 1.6G.14 | Against production | Green across 623 upcoming events, with the one past row (an ESL picnic, 2026-11-03) surfaced | [M] · `npm run validate` |
+
 ### 1.6F Published surfaces match the database *(new 2026-11-10 — the first check on the published end of the pipe)*
 Every other check watches intake. This one asks whether what arrived was ever published, over HTTP against production, because the gap it measures is between our intent and what the platform serves — a test importing the page component passed throughout the month the sitemap was frozen. Run by the `published-surfaces` job in the Heartbeat workflow.
 | # | Scenario | Expected result | Tag |

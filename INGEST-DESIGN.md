@@ -209,7 +209,16 @@ The price resolver was included for the same reason, not because a fixture caugh
 
 Two structural guards keep it closed (`source-text.test.ts`): every `inferPlayFriscoEvent` call site must pass sanitised text, and `red-team.ts`'s duplicated `ADULT_OVERRIDE` is asserted equal to the pipeline's — a promise its comment had been making without an assertion behind it.
 
-**Scope.** This cleans text on the way *into* a decision. What we store and display is untouched; civic sources do not publish hidden markup on purpose, so that remains a cosmetic question rather than a safety one.
+**Scope, revised 2026-11-10.** This cleans text on the way *into a decision*. Storage is handled separately, in `guardedUpsert`, and asymmetrically:
+
+| In scraped text | At the write path | Why |
+|---|---|---|
+| Zero-width / bidi characters | **Stripped** (`normaliseStoredText`) | No legitimate use in event text, ever — and it is the case that fails **open**: inside "adults only" it makes the override miss and an adult event reaches a parent. Prevention at the earliest layer that can see it. |
+| Markup, comments, CDATA | **Left alone** | Markup means the **source changed shape** — a human should look at that connector rather than have it tidied away. Left for the post-ingest gate to fail on. |
+
+The asymmetry is deliberate twice over. It puts the fail-open case behind prevention rather than detection, and it keeps the gate's hygiene check **able to fail** — a write path that cleaned everything the check looks for would leave it reporting green forever (GUARDRAILS S, "a check that could not fail").
+
+**The gate check also exists for an unusual reason.** It does not protect a decision; A10 already does. It protects the **exposure figure** above, which five documents now rely on and which nothing was keeping true. A measurement in a document is a snapshot; the check is the instrument. It fails on upcoming events and reports past ones — a past row is inert and no ingest can rewrite it, so failing on one would leave the pipeline permanently red over a row nothing reads. See GUARDRAILS A11 and F4.
 
 ### 8.4 LLM spend ceiling — bounding the anomaly (2026-08-19)
 
