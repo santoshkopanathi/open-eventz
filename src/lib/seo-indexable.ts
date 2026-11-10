@@ -15,9 +15,30 @@ const FRISCO_ADULT_KEYWORDS = [
   "entrepreneur's workshop", 'esl book',
 ]
 
+// Which city each source belongs to. Declared source-first, not city-first, and typed as a
+// complete Record: **adding a source without giving it a city is a type error.**
+//
+// It used to be the other way round — a city→sources map — and `kaleidoscope-park` was added to
+// the pipeline on 2026-10-20 without being added here. Nobody noticed for three weeks, because
+// the failure was invisible from every direction: the app lists Kaleidoscope under Frisco (its
+// own filter has the source), and the sitemap lists its events (it applies no city filter), so
+// only `/frisco` — the page built to rank for "free kids events in frisco" and to link them —
+// quietly omitted all ten. A city→sources list cannot be checked for completeness; this can.
+const SOURCE_CITY: Record<Event['source'], CitySlug> = {
+  'frisco-library': 'frisco',
+  'play-frisco': 'frisco',
+  'kaleidoscope-park': 'frisco',
+  'plano-library': 'plano',
+}
+
 export const CITY_SOURCES: Record<CitySlug, Event['source'][]> = {
-  frisco: ['frisco-library', 'play-frisco'],
-  plano: ['plano-library'],
+  frisco: (Object.keys(SOURCE_CITY) as Event['source'][]).filter(s => SOURCE_CITY[s] === 'frisco'),
+  plano: (Object.keys(SOURCE_CITY) as Event['source'][]).filter(s => SOURCE_CITY[s] === 'plano'),
+}
+
+/** The city a source's events belong to. */
+export function cityForSource(source: Event['source']): CitySlug {
+  return SOURCE_CITY[source]
 }
 
 /** Start of "today" in Central Time, as a UTC ISO string (midnight CT). */

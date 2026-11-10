@@ -17,6 +17,7 @@
     "prepare": "git config core.hooksPath .githooks || exit 0",
     "icons": "node scripts/build-icons.mjs",
     "heartbeat": "tsx scripts/heartbeat.ts",
+    "seo:check": "tsx scripts/seo-check.ts",
     "redteam": "tsx scripts/red-team.ts"
   },
   "dependencies": {
