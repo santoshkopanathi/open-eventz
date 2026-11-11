@@ -141,7 +141,20 @@ export async function inferPlayFriscoEvent(
     const res = await getClient().messages.create({
       model: MODEL,
       max_tokens: 1024,
-      system: SYSTEM_PROMPT,
+      // PROMPT CACHING. The system prompt is 1,334 tokens and identical on every call —
+      // 92% of each request's input. Caching it cuts a 123-event eval run from $0.76 to
+      // $0.32, and does the same for the nightly ingest, which makes this exact call per
+      // new event. Measured 2026-11-11: cache_read_input_tokens = 1327 on every call after
+      // the first.
+      //
+      // Break-even is TWO calls. A single-event run pays 1.25x to write the cache and reads
+      // it back never, costing ~$0.001 more; from the second call on it is ~5x cheaper. Runs
+      // of one are rare and the loss is a tenth of a cent, so this is unconditional rather
+      // than gated on batch size — a conditional would be a branch nobody could test.
+      //
+      // Caching changes cost and nothing else: same model, same prompt, same answer
+      // distribution. The 5-minute TTL is irrelevant here because calls are seconds apart.
+      system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
       messages: [
         {
           role: 'user',

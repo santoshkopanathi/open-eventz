@@ -726,7 +726,58 @@ non-deterministic, so a nightly run with nobody watching produces a weekly false
 first false red teaches everyone to stop reading the colour. **Weekly costs a dollar and gets
 looked at.** That is the argument for weekly, and it is not the cost.
 
-The decision recorded: **on change (blocking) + weekly (informational)**.
+**Decided and built, 2026-11-11: on change (blocking) + weekly, with the prompt cached.**
+`.github/workflows/classifier-eval.yml`.
+
+### How it runs
+
+| Trigger | Effect |
+|---|---|
+| Push touching the prompt, the model id, `price.ts`, `source-text.ts`, the golden set or the scoring rules | **Blocks.** Both suites run. |
+| Monday 16:35 UTC | **Alerts by failing**, like `heartbeat.yml` — a red scheduled job sends GitHub's own workflow-failure mail. |
+| Manual `workflow_dispatch` | On demand. |
+
+Two separate jobs — red-team and golden-set — so neither failure can hide the other's result.
+A `concurrency` group stops a push run and the weekly run billing two sets of calls at once.
+
+### The confirmation pass, and the one asymmetry in it
+
+A failing score does not fail the build on its own. The workflow re-calls **only the rows that
+failed a blocking gate** and scores again, so the claim becomes *"it said that twice"* rather
+than *"it said that once"*.
+
+**Over-claim rows are deliberately not retried.** wrongly-free and leaked are existence gates
+on a named event, so asking that event again answers a sharper question. Over-claim is a
+**count** against a baseline, and re-rolling only the events that pushed the count up can
+lower it and never raise it — a biased resample, which would make the retry a mechanism for
+passing rather than for measuring. `rowsWorthRetrying()` encodes exactly that line.
+
+### One thing the path filter does not watch, on purpose
+
+`src/app/api/events/route.ts` holds the `kid_relevant` visibility gate, and it is **not** in
+the filter. This eval computes `shown` itself from `kid_relevant` + `kid_confidence` and never
+reads that route, so a run triggered by a change there could not detect it — **a check that
+cannot fire**, which is the failure this whole arrangement is set against. That gate has its
+own deterministic test on every push.
+
+The first draft of the filter listed `src/lib/kid-visibility-gate.ts`, which has never
+existed; only its test does. A test now asserts that every literal path in the filter resolves
+to a real file, because a filter entry pointing at nothing never matches and the gate silently
+stops covering what someone believed it covered.
+
+### Caching is on in production, not just in the eval
+
+`inferPlayFriscoEvent` now sends the system prompt as a cached block, so **the nightly ingest
+gets the same 58% cut** — it makes this exact call per new event, and that is the larger bill
+of the two.
+
+Unconditional rather than gated on batch size. **Break-even is two calls:** a run of one pays
+1.25x to write a cache it never reads, costing about a tenth of a cent more, and from the
+second call on it is ~5x cheaper. A conditional would be a branch nobody could test, for a
+tenth of a cent.
+
+Caching changes cost and nothing else — same model, same prompt, same answer distribution.
+Confirmed after the change: red-team still 20/20.
 
 ## What this does not yet give us
 

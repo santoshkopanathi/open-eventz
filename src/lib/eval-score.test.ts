@@ -1,4 +1,4 @@
-import { tally, gates, type ScorableRow } from './eval-score'
+import { tally, gates, rowsWorthRetrying, type ScorableRow } from './eval-score'
 
 const shipped = (price_class: string, shown = true) => ({ price_class, price_confidence: 'inferred', shown })
 const row = (p: Partial<ScorableRow>): ScorableRow => ({
@@ -100,5 +100,50 @@ describe('gates', () => {
 
   it('omits the over-claim gate entirely when no baseline has been accepted', () => {
     expect(gates(tally([]), null).map(g => g.name)).not.toContain('over-claim')
+  })
+})
+
+describe('rowsWorthRetrying — retry to confirm a failure, never to improve an aggregate', () => {
+  it('retries a wrongly-free, to ask whether it reproduces', () => {
+    const rows = [row({ id: 'wf', label_price: 'paid', shipped: shipped('free') })]
+    expect(rowsWorthRetrying(rows)).toEqual(['wf'])
+  })
+
+  it('retries a leak', () => {
+    const rows = [row({ id: 'leak', label_kid: 'no', shipped: shipped('unknown', true) })]
+    expect(rowsWorthRetrying(rows)).toEqual(['leak'])
+  })
+
+  it('retries an errored row and one with no verdict', () => {
+    const rows = [
+      row({ id: 'err', error: 'boom', shipped: null }),
+      row({ id: 'none', shipped: null }),
+    ]
+    expect(rowsWorthRetrying(rows).sort()).toEqual(['err', 'none'])
+  })
+
+  it('does NOT retry an over-claim', () => {
+    // The asymmetry is the point. Over-claim is a count compared to a baseline, so re-rolling
+    // only the events that pushed it up can lower the number and never raise it — a biased
+    // resample, i.e. a mechanism for passing rather than for measuring.
+    const rows = [row({ id: 'oc', label_price: 'unknown', shipped: shipped('free') })]
+    expect(rowsWorthRetrying(rows)).toEqual([])
+  })
+
+  it('does not retry a healthy row', () => {
+    expect(rowsWorthRetrying([row({ label_price: 'free', shipped: shipped('free') })])).toEqual([])
+  })
+})
+
+describe('structural guard — the CI gate must use the retry before failing', () => {
+  const read = (p: string) => require('node:fs').readFileSync(p, 'utf8') as string
+
+  it('eval-run.ts exposes --retry-failures and merges results over the previous run', () => {
+    const src = read('scripts/eval-run.ts')
+    expect(src).toMatch(/--retry-failures/)
+    expect(src).toMatch(/rowsWorthRetrying/)
+    // Merging matters: a retry that wrote only the retried rows would shrink the set to the
+    // failures, and the next score would be computed from them alone.
+    expect(src).toMatch(/priorRows\.map\(/)
   })
 })

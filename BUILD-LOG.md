@@ -2158,3 +2158,76 @@ what it answered.** We had an eval, a red-team suite and a data-quality gate, an
 asked the one question that found this: *is the input intact?* What found it was a worksheet
 designed to show a human exactly what the machine sees. **Build the thing that makes the input
 visible, and input bugs stop looking like model bugs.**
+
+---
+
+## Putting a non-deterministic test on a deterministic pipeline
+
+*Date: 2026-11-11. Modules: [`.github/workflows/classifier-eval.yml`](.github/workflows/classifier-eval.yml), [`src/lib/eval-score.ts`](src/lib/eval-score.ts), [`src/lib/age-inference.ts`](src/lib/age-inference.ts). See EVALS.md Part 3.*
+
+**The problem, stated properly.** `ci.yml` runs on every push and everything in it is free,
+instant and deterministic. The eval and the red-team suite are none of those: paid API, minutes
+per run, and capable of answering differently on identical input.
+
+Dropping them onto the per-push gate produces a red build for a CSS change, because the model
+said "medium" where it had said "high". **The first time someone knows a red is fake, they learn
+to hit re-run — and after that the gate is decoration whose green is still believed.** So the
+real question was never "should we automate the eval"; it was *where does a slow, costly,
+non-deterministic test belong in a pipeline built for the opposite.*
+
+**What we measured first, because the answer turned on it.** Model `claude-sonnet-4-6` at $3/$15
+per MTok. Counted with `count_tokens` over all 123 frozen events plus five live calls for the
+output side: 1,448 input tokens mean, 125 output, **$0.76 for a full run**.
+
+And the number that mattered: **the system prompt is 1,334 tokens, 92% of every single request.**
+Verified rather than assumed — with `cache_control` on the system block, calls 2 and 3 reported
+`cache_read_input_tokens: 1327`. A run drops to **$0.32**.
+
+**Which killed the cost argument, and that was the useful part.** Nightly would be under
+$10/month cached. **So cost does not decide this — noise does.** A non-deterministic suite run
+unattended every night produces a false red most weeks. Weekly costs about a dollar a month and
+gets looked at. Weekly is right for a reason that has nothing to do with the bill.
+
+**Built: on change (blocking) + weekly (alerting).** Path-filtered to the prompt, the model id,
+the two deterministic rules the eval actually executes, and the golden set itself. Weekly alerts
+by failing, like `heartbeat.yml`, because provider-side drift moves the answers while nothing in
+the repo moves and nothing else here would ever say so.
+
+**The confirmation pass, and the asymmetry inside it.** A failing score does not fail the build
+alone — the workflow re-calls **only the rows that failed a blocking gate** and scores again, so
+the claim becomes *"it said that twice."*
+
+**Over-claim rows are deliberately not retried.** wrongly-free and leaked are existence gates on
+a named event, so asking that event again answers a sharper question. Over-claim is a *count*
+against a baseline, and re-rolling only the events that pushed the count up can lower it and
+never raise it. **That is a biased resample — a retry there would be a mechanism for passing
+rather than for measuring.** `rowsWorthRetrying()` is that one line of judgment, in code, tested.
+
+**Caching went into production, not just the eval.** `inferPlayFriscoEvent` sends the prompt as a
+cached block, so the nightly ingest gets the same cut — it makes this exact call per new event
+and is the larger bill. Unconditional, because **break-even is two calls**: a run of one pays
+1.25x to write a cache it never reads, about a tenth of a cent, and from the second call on it is
+~5x cheaper. A conditional would be an untestable branch for a tenth of a cent. Red-team still
+20/20 afterwards, which is the check that it changed cost and nothing else.
+
+**The mistake worth recording.** My first path filter listed `src/lib/kid-visibility-gate.ts`.
+**That file has never existed** — only its test does. A filter entry that matches nothing never
+fires, so the gate would have silently stopped covering what I believed it covered.
+
+Worse, I had nearly listed `src/app/api/events/route.ts` as well, which does exist. That would
+have been the same bug in a subtler form: this eval computes `shown` itself and never reads that
+route, so a run triggered by a change there **could not detect it.** A trigger with no
+corresponding assertion is a green light wired to nothing.
+
+A test now asserts every literal path in the filter resolves to a real file, and that the route
+is absent from the entries — checked against the quoted entries rather than the file text,
+because the workflow names that route in a comment explaining the exclusion and a blanket
+substring check failed on its own explanation.
+
+521 tests green.
+
+**The lesson.** **A trigger is half a check.** The other half is an assertion that can observe
+what the trigger fired for, and nothing in CI tells you when you have only one of the two — the
+job runs, passes, and reports green. Worth asking of any path filter: *if this file changed in
+the worst possible way, which assertion in this job would go red?* If the answer is "none", the
+entry is decoration.

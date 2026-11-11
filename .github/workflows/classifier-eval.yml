@@ -1,0 +1,137 @@
+name: Classifier eval
+
+# WHY THIS IS NOT PART OF ci.yml.
+#
+# ci.yml runs on every push. Everything in it is free, instant and deterministic — the same
+# input gives the same answer forever. The two suites here are none of those things: they call
+# a paid API, take minutes, and can answer differently on identical input.
+#
+# Putting them on the per-push gate would produce a red build for a CSS change, because the
+# model said "medium" where it had said "high". The first time a developer knows a red is fake,
+# they learn to hit re-run — and after that the gate is decoration. A check nobody reads is
+# worse than no check, because its green is still believed.
+#
+# So the trigger is narrowed to the only moments the answer can change:
+#
+#   ON CHANGE (blocking)  a push touching the prompt, the model id, the classifier, the
+#                         deterministic rules around it, or the golden set itself. These are the
+#                         only edits in this repo that can move classification quality, and they
+#                         are rare — so cost and slowness do not matter here.
+#
+#   WEEKLY (alerting)     because Anthropic can change a model underneath us. Nothing in the
+#                         repo moved, but the answers did, and nothing else in this system would
+#                         ever tell us. Alerts by failing, like heartbeat.yml: a red scheduled
+#                         job triggers GitHub's own workflow-failure mail.
+#
+# Weekly rather than nightly, and the reason is NOT cost — a measured run is $0.32 with the
+# system prompt cached, so nightly would be under $10/month. It is noise. A non-deterministic
+# suite run unattended every night produces a false red most weeks, and the first false red
+# teaches everyone to stop reading the colour. Weekly costs about a dollar a month and gets
+# looked at. See EVALS.md "What a run costs".
+
+on:
+  push:
+    paths:
+      # The prompt and the MODEL constant — the two edits most likely to move quality.
+      - 'src/lib/age-inference.ts'
+      # The deterministic rules that can overturn a correct model answer. The red-team run that
+      # found a regex overriding a correct refusal is why these are in the list.
+      - 'src/lib/price.ts'
+      - 'src/lib/source-text.ts'
+      # NOT listed: src/app/api/events/route.ts, which holds the kid_relevant visibility
+      # gate. This eval computes `shown` itself from kid_relevant + kid_confidence and never
+      # reads that route, so a run triggered by a change there could not detect it — a check
+      # that cannot fire, which is the failure mode this whole workflow is arranged against.
+      # That gate is covered deterministically by kid-visibility-gate.test.ts, already on
+      # every push in ci.yml. If this eval is ever wired through the API, add the route here.
+      # The eval's own definition. A change to the frozen inputs, the labels or the scoring
+      # rules changes what "pass" means, so it has to be re-measured too.
+      - 'eval/golden/**'
+      - 'src/lib/eval-score.ts'
+      - 'src/lib/eval-set.ts'
+      - 'scripts/eval-*.ts'
+      - 'scripts/red-team.ts'
+      - '.github/workflows/classifier-eval.yml'
+  schedule:
+    # Mondays. :35 on purpose — scheduled runs cluster on :00 and are delayed worst there.
+    - cron: '35 16 * * 1'
+  workflow_dispatch:
+
+# A scheduled run and a push run must not bill two sets of calls at once.
+concurrency:
+  group: classifier-eval
+  cancel-in-progress: false
+
+jobs:
+  red-team:
+    name: Red-team (adversarial fixtures)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # The Anthropic key is an environment-scoped secret; a job must opt in to read it.
+    environment: Production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # Node 22, as in ingest.yml: @supabase/supabase-js needs a global WebSocket.
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # Its own job, because it is the stronger of the two gates: 20 purpose-built adversarial
+      # cases against the production classifier, six of them adult events written in
+      # deliberately family-friendly language. The golden set cannot cover that tail — a
+      # naturally-sampled set is 94% one class, so a classifier that said "yes" to everything
+      # would score 94% on it while being the worst possible product.
+      - name: Red-team suite
+        run: npm run redteam
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+  golden-set:
+    name: Price golden set
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: Production
+    # A separate job rather than a second step, so a red-team failure cannot hide the
+    # golden-set result or the reverse. Same reasoning as the two jobs in heartbeat.yml.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Run the production classifier over the frozen set
+        run: npm run eval:run
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      # Score, and on a failure re-call ONLY the rows that failed a blocking gate before
+      # failing the build. That turns "the model said something bad once" into "it said it
+      # twice", which is the claim worth stopping a merge over. Over-claim rows are NOT
+      # retried — re-rolling only the events that pushed a count up can lower it and never
+      # raise it, which would make the retry a mechanism for passing rather than measuring.
+      # See rowsWorthRetrying() in src/lib/eval-score.ts.
+      - name: Score, with one confirmation pass on failures
+        run: |
+          if npm run eval:score; then
+            echo "gates passed first time"
+          else
+            echo "::warning::A blocking gate failed. Re-calling only the failing rows to see whether it reproduces."
+            npm run eval:run -- --retry-failures
+            npm run eval:score
+          fi
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      # Keep the raw run from a failed gate. Without it, the only record of what the model
+      # actually said is a log that expires.
+      - name: Upload the run
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-run-${{ github.run_number }}
+          path: eval/golden/run-latest.json
+          retention-days: 30

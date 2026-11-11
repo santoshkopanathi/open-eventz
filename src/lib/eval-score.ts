@@ -96,3 +96,29 @@ export function gates(now: Counts, baseline: Counts | null): GateResult[] {
   }
   return out
 }
+
+/**
+ * Rows worth a second call before the build is failed, because the model is non-deterministic
+ * and a single bad roll must not be indistinguishable from a regression.
+ *
+ * Deliberately NARROW: errors, and the two blocking-gate offenders. **Over-claim rows are not
+ * retried**, and that asymmetry is the point.
+ *
+ *   - wrongly-free and leaked are EXISTENCE gates on a specific event. Asking the same event
+ *     twice answers a sharper question — "does this reproduce?" — and a reproduced failure is
+ *     a real one.
+ *   - over-claim is a COUNT compared against a baseline. Re-rolling only the events that
+ *     pushed the count up is a biased resample: it can lower the number and never raise it, so
+ *     a retry there would be a mechanism for passing rather than for measuring.
+ *
+ * In short: retry to confirm a specific failure, never to improve an aggregate.
+ */
+export function rowsWorthRetrying(rows: ScorableRow[]): string[] {
+  return rows
+    .filter(r =>
+      r.error ||
+      !r.shipped ||
+      (r.label_price === 'paid' && r.shipped.price_class === 'free') ||
+      (r.label_kid === 'no' && r.shipped.shown))
+    .map(r => r.id)
+}

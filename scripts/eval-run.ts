@@ -4,6 +4,7 @@
  *   npm run eval:run              # labelled events only (what can be scored)
  *   npm run eval:run -- --all     # every frozen event (use when labelling new ones)
  *   npm run eval:run -- --limit 10
+ *   npm run eval:run -- --retry-failures   # re-call ONLY the rows that failed a blocking gate
  *
  * The previous harness held its own pasted SYSTEM_PROMPT. By 2026-11-11 that copy had drifted
  * to 5681 characters against production's 5340 — so every run was measuring a prompt the site
@@ -24,6 +25,7 @@ import { inferPlayFriscoEvent } from '../src/lib/age-inference'
 import { resolvePriceClass } from '../src/lib/price'
 import { visibleText } from '../src/lib/source-text'
 import { coverage, scorable, type FrozenEvent, type GoldenSet, type Label } from '../src/lib/eval-set'
+import { rowsWorthRetrying } from '../src/lib/eval-score'
 
 const EVENTS_FILE = 'eval/golden/events.json'
 const LABELS_FILE = 'eval/golden/labels.json'
@@ -56,6 +58,7 @@ async function main(): Promise<void> {
   if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY required')
   const argv = process.argv.slice(2)
   const all = argv.includes('--all')
+  const retry = argv.includes('--retry-failures')
   const limitArg = argv.indexOf('--limit')
   const limit = limitArg !== -1 ? Number(argv[limitArg + 1]) : Infinity
 
@@ -73,12 +76,32 @@ async function main(): Promise<void> {
   // run so the set's decay is visible next to the score rather than hidden behind it.
   console.log(`  labels with no input : ${cov.orphanLabels}  (unscorable — input text lost)`)
 
+  // RETRY MODE. The model is non-deterministic, so one bad roll must not be
+  // indistinguishable from a regression. This re-calls only the rows that failed a blocking
+  // gate (and any that errored), then merges them back over the previous run — so the
+  // question becomes "does this failure reproduce?", which is the one worth failing a build
+  // over. Over-claim rows are deliberately NOT retried; see rowsWorthRetrying().
+  let retryIds: Set<string> | null = null
+  let priorRows: RunRow[] = []
+  if (retry) {
+    if (!existsSync(OUT_FILE)) throw new Error(`--retry-failures needs a previous ${OUT_FILE}`)
+    const prev = JSON.parse(readFileSync(OUT_FILE, 'utf8')) as { rows: RunRow[] }
+    priorRows = prev.rows
+    retryIds = new Set(rowsWorthRetrying(prev.rows))
+    if (retryIds.size === 0) {
+      console.log('\nNothing failed a blocking gate in the previous run — nothing to retry.\n')
+      return
+    }
+    console.log(`\nRETRY: ${retryIds.size} row(s) that failed a blocking gate`)
+    retryIds.forEach(id => console.log(`  ${id}`))
+  }
+
   const pairs = scorable(set)
   const targets: { event: FrozenEvent; label: Label | null }[] = all
     ? set.events.map(event => ({ event, label: set.labels.find(l => l.id === event.id) ?? null }))
     : pairs.map(p => ({ event: p.event, label: p.label }))
 
-  const run = targets.slice(0, limit)
+  const run = (retryIds ? targets.filter(t => retryIds!.has(t.event.id)) : targets).slice(0, limit)
   if (run.length === 0) {
     console.log('\nNothing to run. Label some frozen events first (npm run eval:worksheet).\n')
     return
@@ -129,10 +152,16 @@ async function main(): Promise<void> {
     process.stdout.write(row.error ? '!' : '.')
   }
 
+  // In retry mode the new results REPLACE their old rows and everything else is carried
+  // forward untouched, so the scorer still sees the whole set.
+  const merged = retryIds
+    ? priorRows.map(old => out.find(r => r.id === old.id) ?? old)
+    : out
+
   writeFileSync(OUT_FILE, JSON.stringify({
     ran_at: new Date().toISOString(),
     scored_against: LABELS_FILE,
-    rows: out,
+    rows: merged,
   }, null, 2) + '\n')
   const errs = out.filter(r => r.error).length
   console.log(`\n\nwrote ${OUT_FILE} — ${out.length} rows, ${errs} errors`)
