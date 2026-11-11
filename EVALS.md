@@ -680,6 +680,54 @@ read as a pass then a total API outage would score as a flawless run.
 **First run against the 8 survivors:** 7 badged, 4 agree, 3 over-claim, 1 under-claim,
 **0 wrongly-free, 0 leaked.** Baseline accepted and committed.
 
+
+## What a run costs — measured 2026-11-11
+
+Model: `claude-sonnet-4-6` at **$3 / $15 per million tokens** (input / output).
+
+Measured with `count_tokens` over all 123 frozen events, plus five live calls for the output
+side. Not estimated.
+
+| | |
+|---|---|
+| Fixed prefix (the system prompt) | **1,334 tokens**, identical on every call |
+| Input per event | 1,448 tokens mean (1,359 min, 2,059 max) |
+| Output per event | **125 tokens** mean, measured live |
+| Input, whole run | 178,088 tokens |
+| **One full run of 123 events** | **$0.76** |
+| Per event | $0.0062 |
+| Red-team suite (20 fixtures) | ~$0.12 |
+
+**92% of every call is the same 1,334 tokens.** That is a textbook prompt-cache case, and it
+was verified rather than assumed — with `cache_control` on the system block, calls 2 and 3
+reported `cache_read_input_tokens: 1327`:
+
+```
+call 1  uncached_in=63   cache_write=1327  cache_read=0     out=107
+call 2  uncached_in=68   cache_write=0     cache_read=1327  out=113
+call 3  uncached_in=197  cache_write=0     cache_read=1327  out=105
+```
+
+Cached, a full run is **$0.32** instead of $0.76 — a 58% cut. The 5-minute TTL is irrelevant
+here because the calls are seconds apart. **The same change applies to production ingest,
+which makes the identical call per new event**, and that is the larger bill of the two.
+
+### What this means for the schedule
+
+| Cadence | Uncached | Cached |
+|---|---|---|
+| Nightly | $22.92 / mo | $9.63 / mo |
+| **Weekly** | **$3.29 / mo** | **$1.38 / mo** |
+| On prompt/model change | ~$0.76 per merge | ~$0.32 per merge |
+
+Cost is not what should decide this. **Nightly is $23/month at its worst and under $10 cached**
+— which is not a budget question, it is a noise question. A model-calling suite is
+non-deterministic, so a nightly run with nobody watching produces a weekly false red, and the
+first false red teaches everyone to stop reading the colour. **Weekly costs a dollar and gets
+looked at.** That is the argument for weekly, and it is not the cost.
+
+The decision recorded: **on change (blocking) + weekly (informational)**.
+
 ## What this does not yet give us
 
 **A set of 8 is not a gate.** It is a working instrument with almost nothing in it. 115 frozen

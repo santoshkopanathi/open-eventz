@@ -14,7 +14,7 @@ import { markRecurring } from './recurring'
 import { parseFriscoEventLink } from './frisco-parse'
 import { centralWallTimeToUtc, parseCentralWallTime } from './datetime'
 import { screenBatch, upcomingStored, purgeCandidates, type StoredTime } from './ingest-guard'
-import { parseEventJsonLd, parseCadence, parseListedDates, weeklyOccurrences, resolveOccurrenceCollisions, centralDateKey, parseThroughDate, programFamily } from './kaleidoscope-parse'
+import { parseEventJsonLd, parseLongDescription, parseCadence, parseListedDates, weeklyOccurrences, resolveOccurrenceCollisions, centralDateKey, parseThroughDate, programFamily } from './kaleidoscope-parse'
 import { startOfTodayCtIso } from './seo-indexable'
 import { createLlmBudget, type LlmBudget } from './llm-budget'
 import { describeLlmFailure, needsHuman, type LlmFailureKind } from './llm-failure'
@@ -1122,6 +1122,12 @@ async function ingestKaleidoscope() {
       // statement about what is an event.
       const parsed = parseEventJsonLd(html)
       if (!parsed) continue
+      // The park CMS caps the JSON-LD description at ~200 chars; the full prose sits in the
+      // same HTML we just fetched. The classifier judges age, kid-relevance and price from
+      // this text, so a sentence that stops mid-word is a materially worse question than the
+      // page can actually answer. Fails closed: null keeps the JSON-LD summary we already had.
+      const fullDescription = parseLongDescription(html, parsed.description)
+      if (fullDescription) parsed.description = fullDescription
 
       const slug = url.replace(/\/$/, '').split('/').pop()!
       const cadence = parseCadence(html)

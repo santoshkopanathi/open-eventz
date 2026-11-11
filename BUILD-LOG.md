@@ -2098,3 +2098,63 @@ First run against the 8 survivors: 7 badged, 4 agree, 3 over-claim, 1 under-clai
 **What it does not yet give us.** A set of 8 is a working instrument with almost nothing in it. And kid-relevance still cannot be gated from it: 60 of 64 labels are "yes", so a classifier that said yes to everything would score 94% while being the worst possible product. **A naturally-sampled set is structurally unable to detect that failure, and sampling harder makes it worse.** That one belongs to the adversarial set — construct the hard negatives rather than wait to collect them.
 
 **The lesson.** **An eval's inputs are part of the eval.** If they can change underneath you, the score is measuring the weather. The three blockers all read like plumbing, and each one meant the printed number described something other than what a reader would assume — which is why none of them could be automated first. **Automating a check that reports the wrong thing does not give you a check; it gives you a green light with nothing behind it, and green lights are trusted.**
+
+---
+
+## The classifier was reading the first 200 characters and we called it a model problem
+
+*Date: 2026-11-11. Modules: [`src/lib/kaleidoscope-parse.ts`](src/lib/kaleidoscope-parse.ts), [`src/lib/ingest.ts`](src/lib/ingest.ts). See BACKLOG #30.*
+
+**How it surfaced.** Not from a bug report. The new eval worksheet prints the stored text of
+each event so a human labels exactly what the classifier sees — and 17 of the 37 stored
+Kaleidoscope descriptions ended mid-sentence in an ellipsis. *"...transform park pathways
+into…"*
+
+**The ellipsis was not ours.** The parser takes `description` straight from the page's
+schema.org Event JSON-LD, verbatim. That field is the page's **meta description**, and the
+park's CMS caps it at about 200 characters. We were copying a truncation faithfully.
+
+The full prose was in the same HTML response we had already fetched and parsed — 5,092
+characters of visible text on the page whose JSON-LD gave us 200.
+
+**Why it mattered more than it looks.** That text is the classifier's only input. Deciding
+*is this for children, what ages, is it free* from 200 characters that stop mid-word is a
+different and strictly worse question than the page can answer. And the truncation is
+invisible downstream: the model gets a fair-looking input, returns a weak answer, and the
+weakness reads as a model failure. **An input defect wearing a model defect's clothes.**
+
+**The fix, and why it is not a CSS selector.** The park rebuilt this site once already — that
+rebuild changed the id scheme and cost us 26 rows. A class name or DOM path would break
+silently on the next rebuild and quietly return us to 200 characters.
+
+So the anchor is the JSON-LD summary itself. `parseLongDescription()` finds the paragraph that
+summary was drawn from, then takes its sibling paragraphs, stopping as soon as anything but
+whitespace separates two of them — because real markup between paragraphs means a new section
+began. That holds for as long as a page's meta description is drawn from its own body, which
+is what a CMS does.
+
+Two details earned their place. The anchor test is **bidirectional**: on the concert series
+page the summary spans several short paragraphs (`Every First Saturday | 7 PM – 9 PM` is its
+own `<p>`), so neither string is reliably the longer one, and a one-directional prefix test
+left that page truncated. And the function returns `null` rather than anything **shorter** than
+what we had — on an untruncated page the JSON-LD is already complete, and a "fix" that
+shortened it would be a regression wearing a fix's clothes.
+
+Every uncertain case fails closed. A `null` costs a shorter description, which is the status
+quo; returning the wrong block of prose would feed the classifier text about a different event.
+
+**Verified against the live source:** 20 event pages, 11 truncated, **11 recovered in full, 0
+still truncated**, and the 6 untruncated pages untouched. Total description text 11,571 →
+17,935 characters. 502 tests green.
+
+**One thing this does not do yet.** Classification is cached per event — `classifyEvents`
+treats a stored `kid_relevant` as a cache hit and makes no new call. So the existing
+Kaleidoscope rows keep the judgments they were given from the truncated text. The better input
+only reaches the model for events it has not seen. Clearing the cached inference for that
+source is a separate, deliberate act with a real (small) cost, and it is the obvious next step.
+
+**The lesson.** **Check what the model was actually given before concluding anything about
+what it answered.** We had an eval, a red-team suite and a data-quality gate, and none of them
+asked the one question that found this: *is the input intact?* What found it was a worksheet
+designed to show a human exactly what the machine sees. **Build the thing that makes the input
+visible, and input bugs stop looking like model bugs.**

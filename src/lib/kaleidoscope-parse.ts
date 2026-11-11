@@ -334,3 +334,81 @@ export function programFamily(title: string): string {
     .replace(/\s+/g, ' ')
     .trim()
 }
+
+// ---------------------------------------------------------------------------
+// FULL DESCRIPTION — the JSON-LD one is capped by the park's CMS at ~200 chars.
+//
+// Measured 2026-11-11: 17 of 37 stored Kaleidoscope descriptions ended in an ellipsis.
+// The cap is the SOURCE's, not ours — `description` in the Event JSON-LD is the page's meta
+// description, and the park's CMS truncates it. The full prose was in the same HTML we had
+// already fetched, in a run of <p> elements.
+//
+// This matters because that text is the classifier's only input. Judging "is this for kids,
+// what ages, is it free" from 200 characters that stop mid-sentence is a different and worse
+// question than the one the page can actually answer — and the truncation is invisible in the
+// output, so it reads as a model failure rather than a missing input.
+//
+// THE ANCHORING RULE, and why it is not a CSS selector. The park rebuilt this site once
+// already; a class name or DOM path would break silently on the next rebuild and we would be
+// back to 200 characters with nothing saying so. So the anchor is the JSON-LD summary itself:
+// find the paragraph the summary came from, then take its siblings. That holds as long as the
+// page's own meta description is drawn from its own body, which is what a CMS does.
+// ---------------------------------------------------------------------------
+
+/** Longest description we will carry. Guards against a markup change swallowing the footer. */
+const MAX_DESCRIPTION = 6000
+
+function stripTags(s: string): string {
+  return s
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&#39;|&rsquo;/g, "'")
+    .replace(/&quot;|&ldquo;|&rdquo;/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/**
+ * The page's full description, or `null` to keep the JSON-LD one.
+ *
+ * Fails closed in every uncertain case — a null here costs a shorter description, which is
+ * what we already had. Returning the wrong block of prose would feed the classifier text
+ * about a different event.
+ */
+export function parseLongDescription(html: string, jsonLdDescription: string | null): string | null {
+  if (!jsonLdDescription) return null
+  const summary = stripTags(jsonLdDescription).replace(/[…]+\s*$/, '').trim()
+  // Too short to anchor on safely: a 10-character probe would match page furniture.
+  if (summary.length < 20) return null
+  const probe = summary.slice(0, 30)
+
+  const paras = [...html.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)].map(m => ({
+    text: stripTags(m[1]),
+    start: m.index!,
+    end: m.index! + m[0].length,
+  }))
+
+  // Bidirectional prefix test. The summary can begin at the start of one long paragraph, or
+  // span several short ones ("Every First Saturday | 7 PM – 9 PM" is its own <p>), so neither
+  // string is reliably the longer of the two.
+  const startAt = paras.findIndex(
+    p => p.text.length >= 15 && (p.text.startsWith(probe) || summary.startsWith(p.text)),
+  )
+  if (startAt === -1) return null
+
+  // Consume following siblings only while nothing but whitespace separates them. Any real
+  // markup between two paragraphs means a new section started, which is where the description
+  // ends and the page's furniture begins.
+  const out = [paras[startAt].text]
+  for (let i = startAt + 1; i < paras.length; i++) {
+    if (html.slice(paras[i - 1].end, paras[i].start).trim() !== '') break
+    if (paras[i].text) out.push(paras[i].text)
+    if (out.join('\n\n').length > MAX_DESCRIPTION) break
+  }
+
+  const joined = out.join('\n\n').slice(0, MAX_DESCRIPTION)
+  // Only an improvement counts. An untruncated page already has its full text in the JSON-LD,
+  // and returning something shorter would be a regression dressed up as a fix.
+  return joined.length > summary.length ? joined : null
+}
