@@ -1,0 +1,182 @@
+{
+  "ran_at": "2026-11-11T20:13:53.836Z",
+  "scored_against": "eval/golden/labels.json",
+  "rows": [
+    {
+      "id": "play-frisco-6714",
+      "source": "play-frisco",
+      "title": "Merry Main Street",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-6719",
+      "source": "play-frisco",
+      "title": "Frosty 5K",
+      "label_kid": "yes",
+      "label_price": "unknown",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "paid",
+        "price_confidence": "confirmed"
+      },
+      "shipped": {
+        "price_class": "paid",
+        "price_confidence": "confirmed",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-6777",
+      "source": "play-frisco",
+      "title": "Unplug Texas Day",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "medium",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7131",
+      "source": "play-frisco",
+      "title": "Nature Adventure at Frisco Commons Park",
+      "label_kid": "yes",
+      "label_price": "unknown",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7132",
+      "source": "play-frisco",
+      "title": "Nature Adventure at Frisco Commons Park",
+      "label_kid": "yes",
+      "label_price": "unknown",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7436",
+      "source": "play-frisco",
+      "title": "Craft and Care Fair",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7439",
+      "source": "play-frisco",
+      "title": "Second Saturday: Fall Fun at Heritage",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7671",
+      "source": "play-frisco",
+      "title": "Frisco Camp Out 2026",
+      "label_kid": "yes",
+      "label_price": "paid",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "unknown",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "unknown",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    }
+  ]
+}

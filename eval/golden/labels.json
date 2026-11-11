@@ -1,0 +1,421 @@
+[
+  {
+    "id": "kaleidoscope-park-10000020",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000022",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000026",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000032",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000034",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000036",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000044",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000045",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000047",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000048",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000050",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000051",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000052",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000053",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000056",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000057",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000082",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000083",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000084",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000085",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000086",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000087",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000098",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000099",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000192",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "kaleidoscope-park-10000193",
+    "kid": "no",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-6710",
+    "kid": "no",
+    "price": "unknown",
+    "note": "Not an event at all. It is a request for vendors to submit applications.",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-6714",
+    "kid": "yes",
+    "price": "free",
+    "note": "There seems to be more bullets in the page but not in the description here. Some are missing.",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-6719",
+    "kid": "yes",
+    "price": "unknown",
+    "note": "I could not determine the price from the description itself if it is a paid event. The last sentence in the description is a sign up link. However, when I visit this link in the description and go through it I realize its a paid event. There is no 'Cost' field either",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-6777",
+    "kid": "yes",
+    "price": "free",
+    "note": "This is not a real event as such. It is just an observance request.",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7130",
+    "kid": "yes",
+    "price": "unknown",
+    "note": "Feels like a free event though. There is no explicit paid signal. But there is a 'Cost' field that says it is free. (Note that some of the description (bullets) from the original page is not available here in this description.)",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7131",
+    "kid": "yes",
+    "price": "unknown",
+    "note": "Feels like a free event though. There is no explicit paid signal. But there is a 'Cost' field that says it is free. (Note that some of the description (bullets) from the original page is not available here in this description.)",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7132",
+    "kid": "yes",
+    "price": "unknown",
+    "note": "Feels like a free event though. There is no explicit paid signal. But there is a 'Cost' field that says it is free. (Note that some of the description (bullets) from the original page is not available here in this description.)",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7240",
+    "kid": "yes",
+    "price": "unknown",
+    "note": "It says it is a workshop. So there is a chance this may be paid.(Note that some of the description (bullets) from the original page is not available here in this description.)",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7310",
+    "kid": "yes",
+    "price": "unknown",
+    "note": "There is no explicit price signal. But it feels like a free event. (Side bar - Note that some of the description from the original page is not available here in this description. Looks like the missing part may be coming from a different field which is not labeled in the UI. It feels like it is in the description itself))",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7311",
+    "kid": "yes",
+    "price": "unknown",
+    "note": "There is no explicit price signal. But it feels like a free event.(Side bar - Note that some of the description from the original page is not available here in this description. Looks like the missing part may be coming from a different field which is not labeled in the UI. It feels like it is in the description itself))",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7343",
+    "kid": "yes",
+    "price": "unknown",
+    "note": "There is no price signal. But it feels like a paid event as it says registration is required and equpiemnt etc. will be provided for free.",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7349",
+    "kid": "yes",
+    "price": "paid",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7360",
+    "kid": "yes",
+    "price": "paid",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7405",
+    "kid": "yes",
+    "price": "unknown",
+    "note": "There is no 'Cost' field either",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7414",
+    "kid": "yes",
+    "price": "paid",
+    "note": "The description itself informed that is a paid event. ('Cost' field is also available)",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7427",
+    "kid": "no",
+    "price": "unknown",
+    "note": "The description does not have any free-event or paid-event signal.",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7432",
+    "kid": "yes",
+    "price": "unknown",
+    "note": "leaning towards paid because it says class. There is a link field on the page that says sign up hyperlink. Also the description has SIGN UP HERE hyperlink (which leads to a different page with payment related details)",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7436",
+    "kid": "yes",
+    "price": "free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7437",
+    "kid": "yes",
+    "price": "free",
+    "note": "leaning towards free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7438",
+    "kid": "yes",
+    "price": "free",
+    "note": "leaning towards free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7439",
+    "kid": "yes",
+    "price": "free",
+    "note": "leaning towards free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7440",
+    "kid": "yes",
+    "price": "free",
+    "note": "leaning towards free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7441",
+    "kid": "yes",
+    "price": "free",
+    "note": "leaning towards free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7442",
+    "kid": "yes",
+    "price": "free",
+    "note": "leaning towards free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7498",
+    "kid": "yes",
+    "price": "unknown",
+    "note": "The description does not have any free-event or paid-event signal. However there is a 'Cost' field that have a value 'free'",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7667",
+    "kid": "yes",
+    "price": "unknown",
+    "note": "It may be paid as it says it is a workshop.But registration required is 'No'. Although there is no 'Cost' field. There is a Link field that reads 'Buy tickets' which is a hyperlink. (Note that there is 'GET TICKETS' link in the page that I cant see in the description here.)",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7669",
+    "kid": "yes",
+    "price": "unknown",
+    "note": "It may be paid as it says it is a workshop. But registration required is 'No'. Although there is no 'Cost' field. There is a Link field that reads 'Buy tickets' which is a hyperlink.",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7670",
+    "kid": "yes",
+    "price": "free",
+    "note": "leaning towards free",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7671",
+    "kid": "yes",
+    "price": "paid",
+    "note": "As dinner and breakfast will be provided, feels like too much for a free event. So leaning towards paid.",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7672",
+    "kid": "yes",
+    "price": "unknown",
+    "note": "I may not have the knowledge to categorize this although it is asking for submissions and not really mentioning you have to pay to register/submit. So I will lean towards free. There is a field 'Link' that has the value as a 'Register here' hyperlink. However this event says 'registration required: no' here. So, this is a discrepancy that needs to be looked into. BTW, when I access teh 'Register here' link, there it says there is no entry fee.",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7676",
+    "kid": "yes",
+    "price": "unknown",
+    "note": "It may be paid as it says it is a workshop. But registration required is 'no'. (This registration requirement may have been inferred from description) Although there is no 'Cost' field. There is a Link field that reads 'Register here' which is a hyperlink with pricing details.",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7680",
+    "kid": "yes",
+    "price": "unknown",
+    "note": "Leaning towards free.",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7681",
+    "kid": "yes",
+    "price": "unknown",
+    "note": "Leaning towards free.",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7682",
+    "kid": "yes",
+    "price": "unknown",
+    "note": "Leaning towards free.",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7683",
+    "kid": "yes",
+    "price": "unknown",
+    "note": "Leaning towards free.",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7684",
+    "kid": "yes",
+    "price": "unknown",
+    "note": "It is an outdoor event with no explicit free/paid signal in the description. So leaning towards free.",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7685",
+    "kid": "unknown",
+    "price": "paid",
+    "note": "This is very sparse on description. But on other general feedback is that there are more details on the page in the description area (Once the Frisco Water Park closes to humans for the summer, we invite our dog friends to come play!) than captured here in the description . I wonder if that is coming from some other field.",
+    "labelled_at": "2026-08"
+  },
+  {
+    "id": "play-frisco-7686",
+    "kid": "yes",
+    "price": "free",
+    "note": "no explicit free or paid signal. But this is a community clean up event and normally those would not be paid events.",
+    "labelled_at": "2026-08"
+  }
+]

@@ -2058,3 +2058,43 @@ Two details worth keeping. The gate uses `hasHiddenContent()` exported from the 
 **The lesson.** **A measurement is a snapshot; a check is a guarantee — and the moment you publish the snapshot you have created an obligation to maintain it.** The gap here was not in the fix, which was sound. It was in the write-up: quoting a number in five documents quietly converted a one-off observation into a standing claim, and standing claims decay. Worth asking of any number you put in a document: *what will tell me when this stops being true, and will it reach me before the next reader does?*
 
 A second, smaller one. **Scoping a check to make it green is usually a smell, and occasionally it is the correct answer** — the difference is whether you can say why the excluded population cannot hurt anyone. Here it is sayable in one line: nothing reads a past row. If that sentence had needed a paragraph of hedging, the right move would have been to fix the row instead.
+
+---
+
+## The eval that kept reporting while its inputs dissolved
+
+*Date: 2026-11-11. Modules: [`src/lib/eval-set.ts`](src/lib/eval-set.ts), [`src/lib/eval-score.ts`](src/lib/eval-score.ts), [`scripts/eval-snapshot.ts`](scripts/eval-snapshot.ts), [`scripts/eval-run.ts`](scripts/eval-run.ts), [`scripts/eval-worksheet.ts`](scripts/eval-worksheet.ts). See EVALS.md Part 3.*
+
+**Initial situation.** Three known blockers stood between the price eval and CI: its inputs were read live from the database, it ran a pasted copy of the prompt, and its labels were git-ignored. All three were written down as tidy half-day tasks.
+
+The first measurement changed what the task was. **Of the 64 labelled events, 8 still existed.**
+
+All 26 Kaleidoscope rows were gone — that connector had been rebuilt, its ids had moved from `kaleidoscope-park-10000030` to `kaleidoscope-park-chalk-the-park-2026-11-07`, and every unmatched row was purged. Thirty of 38 Play Frisco events had aged off the city feed.
+
+Then the part that mattered: **the descriptions had never been copied anywhere.** All three result files stored the title and not the body. The word "description" appears in them only inside the labeller's own notes.
+
+**The labels survived. The questions they were answers to did not.** Fifty-six human judgments, made at about a minute each, are now unscorable by anyone.
+
+**And nothing had failed.** The harness printed `SKIP (event not found)` and scored whatever remained. Its last recorded run says `n=62` on a set of 64, and nobody read that as a warning. **A test that degrades silently is worse than one that breaks** — a broken test gets fixed the day it breaks; this one kept printing a plausible number for three months while the thing it measured dissolved.
+
+**What we built.**
+
+**Freezing, and making the freeze append-only.** `eval/golden/events.json` holds the exact title, description and `registration_required` — committed, 123 events on the first run. `freeze()` refuses to rewrite an id it already holds, and that refusal is the guarantee: if a source edits a description after a human labelled it, accepting the edit silently turns the label into the answer to a different question. The database is now a source of *candidates*, never the set itself.
+
+Coverage prints on every run, including `labels with no input : 56 (unscorable — input text lost)`. **That line is permanent.** A set that shrinks has to say so next to the score, not leave it to be inferred from a row count.
+
+**Pointing the runner at production.** The old harness carried its own `SYSTEM_PROMPT` — measured at **5,681 characters against production's 5,340.** Not identical. Every run had been measuring a prompt the site does not run.
+
+`scripts/eval-run.ts` imports `inferPlayFriscoEvent` and `resolvePriceClass` and reproduces the two steps `ingest.ts` performs around them — `visibleText()` on both inputs, price resolution afterwards — because the thing being judged is *the answer a parent sees*, not the model's raw opinion. Every row records both, so a disagreement between them is itself a finding. That distinction is not academic here: the red-team run that found a deterministic rule overriding a correct model refusal is the standing proof the two differ.
+
+A structural test now asserts those imports, asserts `visibleText` on both fields, and asserts that **no eval script contains a `SYSTEM_PROMPT` of its own.** The three superseded scripts were deleted rather than kept — a runnable harness carrying a stale prompt is not history, it is a trap.
+
+**Committing the labels**, keyed by event id instead of row number, with a worksheet generator and parser so the remaining 115 frozen events can be labelled. The worksheet shows only the stored text: a label made from the event's web page is a label for a question the classifier was never asked, and it would read as a model failure forever.
+
+**The gates, unchanged in substance and now enforced.** wrongly-free = 0 and leaked = 0, both blocking; over-claim must not increase against a committed baseline; under-claim and wrongly-hidden informational beside it, so nobody can buy a safety number by badging nothing. A row with no decision counts as an error and never as agreement — tested, because if `null` read as a pass then an API outage would score as a flawless run.
+
+First run against the 8 survivors: 7 badged, 4 agree, 3 over-claim, 1 under-claim, **0 wrongly-free, 0 leaked.** 492 tests green.
+
+**What it does not yet give us.** A set of 8 is a working instrument with almost nothing in it. And kid-relevance still cannot be gated from it: 60 of 64 labels are "yes", so a classifier that said yes to everything would score 94% while being the worst possible product. **A naturally-sampled set is structurally unable to detect that failure, and sampling harder makes it worse.** That one belongs to the adversarial set — construct the hard negatives rather than wait to collect them.
+
+**The lesson.** **An eval's inputs are part of the eval.** If they can change underneath you, the score is measuring the weather. The three blockers all read like plumbing, and each one meant the printed number described something other than what a reader would assume — which is why none of them could be automated first. **Automating a check that reports the wrong thing does not give you a check; it gives you a green light with nothing behind it, and green lights are trusted.**

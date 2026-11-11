@@ -1,2 +1,4 @@
+# Superseded intermediates from the first (unfrozen) eval. Kept out of git because their
+# inputs were never captured — see eval/golden/ for the set that is actually committed.
 baseline-system-answers.json
 _parsed.json

@@ -321,7 +321,7 @@ With 64 events, **one event is 1.6 percentage points.** Quote "70% accurate" and
 
 > **Mitigation:** report counts by direction, never a percentage. *"Zero wrongly-free across every determinable event"* is fully supported by 64 items. *"70% accurate"* is not.
 
-### 2. Point-in-time
+### 2. Point-in-time — **the mitigation was never built, and the set died of it (2026-11-11)**
 
 Play Frisco is purged and rewritten nightly, so the census is complete for **one night**, not for the source. In three months it is a different 38 events, and an August set under-represents winter programming, which has a different price profile.
 
@@ -334,6 +334,21 @@ Play Frisco is purged and rewritten nightly, so the census is complete for **one
 > | Any new *kind* of disagreement? | are the failures the same shape as before? | a new shape means something upstream changed |
 >
 > If only the mix has moved, rebuild. If wrongly-free moved, act now. If neither, keep the frozen set.
+
+> **What actually happened.** The freeze was written down here and not implemented. The harness went on reading its inputs live from the database at run time. On **2026-11-11** we counted what was left of the 64: **8.**
+>
+> | Source | In the set | Still in the database |
+> |---|---|---|
+> | Kaleidoscope Park | 26 | **0** |
+> | Play Frisco | 38 | 8 |
+>
+> Kaleidoscope's connector had been rebuilt and its id scheme changed from `kaleidoscope-park-10000030` to `kaleidoscope-park-chalk-the-park-2026-11-07`; every unmatched row was purged. Play Frisco events aged off the city feed. **The descriptions had never been copied into any file** — `run-v2-results.json`, `run-v3-results.json` and `baseline-system-answers.json` all stored the title and none of the body.
+>
+> So 56 human judgments survived as answers to questions nobody holds. They cannot be scored again, by anyone, ever.
+>
+> And the harness never said a word. It printed `SKIP (event not found)` and scored the remainder — **the most expensive way a test can fail, because it keeps reporting.** The last recorded run shows `n=62` where the set was 64, and nobody read it as a warning.
+>
+> **Now built** — `eval/golden/events.json`, append-only, committed. See Part 3.
 
 ### 3. No adult events — **closed 2026-10-26**
 
@@ -355,11 +370,15 @@ No way to separate a genuine ambiguity from one person's idiosyncrasy. The nine 
 
 *(Those nine also surface an unanswered product question: **is Open Eventz a directory of events **for** children, or of events a family **can attend**?** The model enforces the narrow reading because the prompt happens to say so, not because anyone decided.)*
 
-### 6. Not automated
+### 6. Not automated — **half-closed 2026-11-11**
 
 **Today:** after a change, a person opens a table of 64 rows and forms an opinion about whether it looks better. That needs a human, so it cannot run automatically.
 
 > **Mitigation:** once the scoring emits five numbers — wrongly-free, wrongly-paid, over-claim, under-claim, agree — a computer can compare before against after and apply a written rule: *fail if wrongly-free > 0, or if over-claim increased.* No interpretation required. **That is what makes it possible to run in CI on every prompt or model change** — and it is the actual blocker today, not effort.
+
+> **Built 2026-11-11.** `npm run eval:score` emits the counts, applies the written rule, prints which events failed and **exits non-zero**. No interpretation left in it.
+>
+> **Still open: where it runs.** It cannot go on the per-push gate — it calls a paid API, takes minutes, and can answer differently on identical input, so it would produce false reds, and a gate that cries wolf is routed around within a week. The remaining decision is placement: path-filtered on `src/lib/age-inference.ts` and the model id, plus nightly for provider-side drift, with a re-run of only the failed cases before calling it a failure. **That is a design decision, not a build task.**
 
 ### 7. It counts instances, not events
 
@@ -563,3 +582,124 @@ Both are the failure the freshness incident already taught: *a check you have ne
 | B | Whether `Family ✦` should distinguish "judged family" from "fell back to family" | product judgment |
 | C | The adult-event sample needed to settle the `21+` check | 15 minutes of deliberate labelling |
 | D | Score per instance or per distinct event | decide **before** the next run, not after |
+
+---
+
+# Part 3 — The rebuild (2026-11-11)
+
+Three things blocked this eval from running by itself. None of them was effort; each one meant
+the number it printed described something other than what you would assume.
+
+| Blocker | What it did | State |
+|---|---|---|
+| Inputs read live from the database | the set silently shrank to 8 of 64 | **fixed** — frozen + committed |
+| Harness held a pasted copy of the prompt | measured a prompt the site does not run | **fixed** — imports production |
+| Labels git-ignored | CI could not see the answer key | **fixed** — committed |
+| Where a model-calling test runs | — | **open, needs a decision** |
+
+## 1. The inputs are frozen, and freezing is append-only
+
+`eval/golden/events.json` holds the exact title, description and `registration_required` the
+classifier will be judged on. `npm run eval:snapshot` adds events it has not seen and **refuses
+to rewrite one it already holds.**
+
+That refusal is the whole guarantee, and it is tested. If a source edits a description after a
+human labelled it, accepting the edit would silently turn that label into the answer to a
+different question — the same failure as not freezing at all, only harder to notice.
+
+**123 events frozen on the first run** (86 Play Frisco, 37 Kaleidoscope — the two sources that
+reach `inferPlayFriscoEvent`; library feeds carry structured age and price and are never
+classified).
+
+**Coverage is printed on every run, including the damage:**
+
+```
+frozen inputs        : 123
+labelled             : 64
+scorable (both)      : 8
+frozen, not labelled : 115
+labels with no input : 56  (unscorable — input text lost)
+```
+
+That last line is there permanently. A set that shrinks must say so **next to the score**, not
+leave it to be inferred from a row count nobody reads.
+
+## 2. The runner calls production, not a copy of it
+
+`eval/run-v3.js` held its own `SYSTEM_PROMPT`. Measured on 2026-11-11: **5,681 characters
+against production's 5,340.** Not identical. Every run had been measuring a prompt the site does
+not use, and nothing anywhere would ever have said so.
+
+`scripts/eval-run.ts` imports `inferPlayFriscoEvent` and `resolvePriceClass` directly, and
+reproduces the two steps `ingest.ts` performs around them:
+
+- **`visibleText()` on both inputs** — skipping it would test the classifier on text ingest
+  never sends it, and re-open the hidden-instruction path the red-team run closed.
+- **`resolvePriceClass` afterwards** — because what is being judged is *the answer a parent
+  sees*, not the model's raw opinion. The red-team finding where a deterministic rule overrode
+  a correct model refusal is the standing proof those two differ.
+
+Each row records **both**: `model` (the raw opinion) and `shipped` (what the pipeline
+concluded). When they disagree, the disagreement is the finding.
+
+A structural test asserts the imports exist, that `visibleText` is applied to both fields, and
+that **no eval script contains a `SYSTEM_PROMPT` of its own.** Drift cannot return quietly.
+
+The three superseded scripts — `run-v2.js`, `run-v3.js`, `score.js` — were deleted rather than
+left in place. A runnable harness carrying a stale prompt is not history, it is a trap. The
+results files and `RUN-LOG.md` are kept.
+
+## 3. The labels are committed
+
+`eval/golden/labels.json`, keyed by event id rather than by row number, 64 entries. Public civic
+event text and our own judgments; nothing private.
+
+> **An eval only one person can run is not a control, it is a habit.**
+
+`npm run eval:worksheet` generates a markdown sheet of the unlabelled events, `-- --parse` reads
+it back. The worksheet shows **only the stored text** — a label made from the event's web page
+is a label for a question the classifier was never asked, and it would read as a model failure
+forever. An unrecognised answer is reported and the existing label left untouched, because
+losing a judgment to a typo is the same decay in miniature.
+
+## The gates, as implemented
+
+`src/lib/eval-score.ts` — unit-tested, no accuracy number anywhere in it.
+
+| Gate | Rule | Why |
+|---|---|---|
+| **wrongly-free** | must be **0** | we showed Free, a human said paid — a family arrives with no money |
+| **leaked** | must be **0** | we showed an event a human said was not for children |
+| **over-claim** | must **not increase** vs `baseline.json` | every wrongly-free begins as an over-claim that resolved badly |
+| under-claim | informational | the cost side — stops "fixing" safety by going silent |
+| wrongly-hidden | informational | the other direction of the same trade |
+
+A row with no decision counts as an **error**, never as agreement. Tested, because if `null`
+read as a pass then a total API outage would score as a flawless run.
+
+**First run against the 8 survivors:** 7 badged, 4 agree, 3 over-claim, 1 under-claim,
+**0 wrongly-free, 0 leaked.** Baseline accepted and committed.
+
+## What this does not yet give us
+
+**A set of 8 is not a gate.** It is a working instrument with almost nothing in it. 115 frozen
+events are waiting to be labelled, and that is human time nobody can delegate.
+
+**Kid-relevance still cannot be gated from this set.** 60 of the 64 labels are "yes" — a
+classifier that said yes to everything would score 94% while being the worst possible product.
+A naturally-sampled set is structurally unable to detect that failure, and sampling harder makes
+it worse. The red-team set is the right instrument there: **construct the hard negatives rather
+than wait to collect them.**
+
+**Age has no labels at all** — `ALSO-OK` was used 0 times out of 68 — and stays ungated as a
+stated choice rather than an oversight: a wrong age chip is advisory and a parent corrects it by
+reading on, whereas kid-relevance and price are decisions taken on their behalf.
+
+## The lesson
+
+> **An eval's inputs are part of the eval. If they can change underneath you, the score is
+> measuring the weather.**
+
+And the sharper one, because it cost 56 labels: **a test that degrades silently is worse than a
+test that breaks.** A broken test gets fixed on the day it breaks. This one kept printing a
+number for three months while the thing it measured dissolved.

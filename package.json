@@ -18,7 +18,11 @@
     "icons": "node scripts/build-icons.mjs",
     "heartbeat": "tsx scripts/heartbeat.ts",
     "seo:check": "tsx scripts/seo-check.ts",
-    "redteam": "tsx scripts/red-team.ts"
+    "redteam": "tsx scripts/red-team.ts",
+    "eval:snapshot": "tsx scripts/eval-snapshot.ts",
+    "eval:run": "tsx scripts/eval-run.ts",
+    "eval:score": "tsx scripts/eval-score.ts",
+    "eval:worksheet": "tsx scripts/eval-worksheet.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.110.0",

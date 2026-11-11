@@ -1,0 +1,16 @@
+{
+  "accepted_at": "2026-11-11T20:17:25.706Z",
+  "from_run": "2026-11-11T20:13:53.836Z",
+  "counts": {
+    "scored": 8,
+    "wronglyFree": 0,
+    "overClaim": 3,
+    "underClaim": 1,
+    "agree": 4,
+    "badged": 7,
+    "leaked": 0,
+    "wronglyHidden": 0,
+    "errors": 0
+  },
+  "note": "Counts a human accepted as the state to regress against. Commit this file."
+}
