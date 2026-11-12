@@ -163,8 +163,8 @@ async function main(): Promise<void> {
     scored_against: LABELS_FILE,
     rows: merged,
   }, null, 2) + '\n')
-  const errs = out.filter(r => r.error).length
-  console.log(`\n\nwrote ${OUT_FILE} — ${out.length} rows, ${errs} errors`)
+  const errs = merged.filter(r => r.error).length
+  console.log(`\n\nwrote ${OUT_FILE} — ${merged.length} rows (${out.length} called this pass), ${errs} errors`)
   console.log('next: npm run eval:score\n')
 }
 

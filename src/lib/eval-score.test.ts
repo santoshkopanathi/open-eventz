@@ -1,4 +1,4 @@
-import { tally, gates, rowsWorthRetrying, type ScorableRow } from './eval-score'
+import { tally, gates, rowsWorthRetrying, type Counts, type ScorableRow } from './eval-score'
 
 const shipped = (price_class: string, shown = true) => ({ price_class, price_confidence: 'inferred', shown })
 const row = (p: Partial<ScorableRow>): ScorableRow => ({
@@ -87,11 +87,21 @@ describe('gates', () => {
   })
 
   it('passes over-claim when it holds steady, fails when it rises', () => {
-    const one = tally([row({ label_price: 'unknown', shipped: shipped('free') })])
+    // Both tallies must score the SAME NUMBER of events, or the comparability guard correctly
+    // refuses to compare them and this says nothing about the increase rule. The first version
+    // of this test varied the row count while meaning to vary only the over-claim count, and
+    // the guard caught it — which is the guard doing its job on its own test suite.
+    const one = tally([
+      row({ label_price: 'unknown', shipped: shipped('free') }),
+      row({ id: 'y', label_price: 'free', shipped: shipped('free') }),
+    ])
     const two = tally([
       row({ label_price: 'unknown', shipped: shipped('free') }),
       row({ id: 'y', label_price: 'unknown', shipped: shipped('paid') }),
     ])
+    expect(one.scored).toBe(two.scored)
+    expect(one.overClaim).toBe(1)
+    expect(two.overClaim).toBe(2)
     expect(gates(one, one).find(g => g.name === 'over-claim')!.pass).toBe(true)
     expect(gates(two, one).find(g => g.name === 'over-claim')!.pass).toBe(false)
     // Falling is always fine — the gate is on increase, not on change.
@@ -145,5 +155,41 @@ describe('structural guard — the CI gate must use the retry before failing', (
     // Merging matters: a retry that wrote only the retried rows would shrink the set to the
     // failures, and the next score would be computed from them alone.
     expect(src).toMatch(/priorRows\.map\(/)
+  })
+})
+
+describe('gates — a count gate is only meaningful against the same population', () => {
+  const mk = (scored: number, overClaim: number): Counts => ({
+    scored, overClaim, wronglyFree: 0, underClaim: 0, agree: 0,
+    badged: 0, leaked: 0, wronglyHidden: 0, errors: 0,
+  })
+
+  it('reports NOT COMPARABLE when the scored set changed size', () => {
+    // The real case: recovering 56 lost inputs took the set from 8 to 64, and over-claim from
+    // 3 to 17. That is not a regression, it is arithmetic about two different sets. A gate
+    // that cried "regression" there would teach people to re-accept the baseline unread.
+    const g = gates(mk(64, 17), mk(8, 3)).find(x => x.name === 'over-claim')!
+    expect(g.comparable).toBe(false)
+    expect(g.detail).toContain('NOT COMPARABLE')
+  })
+
+  it('does not PASS an incomparable gate either', () => {
+    // Passing would let a real regression hide inside a set change. A human re-accepts.
+    expect(gates(mk(64, 17), mk(8, 3)).find(x => x.name === 'over-claim')!.pass).toBe(false)
+  })
+
+  it('compares normally when the set size is unchanged', () => {
+    expect(gates(mk(64, 17), mk(64, 17)).find(x => x.name === 'over-claim')!.pass).toBe(true)
+    expect(gates(mk(64, 18), mk(64, 17)).find(x => x.name === 'over-claim')!.pass).toBe(false)
+    expect(gates(mk(64, 16), mk(64, 17)).find(x => x.name === 'over-claim')!.pass).toBe(true)
+  })
+
+  it('still gates wrongly-free and leaked regardless of set size', () => {
+    // Existence gates do not depend on the population, which is exactly why they are the
+    // blocking ones at this sample size.
+    const now = { ...mk(64, 0), wronglyFree: 1, leaked: 1 }
+    const gs = gates(now, mk(8, 0))
+    expect(gs.find(g => g.name === 'wrongly-free')!.pass).toBe(false)
+    expect(gs.find(g => g.name === 'leaked non-kid events')!.pass).toBe(false)
   })
 })

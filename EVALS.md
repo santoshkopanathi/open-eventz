@@ -344,7 +344,19 @@ Play Frisco is purged and rewritten nightly, so the census is complete for **one
 >
 > Kaleidoscope's connector had been rebuilt and its id scheme changed from `kaleidoscope-park-10000030` to `kaleidoscope-park-chalk-the-park-2026-11-07`; every unmatched row was purged. Play Frisco events aged off the city feed. **The descriptions had never been copied into any file** — `run-v2-results.json`, `run-v3-results.json` and `baseline-system-answers.json` all stored the title and none of the body.
 >
-> So 56 human judgments survived as answers to questions nobody holds. They cannot be scored again, by anyone, ever.
+> So 56 human judgments survived as answers to questions nobody holds.
+>
+> **CORRECTED 2026-11-12 — they were recoverable, and I had not looked properly.**
+> `eval/price-golden-worksheet.md`, the document the labeller filled in and tracked in git the
+> whole time, carries the full source text of every event in a quoted block — because its entire
+> purpose was to show a human exactly what the model would see. **I searched the machine-generated
+> artefacts and not the human-facing one**, which is backwards: the human-facing worksheet is the
+> only artefact guaranteed to contain the question, since a label is meaningless without it.
+> 
+> `npm run eval:recover` reconstructs the frozen inputs from it. **Scorable went from 8 to 64.**
+> Fidelity was checked first against the 8 events still in the database: 7 byte-identical, and the
+> 8th different because the city had rewritten the event between August and November — which is
+> the argument *for* trusting the worksheet, not against it. See "Recovery" below.
 >
 > And the harness never said a word. It printed `SKIP (event not found)` and scored the remainder — **the most expensive way a test can fail, because it keeps reporting.** The last recorded run shows `n=62` where the set was 64, and nobody read it as a warning.
 >
@@ -618,7 +630,7 @@ frozen inputs        : 123
 labelled             : 64
 scorable (both)      : 8
 frozen, not labelled : 115
-labels with no input : 56  (unscorable — input text lost)
+labels with no input : 0   (was 56 before the worksheet recovery)
 ```
 
 That last line is there permanently. A set that shrinks must say so **next to the score**, not
@@ -781,8 +793,10 @@ Confirmed after the change: red-team still 20/20.
 
 ## What this does not yet give us
 
-**A set of 8 is not a gate.** It is a working instrument with almost nothing in it. 115 frozen
-events are waiting to be labelled, and that is human time nobody can delegate.
+**Superseded 2026-11-12: the set is 64, recovered from the worksheet — see Recovery below.**
+What remains unlabelled is 54 *judgments* (not 116 events: a recurring series carries identical
+text across its dates, so it is one decision applied to all of them), and that is human time
+nobody can delegate.
 
 **Kid-relevance still cannot be gated from this set.** 60 of the 64 labels are "yes" — a
 classifier that said yes to everything would score 94% while being the worst possible product.
@@ -793,6 +807,80 @@ than wait to collect them.**
 **Age has no labels at all** — `ALSO-OK` was used 0 times out of 68 — and stays ungated as a
 stated choice rather than an oversight: a wrong age chip is advisory and a parent corrects it by
 reading on, whereas kid-relevance and price are decisions taken on their behalf.
+
+## Recovery — the inputs were in the worksheet all along (2026-11-12)
+
+The user asked a question I should have asked myself: *"I filled a label set in a separate
+document — where is it, isn't that usable?"*
+
+It was. `eval/price-golden-worksheet.md` quotes **the full source text of every event**, because
+its whole purpose was to show a human exactly what the model would see. It has been tracked in
+git since August.
+
+**I had searched the machine-generated artefacts and not the human-facing one.** That is
+backwards. A worksheet is the only artefact guaranteed to contain the question, because a label
+written next to no text is not a label.
+
+### Fidelity, checked before trusting it
+
+Eight of the 68 events still exist in the database and had been frozen from it:
+
+| | |
+|---|---|
+| byte-identical to the worksheet | **7** |
+| differing | 1 |
+
+The one difference is `play-frisco-7439`: *"Second Saturday at Heritage"* (347 chars) had become
+*"Second Saturday: Fall Fun at Heritage"* (465 chars). **The city rewrote the event.**
+
+That divergence is the argument *for* the worksheet, not against it. The copy frozen from
+November's database is a different event from the one the human judged — so the label and its
+input had already drifted apart inside the golden set, which is exactly the corruption
+append-only exists to prevent. It happened because the first snapshot was taken from the database
+*months after* the labelling.
+
+> **For a labelled event, the frozen input is whatever the human was looking at when they
+> answered — not whatever the source says now.**
+
+That is why `npm run eval:recover` may overwrite a labelled id where `freeze()` refuses. It is
+not a refresh to newer text; it is a **restoration of the original question.** The script prints
+every overwrite and never runs silently, because that distinction is the only thing separating it
+from the failure it repairs.
+
+### Result
+
+| | before | after |
+|---|---|---|
+| frozen inputs | 124 | 184 |
+| **scorable** | **8** | **64** |
+| labels with no input | 56 | **0** |
+
+### And the first real score found something
+
+On 64 events: **0 wrongly-free**, 39 agree, 3 under-claim, 2 wrongly hidden — and **1 leak.**
+
+`kaleidoscope-park-10000193` *"Shop Local Vendor Markets Presented by Comerica"* is labelled
+`kid: no`, and the pipeline shows it. The model says `kid_relevant: true`, `family`, medium
+confidence. **The leak reproduced on retry**, so it is a stable disagreement, not model variance.
+
+Reading the text, the disagreement looks like a **label question rather than a model defect**: the
+event is a monthly artisan market a family can walk around, and the worksheet's own rule —
+*"vendor applications … are no"* — was written for notices aimed at businesses, which this is not,
+although its title contains the word "Vendor". **That is for the labeller to settle, not for the
+eval to quietly resolve in whichever direction turns the gate green.**
+
+The gate is therefore left RED pending that judgment, which is the correct state.
+
+### A gap the recovery exposed
+
+Over-claim went from 3 to 17 — because the set went from 8 to 64. **That is not a regression, it
+is arithmetic about two different populations**, and a gate that cried "regression" there would
+teach everyone to re-accept the baseline unread.
+
+`gates()` now reports **NOT COMPARABLE** when `scored` differs from the baseline's, and does not
+pass either — passing would let a real regression hide inside a set change. A human re-accepts.
+The existence gates, wrongly-free and leaked, are unaffected by set size, which is precisely why
+they are the blocking ones at this sample size.
 
 ## The lesson
 

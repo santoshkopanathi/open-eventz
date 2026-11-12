@@ -33,7 +33,8 @@ function main(): void {
   const results = gates(now, base)
   console.log('')
   for (const g of results) {
-    console.log(`  ${g.pass ? 'PASS' : 'FAIL'}  ${g.name.padEnd(24)} ${g.detail}`)
+    const tag = g.comparable === false ? 'N/A ' : g.pass ? 'PASS' : 'FAIL'
+    console.log(`  ${tag}  ${g.name.padEnd(24)} ${g.detail}`)
   }
   if (!base) console.log(`  ----  over-claim               ${now.overClaim}  NO BASELINE — run with --accept`)
 

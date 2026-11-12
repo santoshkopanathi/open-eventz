@@ -66,7 +66,13 @@ export function tally(rows: ScorableRow[]): Counts {
   return c
 }
 
-export interface GateResult { name: string; pass: boolean; detail: string }
+export interface GateResult {
+  name: string
+  pass: boolean
+  detail: string
+  /** false when the gate could not be evaluated against the baseline at all. */
+  comparable?: boolean
+}
 
 /**
  * `baseline` is the last run a human accepted. Over-claim is gated on NOT INCREASING rather
@@ -88,11 +94,26 @@ export function gates(now: Counts, baseline: Counts | null): GateResult[] {
     },
   ]
   if (baseline) {
-    out.push({
-      name: 'over-claim',
-      pass: now.overClaim <= baseline.overClaim,
-      detail: `${now.overClaim} vs baseline ${baseline.overClaim} (must not increase)`,
-    })
+    // A count gate is only meaningful against the same population. When the scored set has
+    // changed size the two numbers are not comparable, so the gate reports NOT COMPARABLE
+    // instead of a regression — and it does not pass either, because silently passing would
+    // let a real regression hide inside a set change. A human re-accepts the baseline.
+    if (now.scored !== baseline.scored) {
+      out.push({
+        name: 'over-claim',
+        pass: false,
+        comparable: false,
+        detail:
+          `${now.overClaim} on ${now.scored} events vs baseline ${baseline.overClaim} on ${baseline.scored} — ` +
+          'NOT COMPARABLE, the set changed size. Review the counts, then re-accept with --accept.',
+      })
+    } else {
+      out.push({
+        name: 'over-claim',
+        pass: now.overClaim <= baseline.overClaim,
+        detail: `${now.overClaim} vs baseline ${baseline.overClaim} (must not increase)`,
+      })
+    }
   }
   return out
 }

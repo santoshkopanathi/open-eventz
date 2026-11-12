@@ -22,7 +22,8 @@
     "eval:snapshot": "tsx scripts/eval-snapshot.ts",
     "eval:run": "tsx scripts/eval-run.ts",
     "eval:score": "tsx scripts/eval-score.ts",
-    "eval:worksheet": "tsx scripts/eval-worksheet.ts"
+    "eval:worksheet": "tsx scripts/eval-worksheet.ts",
+    "eval:recover": "tsx scripts/eval-recover-worksheet.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.110.0",

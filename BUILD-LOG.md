@@ -2312,3 +2312,72 @@ And the smaller one, which cost nothing only because the snapshot existed: **a d
 clears a field is a visibility change.** Nulling a column that a fail-closed gate reads means
 hiding rows, and the rows that cannot be rewritten are precisely the ones nobody will notice are
 gone.
+
+---
+
+## I searched the machine's files and not the human's
+
+*Date: 2026-11-12. Modules: [`scripts/eval-recover-worksheet.ts`](scripts/eval-recover-worksheet.ts), [`src/lib/eval-score.ts`](src/lib/eval-score.ts). See EVALS.md → Recovery.*
+
+**The question that found it.** The user asked: *"I manually filled a label set in a separate
+document last time — where is it? Isn't that usable?"*
+
+Yesterday I had measured that 56 of 64 labelled events were purged from the database, checked
+`run-v2-results.json`, `run-v3-results.json` and `baseline-system-answers.json`, found that all
+three stored titles without bodies, and written **"56 human judgments are permanently
+unscorable"** into five documents.
+
+`eval/price-golden-worksheet.md` carries the full source text of every one of the 68 events in a
+quoted block. It has been tracked in git since August. Its entire purpose was to show a human
+exactly what the model would see.
+
+**I searched the machine-generated artefacts and not the human-facing one.** That is backwards,
+and not by a small margin: **a worksheet is the only artefact guaranteed to contain the question,
+because a label written next to no text is not a label.** The thing I declared lost was sitting in
+the one file whose reason for existing was to hold it.
+
+**Fidelity first, because the recovery is only worth as much as the record.** Eight events still
+exist in the database and had been frozen from it. Seven are byte-identical to the worksheet. The
+eighth, `play-frisco-7439`, differs: *"Second Saturday at Heritage"* (347 chars) is now *"Second
+Saturday: Fall Fun at Heritage"* (465 chars) — the city rewrote it.
+
+**That one divergence is the argument for the worksheet rather than against it.** The copy frozen
+from November's database is a different event from the one the human judged, so inside the golden
+set the label and its input had *already* drifted apart — the exact corruption append-only exists
+to prevent, caused by taking the first snapshot from the database months after the labelling. So:
+**for a labelled event the frozen input is whatever the human was looking at when they answered**,
+which makes the worksheet more authoritative than the live source, not less.
+
+`npm run eval:recover` is therefore allowed to overwrite a labelled id where `freeze()` refuses.
+It is not a refresh to newer text, it is a restoration of the original question — and it prints
+every overwrite and never runs silently, because that distinction is the only thing separating it
+from the failure it repairs.
+
+**Scorable: 8 → 64. Labels with no input: 56 → 0.**
+
+**The first real score found a real thing.** 0 wrongly-free, 39 agree, 3 under-claim, 2 wrongly
+hidden, and **1 leak** — *Shop Local Vendor Markets*, labelled `kid: no`, shown by the pipeline,
+model confident it is a family event. **It reproduced on retry**, so it is a stable disagreement
+rather than variance. Reading the text it looks like a label question, not a model defect: the
+worksheet's rule *"vendor applications are no"* was written for notices aimed at businesses, and
+this is a monthly artisan market with the word "Vendor" in its title. **Left to the labeller, and
+the gate left RED, because an eval that resolves its own disagreements in whichever direction
+turns green is not an eval.**
+
+**A gap it exposed.** Over-claim went 3 → 17 because the set went 8 → 64. That is arithmetic about
+two populations, not a regression, and a gate crying regression there would teach everyone to
+re-accept the baseline unread. `gates()` now reports **NOT COMPARABLE** when the scored count
+differs, and does not pass either — passing would let a real regression hide inside a set change.
+It immediately caught an imprecision in its own test suite, where a test meaning to vary only the
+over-claim count had varied the row count too.
+
+534 tests green.
+
+**The lesson.** **When looking for a record of a human judgment, search the human's artefacts
+first.** I went to the generated JSON because it was structured, and structured files are written
+by code that had no reason to keep the prompt — while the worksheet existed for no other purpose.
+Worth asking before declaring anything lost: *who was the audience of the file that would have
+held this, and did they need the thing I am looking for?*
+
+And a sharper one about the first mistake: **"I checked and it is not there" is a claim about where
+I looked.** I reported it as a claim about the world, in five documents, in bold.

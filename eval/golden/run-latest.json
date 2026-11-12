@@ -1,7 +1,599 @@
 {
-  "ran_at": "2026-11-11T20:13:53.836Z",
+  "ran_at": "2026-11-12T17:23:48.452Z",
   "scored_against": "eval/golden/labels.json",
   "rows": [
+    {
+      "id": "kaleidoscope-park-10000020",
+      "source": "kaleidoscope-park",
+      "title": "Live After 5 Presented by New York Life North Dallas",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "medium",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "confirmed"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "confirmed",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000022",
+      "source": "kaleidoscope-park",
+      "title": "Live After 5 Presented by New York Life North Dallas",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "medium",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "confirmed"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "confirmed",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000026",
+      "source": "kaleidoscope-park",
+      "title": "Live After 5 Presented by New York Life North Dallas",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "medium",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "confirmed"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "confirmed",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000032",
+      "source": "kaleidoscope-park",
+      "title": "Live After 5 Presented by New York Life North Dallas",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "medium",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "confirmed"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "confirmed",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000034",
+      "source": "kaleidoscope-park",
+      "title": "Live After 5 Presented by New York Life North Dallas",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "medium",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "confirmed"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "confirmed",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000036",
+      "source": "kaleidoscope-park",
+      "title": "Live After 5 Presented by New York Life North Dallas",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "medium",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "confirmed"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "confirmed",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000044",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000045",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "unknown",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "unknown",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000047",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000048",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000050",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000051",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000052",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000053",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000056",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000057",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000082",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000083",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000084",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000085",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000086",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000087",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000098",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000099",
+      "source": "kaleidoscope-park",
+      "title": "SaturYAY Presented by Atmos Energy",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000192",
+      "source": "kaleidoscope-park",
+      "title": "Kaleidoscope Live Concert Series",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "medium",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-10000193",
+      "source": "kaleidoscope-park",
+      "title": "Shop Local Vendor Markets Presented by Comerica",
+      "label_kid": "no",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "medium",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "unknown",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-6710",
+      "source": "play-frisco",
+      "title": "Merry Main Street Vendor Applications Open",
+      "label_kid": "no",
+      "label_price": "unknown",
+      "model": {
+        "kid_relevant": false,
+        "kid_confidence": "high",
+        "age_buckets": [],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": false
+      },
+      "error": null
+    },
     {
       "id": "play-frisco-6714",
       "source": "play-frisco",
@@ -69,6 +661,28 @@
       "error": null
     },
     {
+      "id": "play-frisco-7130",
+      "source": "play-frisco",
+      "title": "Nature Adventure at Frisco Commons Park",
+      "label_kid": "yes",
+      "label_price": "unknown",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
       "id": "play-frisco-7131",
       "source": "play-frisco",
       "title": "Nature Adventure at Frisco Commons Park",
@@ -113,6 +727,228 @@
       "error": null
     },
     {
+      "id": "play-frisco-7240",
+      "source": "play-frisco",
+      "title": "Artist-led Workshop: Watercolor and Mindful Self-",
+      "label_kid": "yes",
+      "label_price": "unknown",
+      "model": {
+        "kid_relevant": false,
+        "kid_confidence": "medium",
+        "age_buckets": [],
+        "price": "paid",
+        "price_confidence": "confirmed"
+      },
+      "shipped": {
+        "price_class": "paid",
+        "price_confidence": "confirmed",
+        "shown": false
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7310",
+      "source": "play-frisco",
+      "title": "Cycle the City - Cottonwood Creek Greenbelt",
+      "label_kid": "yes",
+      "label_price": "unknown",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "medium",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7311",
+      "source": "play-frisco",
+      "title": "Cycle the City - Dominion Trail",
+      "label_kid": "yes",
+      "label_price": "unknown",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "medium",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7343",
+      "source": "play-frisco",
+      "title": "Learn to Fish",
+      "label_kid": "yes",
+      "label_price": "unknown",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "toddler",
+          "kids",
+          "teen"
+        ],
+        "price": "unknown",
+        "price_confidence": "confirmed"
+      },
+      "shipped": {
+        "price_class": "unknown",
+        "price_confidence": "confirmed",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7349",
+      "source": "play-frisco",
+      "title": "Play For All Sensory Swim",
+      "label_kid": "yes",
+      "label_price": "paid",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "paid",
+        "price_confidence": "confirmed"
+      },
+      "shipped": {
+        "price_class": "paid",
+        "price_confidence": "confirmed",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7360",
+      "source": "play-frisco",
+      "title": "So Long Sweet Summer",
+      "label_kid": "yes",
+      "label_price": "paid",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "paid",
+        "price_confidence": "confirmed"
+      },
+      "shipped": {
+        "price_class": "paid",
+        "price_confidence": "confirmed",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7405",
+      "source": "play-frisco",
+      "title": "Walnut Wednesdays",
+      "label_kid": "yes",
+      "label_price": "unknown",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7414",
+      "source": "play-frisco",
+      "title": "Princess Tea 2026",
+      "label_kid": "yes",
+      "label_price": "paid",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "toddler",
+          "kids"
+        ],
+        "price": "paid",
+        "price_confidence": "confirmed"
+      },
+      "shipped": {
+        "price_class": "paid",
+        "price_confidence": "confirmed",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7427",
+      "source": "play-frisco",
+      "title": "Reception, \"Stories from the Archives\"",
+      "label_kid": "no",
+      "label_price": "unknown",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "low",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": false
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7432",
+      "source": "play-frisco",
+      "title": "Heritage How-To: Artistic Greeting Cards with Lav",
+      "label_kid": "yes",
+      "label_price": "unknown",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "medium",
+        "age_buckets": [
+          "kids",
+          "teen"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "unknown",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
       "id": "play-frisco-7436",
       "source": "play-frisco",
       "title": "Craft and Care Fair",
@@ -135,14 +971,214 @@
       "error": null
     },
     {
-      "id": "play-frisco-7439",
+      "id": "play-frisco-7437",
       "source": "play-frisco",
-      "title": "Second Saturday: Fall Fun at Heritage",
+      "title": "Second Saturday at Heritage",
       "label_kid": "yes",
       "label_price": "free",
       "model": {
         "kid_relevant": true,
         "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7438",
+      "source": "play-frisco",
+      "title": "Second Saturday at Heritage",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7439",
+      "source": "play-frisco",
+      "title": "Second Saturday at Heritage",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7440",
+      "source": "play-frisco",
+      "title": "Second Saturday at Heritage",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7441",
+      "source": "play-frisco",
+      "title": "Second Saturday at Heritage",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7442",
+      "source": "play-frisco",
+      "title": "Second Saturday at Heritage",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7498",
+      "source": "play-frisco",
+      "title": "Saturday Sparks: Raptor Experience",
+      "label_kid": "yes",
+      "label_price": "unknown",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "high",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7667",
+      "source": "play-frisco",
+      "title": "Artist-led Workshop: Watercolor with Maya Modi",
+      "label_kid": "yes",
+      "label_price": "unknown",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "medium",
+        "age_buckets": [
+          "kids",
+          "teen"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "unknown",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7669",
+      "source": "play-frisco",
+      "title": "Artist-led Workshop: Watercolor with Maya Modi",
+      "label_kid": "yes",
+      "label_price": "unknown",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "medium",
+        "age_buckets": [
+          "kids",
+          "teen"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "unknown",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7670",
+      "source": "play-frisco",
+      "title": "Reception \"The Shape of Now\"",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "medium",
         "age_buckets": [
           "family"
         ],
@@ -173,6 +1209,203 @@
       },
       "shipped": {
         "price_class": "unknown",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7672",
+      "source": "play-frisco",
+      "title": "Art in the Atrium 26 - Call for Art",
+      "label_kid": "yes",
+      "label_price": "unknown",
+      "model": {
+        "kid_relevant": false,
+        "kid_confidence": "high",
+        "age_buckets": [],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": false
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7676",
+      "source": "play-frisco",
+      "title": "Heritage How-To: Calligraphy with Gaurii S Kumaar",
+      "label_kid": "yes",
+      "label_price": "unknown",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "medium",
+        "age_buckets": [
+          "kids",
+          "teen"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "unknown",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7680",
+      "source": "play-frisco",
+      "title": "Parks For Pollinators: What Remains",
+      "label_kid": "yes",
+      "label_price": "unknown",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "medium",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7681",
+      "source": "play-frisco",
+      "title": "Parks For Pollinators: What Remains",
+      "label_kid": "yes",
+      "label_price": "unknown",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "medium",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7682",
+      "source": "play-frisco",
+      "title": "Parks For Pollinators: What Remains",
+      "label_kid": "yes",
+      "label_price": "unknown",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "medium",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7683",
+      "source": "play-frisco",
+      "title": "Parks For Pollinators: What Remains",
+      "label_kid": "yes",
+      "label_price": "unknown",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "medium",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7684",
+      "source": "play-frisco",
+      "title": "Parks For Pollinators: What Remains",
+      "label_kid": "yes",
+      "label_price": "unknown",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "medium",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7685",
+      "source": "play-frisco",
+      "title": "Paws in the Pool 2026",
+      "label_kid": "unknown",
+      "label_price": "paid",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "medium",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "paid",
+        "price_confidence": "confirmed"
+      },
+      "shipped": {
+        "price_class": "paid",
+        "price_confidence": "confirmed",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "play-frisco-7686",
+      "source": "play-frisco",
+      "title": "Community Clean-Up & Bluebonnet Planting",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "medium",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred"
+      },
+      "shipped": {
+        "price_class": "free",
         "price_confidence": "inferred",
         "shown": true
       },
