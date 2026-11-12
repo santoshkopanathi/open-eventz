@@ -52,25 +52,54 @@ export interface GoldenSet {
 }
 
 /**
- * Append-only merge. An id already present keeps its ORIGINAL capture; the incoming copy
- * is dropped. Refreshing a frozen input would silently redefine the question a label was
- * the answer to, which is the same failure as not freezing at all, only harder to notice.
+ * Merge a fresh capture into the frozen set.
+ *
+ * **What the freeze protects is LABELS, not bytes.** A labelled id is immutable: refreshing it
+ * would silently redefine the question a human already answered, which is the same failure as
+ * not freezing at all, only harder to notice. So an id in `labelledIds` is never rewritten.
+ *
+ * An id that is frozen but NOT yet labelled has nothing to protect, and holding a stale copy of
+ * it is actively harmful. We learned that within a day: the first snapshot froze 17 rows whose
+ * description the source had truncated at 200 characters, and the connector fix landed hours
+ * later. Labelling those would have meant hand-labelling a known-bad input on purpose, and
+ * every run afterwards would have scored the model against a defect already repaired.
+ *
+ * So an unlabelled id is refreshed when the incoming text differs. The rule reads: **the set is
+ * append-only with respect to answered questions, and current with respect to unanswered ones.**
  */
-export function freeze(existing: FrozenEvent[], incoming: FrozenEvent[]): {
+export function freeze(
+  existing: FrozenEvent[],
+  incoming: FrozenEvent[],
+  labelledIds: ReadonlySet<string> = new Set(),
+): {
   merged: FrozenEvent[]
   added: FrozenEvent[]
+  refreshed: FrozenEvent[]
   kept: number
 } {
   const byId = new Map(existing.map(e => [e.id, e]))
   const added: FrozenEvent[] = []
+  const refreshed: FrozenEvent[] = []
   for (const e of incoming) {
-    if (byId.has(e.id)) continue
-    byId.set(e.id, e)
-    added.push(e)
+    const prior = byId.get(e.id)
+    if (!prior) {
+      byId.set(e.id, e)
+      added.push(e)
+      continue
+    }
+    // Labelled: immutable, full stop.
+    if (labelledIds.has(e.id)) continue
+    // Unlabelled and the text moved: take the newer copy, but keep the ORIGINAL capture
+    // timestamp, so the set still records when this input first entered it.
+    if (prior.title !== e.title || prior.description !== e.description) {
+      byId.set(e.id, { ...e, captured_at: prior.captured_at })
+      refreshed.push(e)
+    }
   }
   return {
     merged: [...byId.values()].sort((a, b) => a.id.localeCompare(b.id)),
     added,
+    refreshed,
     kept: existing.length,
   }
 }

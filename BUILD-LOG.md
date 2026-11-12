@@ -2231,3 +2231,84 @@ what the trigger fired for, and nothing in CI tells you when you have only one o
 job runs, passes, and reports green. Worth asking of any path filter: *if this file changed in
 the worst possible way, which assertion in this job would go red?* If the answer is "none", the
 entry is decoration.
+
+---
+
+## The truncation cost one confidence downgrade, and the fix was still right
+
+*Date: 2026-11-12. Modules: [`src/lib/eval-set.ts`](src/lib/eval-set.ts), [`scripts/eval-worksheet.ts`](scripts/eval-worksheet.ts), [`scripts/eval-snapshot.ts`](scripts/eval-snapshot.ts). See BACKLOG #30, EVALS.md Part 3.*
+
+**The measurement I had promised.** The connector fix recovered the descriptions the park's CMS
+truncates at 200 characters, but classification is cached per event — so the stored rows kept the
+judgments made from the short text. Clearing that cache was the only way to find out what the
+truncation had actually been costing.
+
+Snapshot first, because this was a production write: 38 Kaleidoscope rows saved to disk. Cleared
+`kid_relevant` on **only the 17 rows whose input was truncated** — the other 21 always had their
+full description, so re-asking them would spend money on a question that never changed. Re-ran the
+ingest: 23 fetched, 23 upserted, **9 LLM calls.**
+
+**The result, and it is smaller than I implied it would be.**
+
+| | |
+|---|---|
+| Rows with truncated input | 17 |
+| Reclassified on full text | **9** |
+| **Decisions that changed** | **1** |
+| Visibility changes a parent would see | **0** |
+
+The one change: *Shop Local Vendor Market* went from `age_confidence: medium` to `low` as its
+description grew from 215 to 528 characters. **The model got less confident with more
+information** — which is the model behaving well. A confident answer drawn from truncated text is
+the over-claim pattern exactly; the fuller text revealed the ambiguity the short version hid.
+
+So the honest grade: **this was a real input defect with almost no measured impact.** The fix was
+still right — it was wrong on its own terms, and it is the kind of defect that *could* cost a
+great deal on a different source — but I had framed the urgency higher than the evidence
+supported, and the evidence is what the measurement was for.
+
+**The eight rows that could not be reclassified**, and the thing that nearly went wrong. Of the 17,
+8 were past occurrences the nightly fetch no longer retrieves. Nulling `kid_relevant` hides a row
+(the API gate reads NULL on an LLM-classified source as "never successfully classified"), so those
+8 would have stayed **hidden forever** — a data fix that silently deleted rows from the site.
+Restored from the snapshot; `kid_relevant IS NULL` back to 0, and `npm run validate` green across
+592 upcoming events.
+
+**Which exposed a flaw in the freeze.** The golden set had frozen 17 descriptions in their
+truncated form, hours before the connector fix. Labelling those would have meant hand-labelling a
+known-bad input on purpose, and every run afterwards would have scored the model against a defect
+we had already repaired.
+
+The append-only rule, read literally, forbade fixing it. But the rule was over-broad:
+
+> **What the freeze protects is LABELS, not bytes.**
+
+A labelled id must be immutable — refreshing it redefines a question a human already answered. An
+id that is frozen but **unlabelled** has nothing to protect, and holding a stale copy is actively
+harmful. `freeze()` now takes the labelled ids and refreshes only the rest. The set is
+*append-only with respect to answered questions, and current with respect to unanswered ones.*
+
+Checked before changing it: **0 of the 64 existing labels sat on truncated text**, so no judgment
+was contaminated. Re-snapshot: 15 refreshed, 1 new, 64 held immutable. 8 still truncated — all
+past, all unlabelled, and unrefreshable because the source no longer serves them.
+
+**And a second look at "115 events to label".** That number was mine and it was misleading. 124
+frozen events are **54 distinct programs**: every occurrence of a recurring series carries the
+identical title and description, so it is ONE judgment. *Saturday Music Series at Frisco Fresh
+Market* is 30 of the 124 on its own.
+
+The worksheet now asks once per program and fans the answer out to every date — verified by
+filling one block and watching 64 labels become 94. **Roughly an hour of human judgment, not two**,
+and asking someone to make the same call 30 times was never rigour, it was padding a number.
+
+530 tests green.
+
+**The lesson.** **A rule stated in terms of its mechanism outlives its purpose and starts
+obstructing it.** "Append-only" was shorthand for "do not invalidate a human's answer", and within
+a day the shorthand was forbidding a repair the purpose demanded. Worth asking of any constraint
+that starts to chafe: *what was this protecting, and is that what it is protecting now?*
+
+And the smaller one, which cost nothing only because the snapshot existed: **a data fix that
+clears a field is a visibility change.** Nulling a column that a fail-closed gate reads means
+hiding rows, and the rows that cannot be rewritten are precisely the ones nobody will notice are
+gone.

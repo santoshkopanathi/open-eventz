@@ -12,10 +12,10 @@ describe('freeze — append-only, because a refreshed input invalidates its labe
     expect(merged.map(e => e.id)).toEqual(['a', 'b'])
   })
 
-  it('REFUSES to overwrite an event already frozen, even when the source text changed', () => {
+  it('REFUSES to overwrite a LABELLED event, even when the source text changed', () => {
     // This is the whole guarantee. If the source edits a description after a human labelled
     // it, accepting the edit silently makes the label the answer to a different question.
-    const { merged, added } = freeze([ev('a', 'original text')], [ev('a', 'EDITED text')])
+    const { merged, added } = freeze([ev('a', 'original text')], [ev('a', 'EDITED text')], new Set(['a']))
     expect(added).toHaveLength(0)
     expect(merged).toHaveLength(1)
     expect(merged[0].description).toBe('original text')
@@ -84,5 +84,83 @@ describe('structural guard — the eval must call production, never a copy of it
     for (const f of ['scripts/eval-run.ts', 'scripts/eval-score.ts', 'scripts/eval-snapshot.ts']) {
       expect(read(f)).not.toMatch(/SYSTEM_PROMPT\s*=\s*[`'"]/)
     }
+  })
+})
+
+describe('freeze — the freeze protects answered questions, not bytes', () => {
+  it('REFRESHES an unlabelled event when the source text has moved', () => {
+    // Why this is not a loophole. The first snapshot captured 17 descriptions the source had
+    // truncated at 200 chars, and the connector fix landed hours later. Holding those forever
+    // would mean hand-labelling a known-bad input on purpose, and every run afterwards would
+    // score the model against a defect already repaired.
+    const { merged, refreshed, added } = freeze(
+      [ev('a', 'truncated…')],
+      [ev('a', 'the full description, recovered')],
+      new Set(), // nothing labelled
+    )
+    expect(refreshed.map(e => e.id)).toEqual(['a'])
+    expect(added).toHaveLength(0)
+    expect(merged[0].description).toBe('the full description, recovered')
+  })
+
+  it('a label is the thing that makes an input immutable — not the passage of time', () => {
+    const existing = [ev('a', 'original')]
+    const incoming = [ev('a', 'changed')]
+    expect(freeze(existing, incoming, new Set(['a'])).merged[0].description).toBe('original')
+    expect(freeze(existing, incoming, new Set()).merged[0].description).toBe('changed')
+  })
+
+  it('does not count an unchanged unlabelled event as refreshed', () => {
+    // Otherwise every snapshot would report churn it did not cause.
+    const { refreshed, added } = freeze([ev('a', 'same')], [ev('a', 'same')], new Set())
+    expect(refreshed).toHaveLength(0)
+    expect(added).toHaveLength(0)
+  })
+
+  it('keeps the ORIGINAL capture timestamp through a refresh', () => {
+    // The set should still record when an input first entered it, or "frozen since" becomes
+    // meaningless and a long-standing event looks new.
+    const old = { ...ev('a', 'truncated…'), captured_at: '2026-11-11T00:00:00Z' }
+    const fresh = { ...ev('a', 'full text'), captured_at: '2026-12-01T00:00:00Z' }
+    const { merged } = freeze([old], [fresh], new Set())
+    expect(merged[0].description).toBe('full text')
+    expect(merged[0].captured_at).toBe('2026-11-11T00:00:00Z')
+  })
+
+  it('treats a title change as a refresh too, not just the description', () => {
+    const { refreshed } = freeze([ev('a')], [{ ...ev('a'), title: 'renamed' }], new Set())
+    expect(refreshed.map(e => e.id)).toEqual(['a'])
+  })
+})
+
+describe('eval-snapshot passes the labelled ids, or the protection does nothing', () => {
+  it('builds labelledIds from the labels file and hands them to freeze', () => {
+    // freeze() defaults labelledIds to an empty set, so a caller that forgets this argument
+    // silently makes every frozen input mutable — the exact failure the module exists to stop.
+    const src = require('node:fs').readFileSync('scripts/eval-snapshot.ts', 'utf8') as string
+    expect(src).toMatch(/const labelledIds = new Set\(/)
+    expect(src).toMatch(/freeze\(existing, incoming, labelledIds\)/)
+  })
+})
+
+describe('the worksheet asks one question per program, not per date', () => {
+  const src = require('node:fs').readFileSync('scripts/eval-worksheet.ts', 'utf8') as string
+
+  it('groups by title + description, so a 30-date series is one judgment', () => {
+    expect(src).toMatch(/function programKey/)
+    expect(src).toMatch(/function group\(/)
+  })
+
+  it('writes every id of the group into the block and applies the answer to all of them', () => {
+    // Without the fan-out the user answers once and 29 dates stay unlabelled, which would
+    // look like the worksheet silently losing their work.
+    expect(src).toMatch(/<!-- ids: /)
+    expect(src).toMatch(/for \(const id of ids\)/)
+  })
+
+  it('shows the FULLEST text in the group', () => {
+    // A truncated copy is a past occurrence the nightly fetch cannot refresh. Labelling the
+    // short version would hand the eval the very input defect the connector fix removed.
+    expect(src).toMatch(/\.length - \(a\.description \?\? ''\)\.length/)
   })
 })

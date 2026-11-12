@@ -20,9 +20,10 @@ config({ path: '.env.local' }) // no-op in CI
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
-import { freeze, type FrozenEvent, type GoldenSet } from '../src/lib/eval-set'
+import { freeze, type FrozenEvent, type GoldenSet, type Label } from '../src/lib/eval-set'
 
 const EVENTS_FILE = 'eval/golden/events.json'
+const LABELS_FILE = 'eval/golden/labels.json'
 
 // The sources whose events reach inferPlayFriscoEvent. Library feeds carry structured age and
 // price, so they are not classified and have nothing for this eval to measure.
@@ -71,7 +72,16 @@ async function main(): Promise<void> {
   }
 
   const existing = load()
-  const { merged, added, kept } = freeze(existing, incoming)
+  // A labelled id is immutable; an unlabelled one is refreshed when the source text has
+  // moved. See freeze(): the freeze protects answered questions, not bytes. This is not a
+  // loophole — the first snapshot captured 17 descriptions the source had truncated, and
+  // the connector fix landed hours later. Holding those forever would mean labelling a
+  // known-bad input on purpose.
+  const labels: Label[] = existsSync(LABELS_FILE)
+    ? JSON.parse(readFileSync(LABELS_FILE, 'utf8'))
+    : []
+  const labelledIds = new Set(labels.filter(l => l.kid || l.price).map(l => l.id))
+  const { merged, added, refreshed, kept } = freeze(existing, incoming, labelledIds)
   writeFileSync(EVENTS_FILE, JSON.stringify(merged, null, 2) + '\n')
 
   const bySource: Record<string, number> = {}
@@ -80,7 +90,8 @@ async function main(): Promise<void> {
   console.log(`\nFROZEN EVAL INPUTS — ${EVENTS_FILE}\n`)
   console.log(`  already frozen (untouched) : ${kept}`)
   console.log(`  newly captured             : ${added.length}`)
-  console.log(`  seen in db but already held: ${incoming.length - added.length}`)
+  console.log(`  refreshed (unlabelled, text moved): ${refreshed.length}`)
+  console.log(`  held immutable (labelled)  : ${labelledIds.size}`)
   console.log(`  total frozen               : ${merged.length}`)
   console.log(`  by source                  : ${JSON.stringify(bySource)}`)
   if (added.length) {
