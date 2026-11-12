@@ -266,7 +266,7 @@
     "title": "Shop Local Vendor Markets Presented by Comerica",
     "description": "Monthly | 10 AM – 2 PM Discover one-of-a-kind finds at our Shop Local Vendor Markets, presented by Comerica Bank. With a curated lineup of local artisans, handmade goods and unique finds, it’s the perfect way to support small! Remaining 2026 Market Dates: September 19 October 17 November 28 Parking : The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park Vendors interested in participating can find more information and sign up here .",
     "start_datetime": null,
-    "registration_required": true,
+    "registration_required": false,
     "captured_at": "2026-08-01T00:00:00.000Z"
   },
   {

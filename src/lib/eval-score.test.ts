@@ -1,4 +1,9 @@
-import { tally, gates, rowsWorthRetrying, type Counts, type ScorableRow } from './eval-score'
+import { tally, gates, rowsWorthRetrying, NOISE_FLOOR, type Counts, type ScorableRow } from './eval-score'
+
+const mkCounts = (scored: number, overClaim: number): Counts => ({
+  scored, overClaim, wronglyFree: 0, underClaim: 0, agree: 0,
+  badged: 0, leaked: 0, wronglyHidden: 0, errors: 0,
+})
 
 const shipped = (price_class: string, shown = true) => ({ price_class, price_confidence: 'inferred', shown })
 const row = (p: Partial<ScorableRow>): ScorableRow => ({
@@ -86,26 +91,36 @@ describe('gates', () => {
     expect(gates(now, base).find(g => g.name === 'leaked non-kid events')!.pass).toBe(false)
   })
 
-  it('passes over-claim when it holds steady, fails when it rises', () => {
-    // Both tallies must score the SAME NUMBER of events, or the comparability guard correctly
-    // refuses to compare them and this says nothing about the increase rule. The first version
-    // of this test varied the row count while meaning to vary only the over-claim count, and
-    // the guard caught it — which is the guard doing its job on its own test suite.
-    const one = tally([
-      row({ label_price: 'unknown', shipped: shipped('free') }),
-      row({ id: 'y', label_price: 'free', shipped: shipped('free') }),
-    ])
-    const two = tally([
-      row({ label_price: 'unknown', shipped: shipped('free') }),
-      row({ id: 'y', label_price: 'unknown', shipped: shipped('paid') }),
-    ])
-    expect(one.scored).toBe(two.scored)
-    expect(one.overClaim).toBe(1)
-    expect(two.overClaim).toBe(2)
-    expect(gates(one, one).find(g => g.name === 'over-claim')!.pass).toBe(true)
-    expect(gates(two, one).find(g => g.name === 'over-claim')!.pass).toBe(false)
-    // Falling is always fine — the gate is on increase, not on change.
-    expect(gates(one, two).find(g => g.name === 'over-claim')!.pass).toBe(true)
+  it('tolerates over-claim movement up to the MEASURED noise floor, flags more', () => {
+    // Measured 2026-11-12: four runs over an unchanged 65-event set gave over-claim
+    // 16, 18, 18, 17 — a spread of 2, from two borderline workshops the model oscillates on.
+    // A "any increase fails" rule against a count that moves by 2 on its own would fail about
+    // half of all clean runs, and a gate that cries wolf gets routed around within a week.
+    const base = mkCounts(65, 16)
+    expect(gates(mkCounts(65, 16), base).find(g => g.name === 'over-claim')!.pass).toBe(true)
+    expect(gates(mkCounts(65, 18), base).find(g => g.name === 'over-claim')!.pass).toBe(true)
+    expect(gates(mkCounts(65, 19), base).find(g => g.name === 'over-claim')!.pass).toBe(false)
+    // Falling is always fine.
+    expect(gates(mkCounts(65, 10), base).find(g => g.name === 'over-claim')!.pass).toBe(true)
+  })
+
+  it('states the limit it can actually detect, rather than implying precision', () => {
+    const g = gates(mkCounts(65, 17), mkCounts(65, 16)).find(x => x.name === 'over-claim')!
+    expect(g.detail).toContain('±' + NOISE_FLOOR)
+  })
+
+  it('never lets over-claim block a build, however far it moves', () => {
+    // It stays the leading indicator for wrongly-free and stays reported. It simply cannot
+    // carry a build decision while its noise floor is 2.
+    expect(gates(mkCounts(65, 99), mkCounts(65, 1)).find(g => g.name === 'over-claim')!.blocking).toBe(false)
+  })
+
+  it('marks the existence gates as blocking, because they are measured stable', () => {
+    // Same four runs: wrongly-free 0,0,0,0 and leaked 0,0,0,0. That is why these two block
+    // and the rate-like counts do not.
+    const gs = gates(mkCounts(65, 0), null)
+    expect(gs.find(g => g.name === 'wrongly-free')!.blocking).toBe(true)
+    expect(gs.find(g => g.name === 'leaked non-kid events')!.blocking).toBe(true)
   })
 
   it('omits the over-claim gate entirely when no baseline has been accepted', () => {
@@ -159,10 +174,7 @@ describe('structural guard — the CI gate must use the retry before failing', (
 })
 
 describe('gates — a count gate is only meaningful against the same population', () => {
-  const mk = (scored: number, overClaim: number): Counts => ({
-    scored, overClaim, wronglyFree: 0, underClaim: 0, agree: 0,
-    badged: 0, leaked: 0, wronglyHidden: 0, errors: 0,
-  })
+  const mk = mkCounts
 
   it('reports NOT COMPARABLE when the scored set changed size', () => {
     // The real case: recovering 56 lost inputs took the set from 8 to 64, and over-claim from
@@ -179,9 +191,15 @@ describe('gates — a count gate is only meaningful against the same population'
   })
 
   it('compares normally when the set size is unchanged', () => {
-    expect(gates(mk(64, 17), mk(64, 17)).find(x => x.name === 'over-claim')!.pass).toBe(true)
-    expect(gates(mk(64, 18), mk(64, 17)).find(x => x.name === 'over-claim')!.pass).toBe(false)
-    expect(gates(mk(64, 16), mk(64, 17)).find(x => x.name === 'over-claim')!.pass).toBe(true)
+    // A rise within the measured noise floor is reported, not flagged; above it, flagged. The
+    // numbers here must step by more than NOISE_FLOOR to exercise the comparison at all.
+    const g = (now: number, base: number) =>
+      gates(mk(64, now), mk(64, base)).find(x => x.name === 'over-claim')!
+    expect(g(17, 17).comparable).not.toBe(false)
+    expect(g(17, 17).pass).toBe(true)
+    expect(g(17 + NOISE_FLOOR, 17).pass).toBe(true)
+    expect(g(17 + NOISE_FLOOR + 1, 17).pass).toBe(false)
+    expect(g(16, 17).pass).toBe(true)
   })
 
   it('still gates wrongly-free and leaked regardless of set size', () => {

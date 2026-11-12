@@ -33,7 +33,7 @@ function main(): void {
   const results = gates(now, base)
   console.log('')
   for (const g of results) {
-    const tag = g.comparable === false ? 'N/A ' : g.pass ? 'PASS' : 'FAIL'
+    const tag = g.comparable === false ? 'N/A ' : g.pass ? 'PASS' : g.blocking ? 'FAIL' : 'warn'
     console.log(`  ${tag}  ${g.name.padEnd(24)} ${g.detail}`)
   }
   if (!base) console.log(`  ----  over-claim               ${now.overClaim}  NO BASELINE — run with --accept`)
@@ -55,9 +55,17 @@ function main(): void {
     return
   }
 
-  const failed = results.filter(g => !g.pass)
-  console.log(failed.length === 0 ? '\nALL GATES PASS\n' : `\nFAILED: ${failed.map(f => f.name).join(', ')}\n`)
-  process.exitCode = failed.length === 0 ? 0 : 1
+  const blockingFailures = results.filter(g => !g.pass && g.blocking)
+  const advisory = results.filter(g => !g.pass && !g.blocking)
+  if (advisory.length) {
+    console.log(`\n  advisory (reported, does not fail the build): ${advisory.map(a => a.name).join(', ')}`)
+  }
+  console.log(
+    blockingFailures.length === 0
+      ? '\nALL BLOCKING GATES PASS\n'
+      : `\nFAILED: ${blockingFailures.map(f => f.name).join(', ')}\n`,
+  )
+  process.exitCode = blockingFailures.length === 0 ? 0 : 1
 }
 
 try { main() } catch (e: any) { console.error(String(e?.message ?? e)); process.exitCode = 1 }

@@ -66,19 +66,57 @@ export function tally(rows: ScorableRow[]): Counts {
   return c
 }
 
+/**
+ * The measured run-to-run spread of the over-claim count on an unchanged set (4 runs,
+ * 2026-11-12). Re-measure it when the set size changes materially — it is a property of this
+ * set and this model, not a constant.
+ */
+export const NOISE_FLOOR = 2
+
 export interface GateResult {
   name: string
   pass: boolean
   detail: string
   /** false when the gate could not be evaluated against the baseline at all. */
   comparable?: boolean
+  /**
+   * Whether a failure here should stop a build. Only metrics MEASURED to be stable across
+   * repeated runs may block — see gates() for the measurement and why over-claim does not.
+   */
+  blocking: boolean
 }
 
 /**
- * `baseline` is the last run a human accepted. Over-claim is gated on NOT INCREASING rather
- * than on zero: every wrongly-free begins as an over-claim that resolved badly, so it is the
- * leading indicator — but forcing it to zero means badging nothing, which buys a safety number
- * with a useless product. Under-claim is reported alongside so that trade stays visible.
+ * `baseline` is the last run a human accepted.
+ *
+ * WHICH METRICS MAY BLOCK A BUILD — decided by measurement, 2026-11-12. Four consecutive runs
+ * over the same 65 events, same prompt, same model, nothing changed:
+ *
+ *     wrongly-free     0, 0, 0, 0     stable
+ *     leaked           0, 0, 0, 0     stable
+ *     agree           42,42,42,42     stable
+ *     under-claim      1, 1, 1, 1     stable
+ *     wrongly-hidden   2, 2, 2, 2     stable
+ *     over-claim      16,18,18,17     ±2
+ *
+ * Only two events of the 65 are unstable, and both are the same borderline: an artist-led
+ * workshop the model oscillates between `unknown` and `paid` on.
+ *
+ * **The existence gates are perfectly stable, which is why they block.** That is the
+ * "gate on existence, not rate" principle with evidence behind it rather than an argument:
+ * asking whether a specific named event was ever shown as free does not depend on sampling
+ * luck, and the measurement says it does not depend on model sampling either.
+ *
+ * **Over-claim does NOT block, because its natural spread is ±2.** A "must not increase" rule
+ * against a count that moves by 2 on its own would fail roughly half of all clean runs, and a
+ * gate that cries wolf is routed around within a week — the same reasoning that keeps this
+ * whole suite off the per-push trigger. It stays reported, with the direction against
+ * baseline, because it is still the leading indicator for wrongly-free; it simply cannot carry
+ * a build decision at this sample size. The honest statement of the limit: **this set can
+ * detect an over-claim regression larger than 2, and nothing smaller.**
+ *
+ * Under-claim and wrongly-hidden are also reported, so nobody can buy a safety number by
+ * badging nothing or hiding everything.
  */
 export function gates(now: Counts, baseline: Counts | null): GateResult[] {
   const out: GateResult[] = [
@@ -86,11 +124,13 @@ export function gates(now: Counts, baseline: Counts | null): GateResult[] {
       name: 'wrongly-free',
       pass: now.wronglyFree === 0,
       detail: `${now.wronglyFree} (must be 0)`,
+      blocking: true,
     },
     {
       name: 'leaked non-kid events',
       pass: now.leaked === 0,
       detail: `${now.leaked} (must be 0)`,
+      blocking: true,
     },
   ]
   if (baseline) {
@@ -103,15 +143,21 @@ export function gates(now: Counts, baseline: Counts | null): GateResult[] {
         name: 'over-claim',
         pass: false,
         comparable: false,
+        blocking: false,
         detail:
           `${now.overClaim} on ${now.scored} events vs baseline ${baseline.overClaim} on ${baseline.scored} — ` +
-          'NOT COMPARABLE, the set changed size. Review the counts, then re-accept with --accept.',
+          'NOT COMPARABLE, the set changed size. Re-accept with --accept.',
       })
     } else {
+      // Reported, never blocking: the measured spread is ±2. See the note above.
+      const delta = now.overClaim - baseline.overClaim
       out.push({
         name: 'over-claim',
-        pass: now.overClaim <= baseline.overClaim,
-        detail: `${now.overClaim} vs baseline ${baseline.overClaim} (must not increase)`,
+        pass: delta <= NOISE_FLOOR,
+        blocking: false,
+        detail:
+          `${now.overClaim} vs baseline ${baseline.overClaim} (${delta >= 0 ? '+' : ''}${delta}); ` +
+          `measured run-to-run spread is ±${NOISE_FLOOR}, so only a rise above that means anything`,
       })
     }
   }

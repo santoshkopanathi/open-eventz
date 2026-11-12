@@ -2381,3 +2381,112 @@ held this, and did they need the thing I am looking for?*
 
 And a sharper one about the first mistake: **"I checked and it is not there" is a claim about where
 I looked.** I reported it as a claim about the world, in five documents, in bold.
+
+---
+
+## Measuring the noise before trusting the gate
+
+*Date: 2026-11-12. Modules: [`src/lib/eval-score.ts`](src/lib/eval-score.ts), [`src/lib/eval-set.ts`](src/lib/eval-set.ts). See EVALS.md → Adjudication.*
+
+**Starting point.** The first full run of the recovered 64-event set produced one blocking
+failure and two disagreements in the opposite direction. The labeller adjudicated all five.
+
+**Four label revisions, recorded with reasons.** `Label` gained a `revisions[]` field, because
+**a golden set whose answers change without trace is not ground truth — it is an opinion with a
+timestamp.** The cheapest way to turn a red gate green is to edit the answer key, and that edit
+is indistinguishable from a genuine correction unless the reason sits next to it.
+
+| Event | Change | The labeller's reason |
+|---|---|---|
+| Shop Local Vendor Markets | kid no → **yes** | agreed with the model; a community artisan market is a general-audience family event |
+| Reception, "Stories from the Archives" | kid no → **yes** | *"I was not educated about this kind of event… now that I understand what reception means"* |
+| Art in the Atrium — Call for Art | kid yes → **no** | agreed with the model; a call for submissions is not an attendable event, even though a child could submit |
+| Shop Local (Fifth Third sibling) | **new**: kid yes, price free | labelled alongside its twin so the same programme cannot get opposite answers |
+
+**Both blocking gates went green**: wrongly-free 0, leaked 0.
+
+**Two questions answered rather than assumed.** The labeller asked whether more description
+existed for the Reception — it does not: the row is purged, but a live sibling
+(`play-frisco-7817`, "Art in the Atrium 26 Public Reception") carries 132 characters of the same
+shape, so ~130 chars is simply what the city publishes for a reception. And the
+`registration_required` discrepancy between the two sibling markets turned out to be a **ghost**:
+the live row reads `false` with `price_confidence: confirmed`, exactly as the labeller expected.
+The `true` was on the old numeric-id row recovered from August, set by the retired pre-rebuild
+connector.
+
+**Which produced a third category for the freeze.** The rule had two cases — labelled is
+immutable, unlabelled is refreshable. This is neither:
+
+| | |
+|---|---|
+| labelled + source changed | **immutable** — the label belongs to the old text |
+| unlabelled + source changed | **refresh** — nothing to protect |
+| **the capture itself was wrong** | **correct it** — the input never described the source |
+
+That flag was not a fact about the event at any point; it was a scraper defect faithfully
+recorded. Leaving it would permanently test the model against data the current scraper cannot
+produce — and it was already manufacturing a false under-claim, since `resolvePriceClass`
+downgrades an inferred free to unknown when registration is required. Corrected; the label
+untouched.
+
+**Then the thing that changed a design decision.** Over-claim moved from 18 to 16 on an
+*identical* set, purely from re-running. So I measured it properly — four consecutive runs, same
+65 events, same prompt, same model, nothing changed:
+
+| metric | run 1 | 2 | 3 | 4 | spread |
+|---|---|---|---|---|---|
+| **wrongly-free** | 0 | 0 | 0 | 0 | **0** |
+| **leaked** | 0 | 0 | 0 | 0 | **0** |
+| agree | 42 | 42 | 42 | 42 | 0 |
+| under-claim | 1 | 1 | 1 | 1 | 0 |
+| wrongly-hidden | 2 | 2 | 2 | 2 | 0 |
+| **over-claim** | 16 | 18 | 18 | 17 | **±2** |
+
+**Only 2 of 65 events are unstable**, and both are the same borderline — an artist-led watercolor
+workshop the model oscillates between `unknown` and `paid` on, which is precisely the case the
+labeller had flagged as genuinely paid.
+
+**The existence gates are perfectly stable. That is "gate on existence, not rate" with evidence
+instead of an argument.** Asking whether a named event was ever shown as free does not depend on
+sampling luck — and now we know it does not depend on model sampling either.
+
+**And "over-claim must not increase" is below the noise floor.** As a blocking gate it would fail
+about half of all clean runs. That is the cry-wolf failure this suite was arranged to avoid when
+it was kept off the per-push trigger; shipping it as a blocker would have been that same mistake
+one layer down. So over-claim is now **advisory**: reported with its direction, tolerant up to the
+measured ±2, and it cannot fail a build. `GateResult.blocking` carries the distinction and the
+script exits non-zero only on blocking failures.
+
+The limit is now stated rather than implied: **this set can detect an over-claim regression larger
+than 2, and nothing smaller.**
+
+**An unexpected finding while inspecting the 16 over-claims before accepting them as a baseline.**
+Every single one sits on text containing **no price words at all** — the model defaults to free on
+silence, as its own reasoning keeps saying ("the community-event default applies"). 15 of 18 assert
+FREE, and that is the real exposure: each is a guess that, if wrong, becomes a wrongly-free.
+
+But one over-claim is marked `confirmed`: **Frosty 5K**, where the model says *paid* and reasons
+*"registration is required via sign-up, indicating a paid race entry fee typical of organized 5K
+events."* The August note on that event reads: *"I could not determine the price from the
+description… when I visit this link I realize its a paid event."*
+
+**So the model is right about the world, and the label says "undeterminable from text" — and the
+metric counts that as a mark against the system.** The same shape appears on the watercolor
+workshops. That is a real limitation of a text-only labelling rule, and it is now the open
+question: an `unknown` label needs to distinguish *"the text does not say and I do not know"*
+from *"the text does not say but I checked and it is paid"*. The `ALSO-OK` field was invented for
+exactly this and used zero times out of 68, while the free-text notes captured it eight times.
+
+537 tests green. Baseline accepted at 17 on 65 after inspecting all of them.
+
+**The lesson.** **A threshold set without measuring the noise is a guess wearing a number.** The
+pre-registered rule "over-claim must not increase" was sound reasoning about *which direction*
+matters and silent about *how much movement means anything* — and the second question can only be
+answered by running the same thing repeatedly and watching it disagree with itself. Four runs cost
+about a dollar and turned a gate that would have cried wolf every other week into one that reports
+honestly.
+
+And the smaller one: **inspect a baseline before accepting it.** The instruction to "re-accept
+with --accept" is one keystroke, and the whole value of a human in that loop is that they looked.
+Looking is what found the Frosty 5K case, which is now the most interesting open question in the
+eval.

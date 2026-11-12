@@ -44,6 +44,28 @@ export interface Label {
   note?: string
   /** Where this judgment came from, so a re-label can be told from an original. */
   labelled_at?: string
+  /**
+   * Every change to this label, in order.
+   *
+   * A golden set whose answers change without trace is not ground truth — it is an opinion
+   * with a timestamp. The eval exists to argue with the model, so when the HUMAN side of the
+   * argument moves, the move has to be inspectable: what it was, what it became, and the
+   * reason given at the time.
+   *
+   * It also guards the failure this project worries about most. The cheapest way to turn a
+   * red gate green is to edit the answer key, and that edit is indistinguishable from a
+   * genuine correction unless the reason is recorded next to it.
+   */
+  revisions?: LabelRevision[]
+}
+
+export interface LabelRevision {
+  date: string
+  field: 'kid' | 'price'
+  from: string | null
+  to: string | null
+  /** Why, in the labeller's own terms. An empty reason is not acceptable. */
+  why: string
 }
 
 export interface GoldenSet {

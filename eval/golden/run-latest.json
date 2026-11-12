@@ -1,5 +1,5 @@
 {
-  "ran_at": "2026-11-12T17:55:43.665Z",
+  "ran_at": "2026-11-12T19:00:55.054Z",
   "scored_against": "eval/golden/labels.json",
   "rows": [
     {
@@ -16,7 +16,7 @@
         ],
         "price": "free",
         "price_confidence": "confirmed",
-        "reasoning": "This is a free outdoor community music series with lawn games explicitly welcoming friends and family, making it a plausible family outing despite the BYOB element; no age restriction is stated and no child-specific age range is mentioned."
+        "reasoning": "This is a free outdoor community music series with lawn games explicitly welcoming friends and family, making it a plausible family outing despite the BYOB element; no age restriction is stated and the event is explicitly described as FREE."
       },
       "shipped": {
         "price_class": "free",
@@ -39,7 +39,7 @@
         ],
         "price": "free",
         "price_confidence": "confirmed",
-        "reasoning": "A free outdoor community music series with lawn games explicitly welcoming friends and family is a plausible family outing; BYOB and a wine perk for members are incidental adult elements that don't restrict children, and the event is explicitly stated as FREE."
+        "reasoning": "This is a free outdoor community music series with lawn games explicitly welcoming friends and family, making it a plausible family outing despite the BYOB element; no age restrictions are stated."
       },
       "shipped": {
         "price_class": "free",
@@ -62,7 +62,7 @@
         ],
         "price": "free",
         "price_confidence": "confirmed",
-        "reasoning": "A free outdoor community music series with lawn games explicitly welcoming friends and family is the kind of event parents would bring children to, making it family-relevant; the event is explicitly stated as FREE though BYOB and a complimentary wine pour for members are incidental adult perks that don't restrict child attendance."
+        "reasoning": "A free outdoor community music series with lawn games explicitly welcoming friends and family is the kind of event parents would bring children to, though BYOB and wine perks are incidental adult elements that don't restrict access; admission is explicitly stated as free."
       },
       "shipped": {
         "price_class": "free",
@@ -85,7 +85,7 @@
         ],
         "price": "free",
         "price_confidence": "confirmed",
-        "reasoning": "This is a free outdoor community music series explicitly mentioning 'friends and family' and lawn games, making it a plausible family outing; the BYOB element is incidental and does not make it adults-only."
+        "reasoning": "This is a free outdoor community music series with lawn games explicitly welcoming friends and family, making it a plausible family outing; BYOB and complimentary wine perks are incidental adult benefits, not age restrictions."
       },
       "shipped": {
         "price_class": "free",
@@ -108,7 +108,7 @@
         ],
         "price": "free",
         "price_confidence": "confirmed",
-        "reasoning": "This is a free outdoor community music series with lawn games explicitly welcoming friends and family, making it a plausible family outing; BYOB is incidental and does not make it adults-only, and the event is explicitly stated as free."
+        "reasoning": "This is a free community outdoor music series with lawn games explicitly welcoming friends and family, making it a plausible family outing despite the BYOB element; no age restriction is stated and the free admission is explicitly confirmed."
       },
       "shipped": {
         "price_class": "free",
@@ -131,7 +131,7 @@
         ],
         "price": "free",
         "price_confidence": "confirmed",
-        "reasoning": "This is a free outdoor community music series with lawn games explicitly welcoming friends and family, making it a plausible family outing; BYOB and complimentary wine perks are incidental adult features that don't restrict children from attending."
+        "reasoning": "This is a free outdoor community music series with lawn games explicitly welcoming friends and family, making it a plausible family outing; BYOB and complimentary wine perks are incidental adult features that do not restrict children from attending."
       },
       "shipped": {
         "price_class": "free",
@@ -154,7 +154,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "Explicitly family-friendly with child-focused activities (petting zoo, story time, arts and crafts) suitable for all ages; no admission price or paid signal is mentioned."
+        "reasoning": "Explicitly described as 'family-friendly' with activities like petting zoo, story time, and arts and crafts suitable for all ages; no price or ticket information is mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -177,7 +177,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "Explicitly family-friendly with child-focused activities (petting zoo, story time, arts and crafts) suitable for all ages, and no price or ticket information is mentioned, defaulting to free."
+        "reasoning": "Explicitly described as 'family-friendly' with activities like petting zoo, story time, and arts and crafts suitable for all ages; no price or admission fee is mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -200,7 +200,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "Explicitly family-friendly with child-focused activities (petting zoo, story time, arts and crafts) for all ages, and no price or ticket information is mentioned, defaulting to free."
+        "reasoning": "Explicitly described as 'family-friendly' with activities like petting zoo, story time, and arts and crafts suitable for all ages; no price or ticket information is mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -223,7 +223,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "Explicitly family-friendly with child-focused activities (petting zoo, story time, arts and crafts) for all ages, and no price or ticketing information is mentioned, defaulting to free."
+        "reasoning": "Explicitly described as 'family-friendly' with activities like petting zoo, story time, and arts and crafts suitable for all ages; no price or ticket information is mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -246,7 +246,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "Explicitly family-friendly with child-focused activities (petting zoo, story time, arts and crafts) for all ages; no price or ticket information is mentioned, defaulting to free."
+        "reasoning": "Explicitly described as 'family-friendly' with activities like petting zoo, story time, arts and crafts, and lawn games suitable for all ages; no price or ticket information is mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -269,7 +269,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "Explicitly family-friendly with child-focused activities (petting zoo, story time, arts and crafts) suitable for all ages, and no price or ticketing information is mentioned, defaulting to free."
+        "reasoning": "Explicitly family-friendly with petting zoo, story time, arts and crafts, and lawn games for all ages; no price or ticketing information is mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -292,7 +292,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "Explicitly family-friendly with child-focused activities (petting zoo, story time, arts and crafts) for all ages; no price or ticket information is mentioned, defaulting to free."
+        "reasoning": "Explicitly described as 'family-friendly' with activities like petting zoo, story time, and arts and crafts that suit all ages; no admission price or paid signal is mentioned."
       },
       "shipped": {
         "price_class": "free",
@@ -315,7 +315,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "Explicitly family-friendly with child-focused activities (petting zoo, story time, arts and crafts) suitable for all ages, and no price or ticketing information is mentioned."
+        "reasoning": "Explicitly described as 'family-friendly' with activities like a petting zoo, story time, and arts and crafts that suit all ages; no price or admission fee is mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -338,7 +338,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "Explicitly family-friendly with child-focused activities (petting zoo, story time, crafts, lawn games) for all ages; no price or ticket information is mentioned, defaulting to free."
+        "reasoning": "Explicitly described as 'family-friendly' with activities like petting zoo, story time, and arts and crafts suitable for all ages; no price or ticketing information is mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -361,7 +361,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "Explicitly family-friendly with child-focused activities (petting zoo, story time, arts and crafts) suitable for all ages, and no price or ticket information is mentioned, defaulting to free."
+        "reasoning": "Explicitly described as 'family-friendly' with activities like petting zoo, story time, arts and crafts, and lawn games suited to all ages; no price or ticket information is mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -384,7 +384,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "Explicitly family-friendly with child-focused activities (petting zoo, story time, arts and crafts) suitable for all ages; no admission price or paid signal is mentioned, defaulting to free."
+        "reasoning": "Explicitly described as 'family-friendly' with activities like petting zoo, story time, and arts and crafts suitable for all ages; no price or admission fee is mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -407,7 +407,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "Explicitly family-friendly with child-focused activities (petting zoo, story time, crafts, lawn games) for all ages; no price or ticket information is mentioned, defaulting to free."
+        "reasoning": "Explicitly described as 'family-friendly' with activities like petting zoo, story time, and arts and crafts suitable for all ages; no price or ticket information is mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -430,7 +430,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "Explicitly family-friendly with child-focused activities (petting zoo, story time, arts and crafts) for all ages; no price or ticket information is mentioned, defaulting to free."
+        "reasoning": "Explicitly described as 'family-friendly' with activities like petting zoo, story time, and arts and crafts suitable for all ages; no price or ticket information is mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -453,7 +453,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "Explicitly family-friendly with child-focused activities (petting zoo, story time, arts and crafts) for all ages; no price or ticket information is mentioned, defaulting to free."
+        "reasoning": "Explicitly described as 'family-friendly' with activities like petting zoo, story time, arts and crafts, and lawn games suitable for all ages; no price or admission fee is mentioned."
       },
       "shipped": {
         "price_class": "free",
@@ -476,7 +476,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "Explicitly family-friendly with child-focused activities like petting zoo, story time, and arts and crafts for all ages; no price or ticket information is mentioned, defaulting to free."
+        "reasoning": "Explicitly described as 'family-friendly' with activities like petting zoo, story time, and arts and crafts suitable for all ages; no price or ticket information is mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -499,7 +499,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "Explicitly family-friendly with child-focused activities (petting zoo, story time, arts and crafts) suitable for all ages; no admission price or paid signal is mentioned, defaulting to free."
+        "reasoning": "Explicitly described as 'family-friendly' with activities like petting zoo, story time, and arts and crafts that suit all ages; no price or admission fee is mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -522,7 +522,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "Explicitly family-friendly with child-focused activities (petting zoo, story time, arts and crafts) suitable for all ages, and no price or ticketing information is mentioned, defaulting to free."
+        "reasoning": "Explicitly described as 'family-friendly' with activities like petting zoo, story time, arts and crafts, and lawn games suited to all ages; no price or ticket information is mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -545,7 +545,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "Explicitly family-friendly with petting zoo, story time, and crafts for all ages; no price or ticket information is mentioned, defaulting to free."
+        "reasoning": "Explicitly family-friendly with child-focused activities (petting zoo, story time, arts and crafts) open to all ages, and no price or ticketing information is mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -568,7 +568,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "An outdoor concert series under the stars with a family-friendly park setting (playground mentioned nearby) is a general-audience event a parent would plausibly attend with children of any age; no price or ticket requirement is mentioned, so free is the default."
+        "reasoning": "An outdoor cover band concert series in a park setting is a general-audience community event that families would plausibly attend together, no age restrictions are mentioned, and no price or ticketing information is stated, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -581,7 +581,7 @@
       "id": "kaleidoscope-park-10000193",
       "source": "kaleidoscope-park",
       "title": "Shop Local Vendor Markets Presented by Comerica",
-      "label_kid": "no",
+      "label_kid": "yes",
       "label_price": "free",
       "model": {
         "kid_relevant": true,
@@ -591,10 +591,33 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "A community vendor market at a park with a playground nearby is a general-audience event a family would plausibly attend together; no age restrictions are stated, no price is mentioned, and the community-event default applies."
+        "reasoning": "An outdoor local vendor market is a general-audience community event a family would plausibly attend together, no age restrictions are mentioned, and no price or ticket requirement is stated so it defaults to free."
       },
       "shipped": {
-        "price_class": "unknown",
+        "price_class": "free",
+        "price_confidence": "inferred",
+        "shown": true
+      },
+      "error": null
+    },
+    {
+      "id": "kaleidoscope-park-shop-local-vendor-market-presented-by-fifth-thirds-bank-2026-11-28",
+      "source": "kaleidoscope-park",
+      "title": "Shop Local Vendor Market Presented by Fifth Third Bank",
+      "label_kid": "yes",
+      "label_price": "free",
+      "model": {
+        "kid_relevant": true,
+        "kid_confidence": "medium",
+        "age_buckets": [
+          "family"
+        ],
+        "price": "free",
+        "price_confidence": "inferred",
+        "reasoning": "A local vendor market in a park setting is a general-audience community event a family would plausibly attend together; no age restrictions or admission fee are mentioned, so it defaults to free."
+      },
+      "shipped": {
+        "price_class": "free",
         "price_confidence": "inferred",
         "shown": true
       },
@@ -612,7 +635,7 @@
         "age_buckets": [],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "This is a vendor application call, not an attendee event, so no parent would bring a child to participate; price is irrelevant and defaults to free per community event norms."
+        "reasoning": "This is a vendor application call, not an attendee event, so no parent would bring a child to participate; price is irrelevant and defaults to free."
       },
       "shipped": {
         "price_class": "free",
@@ -635,7 +658,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "A holiday community street event with 'fun activities' for 'friends and family' is clearly family-oriented with no stated price, defaulting to free."
+        "reasoning": "A community holiday tradition with 'fun activities' for 'friends and family' is clearly family-friendly and suitable for all ages, with no price or ticket information mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -658,7 +681,7 @@
         ],
         "price": "paid",
         "price_confidence": "confirmed",
-        "reasoning": "A festive fun run explicitly for 'all ages' that families attend together; signing up via a race website implies registration fees typical of organized 5K events."
+        "reasoning": "A festive fun run explicitly for 'all ages' that families attend together; registration is required via sign-up on the race website, indicating a paid entry fee typical of organized 5K events."
       },
       "shipped": {
         "price_class": "paid",
@@ -681,7 +704,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "A statewide initiative encouraging families to visit parks and recreation spaces together, clearly family-oriented with no age restriction or price mentioned."
+        "reasoning": "A statewide initiative encouraging families to visit parks and recreation spaces together, clearly family-oriented with no age restrictions or price mentioned."
       },
       "shipped": {
         "price_class": "free",
@@ -704,7 +727,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "This outdoor park event is explicitly described as 'perfect for all ages' and family-friendly, making it clearly kid-relevant for all age groups, with no price signals indicating a cost to attend."
+        "reasoning": "This outdoor nature exploration event at a park is explicitly described as 'perfect for all ages' and family-friendly, with no price mentioned defaulting to free for this community event."
       },
       "shipped": {
         "price_class": "free",
@@ -727,7 +750,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "This outdoor nature exploration event is explicitly described as 'perfect for all ages' and family-friendly, making it clearly kid-relevant for all age groups, with no price mentioned defaulting to free."
+        "reasoning": "This outdoor park event is explicitly described as 'perfect for all ages' and family-oriented, with no admission fee or paid signals mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -750,7 +773,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "This outdoor nature exploration event at a park is explicitly described as 'perfect for all ages' and family-friendly, making it clearly kid-relevant for all age groups, with no price or ticket information mentioned, defaulting to free."
+        "reasoning": "This is an outdoor nature exploration event explicitly described as 'perfect for all ages' and welcoming families, with no admission price or paid signal mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -771,7 +794,7 @@
         "age_buckets": [],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "The workshop's focus on breathwork, mindfulness affirmations, and ritual-based intention-setting is oriented toward an adult self-improvement audience, making it unlikely a parent would bring a child; no price is mentioned so it defaults to free."
+        "reasoning": "The workshop's framing around breathwork, affirmations, mindfulness rituals, and 'releasing control' is oriented toward adult self-development rather than a family or child activity, and no price is mentioned so the community-event default of free applies."
       },
       "shipped": {
         "price_class": "unknown",
@@ -794,7 +817,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "A community bike ride at a conversational pace through parks and trails is a classic family outing a parent would plausibly do with children; no age restriction or price is mentioned, defaulting to free."
+        "reasoning": "A community bike ride at a conversational pace through parks and trails is a classic family activity that parents would plausibly attend with children; no age restrictions or price are mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -817,7 +840,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "A community bike ride at a conversational pace through parks and trails is a classic family outing a parent would join with children; no age restrictions or price are mentioned, defaulting to free."
+        "reasoning": "A community bike ride at a conversational pace through parks and trails is a family-friendly activity a parent would plausibly do with older children; no age restriction or price is mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -842,7 +865,7 @@
         ],
         "price": "unknown",
         "price_confidence": "confirmed",
-        "reasoning": "This beginner fishing workshop is explicitly open to ages 5 and up with an accompanying adult, covering toddler-adjacent through teen age groups; registration is required but no price is stated, making the cost ambiguous."
+        "reasoning": "Explicitly open to ages 5 and up with an accompanying adult making it child-focused; 'registration is required' with a sign-up link creates ambiguity about whether there is a cost, so price is unknown."
       },
       "shipped": {
         "price_class": "unknown",
@@ -865,7 +888,7 @@
         ],
         "price": "paid",
         "price_confidence": "confirmed",
-        "reasoning": "A sensory-friendly swim event at a water park is clearly family-oriented and inclusive of all ages, and the phrase 'Ticket available now!' is an explicit paid signal."
+        "reasoning": "A sensory-friendly swim event at a water park is clearly family-oriented and all ages can participate together; 'Ticket available now' is an explicit paid signal."
       },
       "shipped": {
         "price_class": "paid",
@@ -888,7 +911,7 @@
         ],
         "price": "paid",
         "price_confidence": "confirmed",
-        "reasoning": "A water park end-of-summer event explicitly for all ages with live music and inflatables is clearly family-oriented, and the listing states explicit ticket prices for youth and adults, making it paid (though free for members/pass holders)."
+        "reasoning": "A water park end-of-summer event explicitly designed for all ages and families; pricing is clearly stated with separate youth and adult event pass costs, though free for members and pass holders."
       },
       "shipped": {
         "price_class": "paid",
@@ -911,7 +934,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "Explicitly described as a family drop-in activity with hands-on fun and playful learning for families, no age restriction stated, and no price or ticket information mentioned so it defaults to free."
+        "reasoning": "Explicitly framed as a family drop-in activity series with hands-on fun and playful learning, suitable for all ages; no price mentioned, defaulting to free per community event convention."
       },
       "shipped": {
         "price_class": "free",
@@ -935,7 +958,7 @@
         ],
         "price": "paid",
         "price_confidence": "confirmed",
-        "reasoning": "A princess-themed tea party explicitly recommended for ages 3 and up, with tickets required for each attendee, making it a paid child-focused event."
+        "reasoning": "A princess tea party explicitly recommended for ages 3 and up with a ticket purchase required, making it a clearly child-focused paid event for toddlers and kids."
       },
       "shipped": {
         "price_class": "paid",
@@ -948,7 +971,7 @@
       "id": "play-frisco-7427",
       "source": "play-frisco",
       "title": "Reception, \"Stories from the Archives\"",
-      "label_kid": "no",
+      "label_kid": "yes",
       "label_price": "unknown",
       "model": {
         "kid_relevant": true,
@@ -958,7 +981,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "A public art reception is a general-audience community event a family could plausibly attend together, with no age restrictions, no stated price, and no ambiguous pricing signals."
+        "reasoning": "A public art reception with no age restrictions is plausibly a family outing, though nothing in the text specifically targets children; no price is mentioned so the community-event default of free applies."
       },
       "shipped": {
         "price_class": "free",
@@ -982,7 +1005,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "A hands-on card-making craft class is suitable for older children and teens who can follow instructor-led techniques; no age restriction or adult-only language is present, no price is mentioned so the community-event default of free applies."
+        "reasoning": "A hands-on card-making craft class with all supplies provided is suitable for older children and teens who can follow instructor-led techniques; no age restriction or price is mentioned, so it defaults to free under the community-event assumption."
       },
       "shipped": {
         "price_class": "unknown",
@@ -1005,7 +1028,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "The event explicitly welcomes all ages and encourages families to attend, making it clearly kid-relevant; no price or ticket information is mentioned, so free is the community-event default."
+        "reasoning": "The event explicitly states 'for all ages' and 'bring the whole family,' making it clearly kid-relevant for all age groups, and no price or fee is mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -1028,7 +1051,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "A recurring museum and historic site event with hands-on activities and demonstrations that families with children of all ages would attend together; no age restriction or price is mentioned, defaulting to free."
+        "reasoning": "A recurring family-oriented museum event with hands-on activities and historic home tours that parents would naturally attend with children of all ages, with no price or admission fee mentioned."
       },
       "shipped": {
         "price_class": "free",
@@ -1051,7 +1074,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "A family-oriented heritage museum event with hands-on activities and historic home tours that parents would naturally attend with children of all ages, with no price mentioned defaulting to free."
+        "reasoning": "A recurring family-oriented heritage museum event with hands-on activities and historic home tours that parents would clearly attend with children of all ages; no price or ticket information is mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -1074,7 +1097,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "A museum open day with hands-on activities and historic home tours is a classic family outing suitable for all ages, with no price mentioned defaulting to free."
+        "reasoning": "A recurring family-friendly museum and heritage center event with hands-on activities and demonstrations that parents would clearly choose to attend with children of all ages, and no price or ticket information is mentioned."
       },
       "shipped": {
         "price_class": "free",
@@ -1097,7 +1120,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "A recurring family-friendly museum event with hands-on activities and historic demonstrations that parents would clearly attend with children of all ages, with no price mentioned defaulting to free."
+        "reasoning": "A family-oriented monthly event at a heritage museum with hands-on activities and demonstrations that families with children of all ages would attend together; no price mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -1120,7 +1143,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "A recurring family-friendly museum event with hands-on activities and historic home tours that parents would clearly attend with children of all ages, with no price or ticket information mentioned."
+        "reasoning": "A recurring family-oriented museum event with hands-on activities and historic demonstrations that parents would clearly choose to attend with children of all ages, with no price or ticket information mentioned."
       },
       "shipped": {
         "price_class": "free",
@@ -1143,7 +1166,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "A recurring family-oriented museum event with hands-on activities and historic home tours that parents would clearly attend with children of all ages, with no price or admission cost mentioned."
+        "reasoning": "A recurring museum and historic site event with hands-on activities and live demonstrations is clearly family-oriented with broad age appeal, and no price or ticket information is mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -1166,7 +1189,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "A live raptor encounter at a community event is a classic family outing with broad all-ages appeal, no age restriction is mentioned, and no price or ticket language appears making free the community-event default."
+        "reasoning": "A live raptor encounter at a community event is a classic family outing with broad all-ages appeal, no age restriction is mentioned, and no price or ticket information is given so the community-event default of free applies."
       },
       "shipped": {
         "price_class": "free",
@@ -1190,7 +1213,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "A watercolor workshop is plausibly attended by older children and teens with a parent, though the focus on technique (water-to-pigment ratio, wet-on-dry vs wet-on-wet) and 'calming our busy minds' framing suggests it suits kids 6+ and teens rather than toddlers or a broad all-ages family group; no price is mentioned, so the community-event default of free applies."
+        "reasoning": "A watercolor workshop is a general-audience creative activity a parent might attend with an older child or teen; the focus on specific techniques like water-to-pigment ratios suggests it suits kids and teens rather than toddlers, and no price or fee is mentioned so it defaults to free."
       },
       "shipped": {
         "price_class": "unknown",
@@ -1214,7 +1237,7 @@
         ],
         "price": "paid",
         "price_confidence": "inferred",
-        "reasoning": "A watercolor workshop led by an artist is plausibly attended by older children and teens, but the technical instruction (water-to-pigment ratio, wet-on-dry techniques) and adult-oriented framing ('calming our busy minds') suggest it skews older than toddlers; no price is mentioned but artist-led workshops are typically paid, though this is a community calendar default context making it ambiguous — however the structured, instructor-led format is a stronger paid signal than a typical free community event."
+        "reasoning": "A watercolor workshop led by an instructor requiring technique-following and color ratio mastery suits older children and teens rather than toddlers; no age restriction excludes families, but the technical instruction implies kids/teen rather than all-ages; no price is mentioned so the community-event default of free applies, but 'workshop' with an artist typically implies a fee — however, with no explicit paid signal, this defaults to free."
       },
       "shipped": {
         "price_class": "paid",
@@ -1237,7 +1260,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "A public gallery reception with interactive art activities, live performances, and music is a general-audience community event a family would plausibly attend together; no age restrictions or price are mentioned, so it defaults to free."
+        "reasoning": "A public gallery reception with live performances, interactive art activities, and music is a general-audience community event a family would plausibly attend together; no age restrictions or admission price are mentioned."
       },
       "shipped": {
         "price_class": "free",
@@ -1260,7 +1283,7 @@
         ],
         "price": "unknown",
         "price_confidence": "inferred",
-        "reasoning": "A family camping overnight event with movies, s'mores, and outdoor activities is clearly kid-relevant for all ages; no age range is stated so 'family' is assumed; price is unknown because 'participants will also receive Camp Out swag' and the structured nature (dinner, breakfast, swag) suggests possible registration or fee, making a free default unreliable."
+        "reasoning": "A family camping event with movies, s'mores, and outdoor activities is clearly kid-relevant and suits all ages; meals and swag are included but no explicit price or free statement is given, and 'participants' implies some form of registration that may involve a fee, so price is unknown."
       },
       "shipped": {
         "price_class": "unknown",
@@ -1273,7 +1296,7 @@
       "id": "play-frisco-7672",
       "source": "play-frisco",
       "title": "Art in the Atrium 26 - Call for Art",
-      "label_kid": "yes",
+      "label_kid": "no",
       "label_price": "unknown",
       "model": {
         "kid_relevant": false,
@@ -1281,7 +1304,7 @@
         "age_buckets": [],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "This is a call for art submissions, not an attendable event, so no parent would bring a child to participate; age buckets are empty and no price is mentioned so the community-event default of free applies."
+        "reasoning": "This is a call for art submissions, not an event families attend together, so it is not kid-relevant; no price is mentioned so it defaults to free."
       },
       "shipped": {
         "price_class": "free",
@@ -1305,7 +1328,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "A beginner calligraphy workshop with hands-on instruction and supplied materials is plausibly attended by older children and teens with a parent, though it requires dexterity and sustained attention, making it unsuitable for toddlers; no price or admission fee is mentioned, defaulting to free."
+        "reasoning": "A beginner calligraphy workshop with hands-on instruction suits older children and teens who can follow step-by-step pen techniques; no age restriction is stated, no price or fee is mentioned, so it defaults to free."
       },
       "shipped": {
         "price_class": "unknown",
@@ -1328,7 +1351,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "A nature exploration series searching for bees, beetles, and butterflies in local parks is a family-friendly outdoor activity a parent would plausibly attend with children of all ages, and no price or fee is mentioned, defaulting to free."
+        "reasoning": "A nature walk series searching for insects in local parks is a family-friendly outdoor activity a parent would plausibly bring children to, with no age restrictions stated, no price mentioned, and no paid signals present."
       },
       "shipped": {
         "price_class": "free",
@@ -1351,7 +1374,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "A nature exploration series searching for pollinators in local parks is a family-friendly outdoor activity a parent would plausibly attend with children of any age, with no price mentioned and no adult restrictions."
+        "reasoning": "A nature exploration series searching for pollinators in local parks is a family-friendly outdoor activity a parent would plausibly bring children to, no age is stated so 'family' is used, and no price or fee is mentioned so the community-event default of free applies."
       },
       "shipped": {
         "price_class": "free",
@@ -1374,7 +1397,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "A nature exploration series searching for pollinators in local parks is a family-friendly outdoor activity a parent would plausibly attend with children of all ages, no age restriction or price is mentioned, defaulting to free."
+        "reasoning": "A nature-exploration series searching for insects in local parks is a classic family outing a parent would bring children to; no age is stated so 'family' is used, and no price or ticket information is mentioned, defaulting to free."
       },
       "shipped": {
         "price_class": "free",
@@ -1397,7 +1420,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "A nature exploration event searching for insects in local parks is a family-friendly outdoor activity a parent would plausibly bring children to, no age is stated so 'family' is used, and no price or fee is mentioned defaulting to free."
+        "reasoning": "A weekly outdoor nature exploration series searching for insects in local parks is a classic family activity a parent would bring children to, with no age restriction stated, no price mentioned, and no ambiguous payment signals."
       },
       "shipped": {
         "price_class": "free",
@@ -1420,7 +1443,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "A nature exploration series searching for insects in local parks is a family-friendly outdoor activity a parent would plausibly attend with children of various ages, no price is mentioned so the community-event default of free applies."
+        "reasoning": "A nature exploration series searching for bees, beetles, and butterflies in local parks is a family-friendly outdoor activity a parent would plausibly attend with children of all ages, with no price or admission fee mentioned."
       },
       "shipped": {
         "price_class": "free",
@@ -1443,7 +1466,7 @@
         ],
         "price": "paid",
         "price_confidence": "confirmed",
-        "reasoning": "A pet-friendly pool event is a fun family outing parents would plausibly bring children to, with no stated age restriction; tickets are explicitly mentioned, confirming a paid entry."
+        "reasoning": "A pet-friendly pool event is a family-oriented activity that parents would plausibly attend with children, and the explicit mention of 'tickets' confirms a paid entry."
       },
       "shipped": {
         "price_class": "paid",
@@ -1466,7 +1489,7 @@
         ],
         "price": "free",
         "price_confidence": "inferred",
-        "reasoning": "A community clean-up and planting event is a general-audience outdoor activity a family would plausibly attend together, no age restrictions are mentioned, and no price or fee is indicated."
+        "reasoning": "A community clean-up and planting event is a general-audience outdoor activity a family would attend together, with no age restrictions stated, supplies provided at no mentioned cost, and no price signals present."
       },
       "shipped": {
         "price_class": "free",

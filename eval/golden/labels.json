@@ -151,9 +151,40 @@
   },
   {
     "id": "kaleidoscope-park-10000193",
-    "kid": "no",
+    "kid": "yes",
     "price": "free",
-    "labelled_at": "2026-08"
+    "labelled_at": "2026-08",
+    "revisions": [
+      {
+        "date": "2026-11-12",
+        "field": "kid",
+        "from": "no",
+        "to": "yes",
+        "why": "Agreed with the model on review: a community artisan market at a park is a general-audience event a family would attend. Original \"no\" was the five-second kid call, with no note recorded."
+      }
+    ]
+  },
+  {
+    "id": "kaleidoscope-park-shop-local-vendor-market-presented-by-fifth-thirds-bank-2026-11-28",
+    "kid": "yes",
+    "price": "free",
+    "revisions": [
+      {
+        "date": "2026-11-12",
+        "field": "kid",
+        "from": null,
+        "to": "yes",
+        "why": "Same program as kaleidoscope-park-10000193 under a different sponsor; labelled together so the two cannot diverge."
+      },
+      {
+        "date": "2026-11-12",
+        "field": "price",
+        "from": null,
+        "to": "free",
+        "why": "Source states it outright — the live row carries price_confidence \"confirmed\" and price_text \"Free\"."
+      }
+    ],
+    "labelled_at": "2026-11-12"
   },
   {
     "id": "play-frisco-6710",
@@ -260,10 +291,19 @@
   },
   {
     "id": "play-frisco-7427",
-    "kid": "no",
+    "kid": "yes",
     "price": "unknown",
     "note": "The description does not have any free-event or paid-event signal.",
-    "labelled_at": "2026-08"
+    "labelled_at": "2026-08",
+    "revisions": [
+      {
+        "date": "2026-11-12",
+        "field": "kid",
+        "from": "no",
+        "to": "yes",
+        "why": "Labeller was not familiar with what a gallery \"reception\" is. Having understood it, corrected to a family event. (Confirmed separately that the 138-char description is the complete source text, not a truncation.)"
+      }
+    ]
   },
   {
     "id": "play-frisco-7432",
@@ -357,10 +397,19 @@
   },
   {
     "id": "play-frisco-7672",
-    "kid": "yes",
+    "kid": "no",
     "price": "unknown",
     "note": "I may not have the knowledge to categorize this although it is asking for submissions and not really mentioning you have to pay to register/submit. So I will lean towards free. There is a field 'Link' that has the value as a 'Register here' hyperlink. However this event says 'registration required: no' here. So, this is a discrepancy that needs to be looked into. BTW, when I access teh 'Register here' link, there it says there is no entry fee.",
-    "labelled_at": "2026-08"
+    "labelled_at": "2026-08",
+    "revisions": [
+      {
+        "date": "2026-11-12",
+        "field": "kid",
+        "from": "yes",
+        "to": "no",
+        "why": "Agreed with the model: a call for art submissions is not an attendable event, so it is not kid-relevant even though a child could submit work. Original \"yes\" conflated \"a kid could take part\" with \"a family could attend\"."
+      }
+    ]
   },
   {
     "id": "play-frisco-7676",
