@@ -4,6 +4,12 @@
  *   npm run eval:worksheet              # write eval/golden/worksheet.md for unlabelled events
  *   npm run eval:worksheet -- --all     # include already-labelled ones (to revise)
  *   npm run eval:worksheet -- --parse   # read the filled worksheet back into labels.json
+ *   npm run eval:worksheet -- --source kaleidoscope-park   # one source at a time
+ *
+ * Labelling is human time and it is the scarce input here, so the sheet is scopeable. One
+ * source in a sitting is a finishable unit of work; 54 judgments in one file is a chore
+ * someone abandons halfway, and a half-filled sheet is worse than a scoped one because
+ * nobody can tell which half was skipped on purpose.
  *
  * ONE BLOCK PER PROGRAM, NOT PER DATE. A recurring series occupies one row per occurrence, but
  * every occurrence carries the identical title and description — so it is ONE judgment, and a
@@ -45,18 +51,23 @@ function group(events: FrozenEvent[]): FrozenEvent[][] {
   return [...m.values()].sort((a, b) => b.length - a.length)
 }
 
-function generate(all: boolean): void {
+function generate(all: boolean, source: string | null): void {
   const events = read<FrozenEvent[]>(EVENTS_FILE, [])
   const labels = read<Label[]>(LABELS_FILE, [])
   const labelled = new Set(labels.filter(l => l.kid || l.price).map(l => l.id))
-  const todo = all ? events : events.filter(e => !labelled.has(e.id))
+  const unlabelled = all ? events : events.filter(e => !labelled.has(e.id))
+  const todo = source ? unlabelled.filter(e => e.source === source) : unlabelled
+  if (source && todo.length === 0) {
+    const seen = [...new Set(events.map(e => e.source))].join(", ")
+    throw new Error(`no unlabelled events for source "${source}". Sources in the set: ${seen}`)
+  }
   const groups = group(todo)
 
   const out: string[] = [
     '# Labelling worksheet',
     '',
-    `**${groups.length} judgments** covering ${todo.length} frozen events — a recurring series is`,
-    'one judgment applied to all its dates.',
+    `**${groups.length} judgments** covering ${todo.length} frozen events${source ? ` from \`${source}\`` : ''}.`,
+    'A recurring series is one judgment applied to all its dates.',
     '',
     'Fill the `kid:` and `price:` values on each ANSWER line, then run',
     '`npm run eval:worksheet -- --parse`. Partial is fine: anything left as `?` is skipped and',
@@ -109,7 +120,7 @@ function generate(all: boolean): void {
 
   writeFileSync(SHEET, out.join('\n'))
   console.log(`\nwrote ${SHEET}`)
-  console.log(`  ${groups.length} judgments covering ${todo.length} frozen events`)
+  console.log(`  ${groups.length} judgments covering ${todo.length} frozen events${source ? ` from ${source}` : ''}`)
   console.log(`  ~${Math.round(groups.length / 60 * 10) / 10} hours at a minute each`)
   console.log('\nfill the ANSWER lines, then: npm run eval:worksheet -- --parse\n')
 }
@@ -169,5 +180,9 @@ function parse(): void {
 const argv = process.argv.slice(2)
 try {
   if (argv.includes('--parse')) parse()
-  else generate(argv.includes('--all'))
+  else {
+    const i = argv.indexOf('--source')
+    const source = i !== -1 ? argv[i + 1] ?? null : null
+    generate(argv.includes('--all'), source)
+  }
 } catch (e: any) { console.error(String(e?.message ?? e)); process.exitCode = 1 }

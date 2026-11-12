@@ -1,7 +1,7 @@
 # Labelling worksheet
 
-**54 judgments** covering 116 frozen events — a recurring series is
-one judgment applied to all its dates.
+**19 judgments** covering 38 frozen events from `kaleidoscope-park`.
+A recurring series is one judgment applied to all its dates.
 
 Fill the `kid:` and `price:` values on each ANSWER line, then run
 `npm run eval:worksheet -- --parse`. Partial is fine: anything left as `?` is skipped and
@@ -14,31 +14,11 @@ can be done later.
 > the text below, you cannot tell. **Do not open the event page to find out** — the
 > classifier cannot either, and a label it had no way to reach measures nothing.
 
-Generated 2026-11-12T16:31:32.129Z.
+Generated 2026-11-12T17:01:33.523Z.
 
 ---
 
-### 1. Saturday Music Series at Frisco Fresh Market
-
-play-frisco · 30 dates, 2026-10-03 → 2027-04-24 · registration: no
-
-<!-- ids: play-frisco-7752 play-frisco-7753 play-frisco-7754 play-frisco-7755 play-frisco-7756 play-frisco-7757 play-frisco-7758 play-frisco-7759 play-frisco-7760 play-frisco-7761 play-frisco-7762 play-frisco-7763 play-frisco-7764 play-frisco-7765 play-frisco-7766 play-frisco-7767 play-frisco-7768 play-frisco-7769 play-frisco-7770 play-frisco-7771 play-frisco-7772 play-frisco-7773 play-frisco-7774 play-frisco-7775 play-frisco-7776 play-frisco-7777 play-frisco-7778 play-frisco-7779 play-frisco-7780 play-frisco-7781 -->
-
-> Check out live local music and entertainment on the patio, Saturdays from 11 a.m. to 1 p.m. at Frisco Fresh Market!
-
-ANSWER kid: ? | price: ? | note: 
-
-### 2. Plaza Live!
-
-play-frisco · 12 dates, 2026-11-06 → 2027-04-15 · registration: no
-
-<!-- ids: play-frisco-7854 play-frisco-7855 play-frisco-7856 play-frisco-7857 play-frisco-7858 play-frisco-7859 play-frisco-7866 play-frisco-7867 play-frisco-7868 play-frisco-7869 play-frisco-7870 play-frisco-7871 -->
-
-> First and third Thursdays from 6 to 8 p.m.
-
-ANSWER kid: ? | price: ? | note: 
-
-### 3. Fitness Fun Classes
+### 1. Fitness Fun Classes
 
 kaleidoscope-park · 6 dates, 2026-11-14 → 2026-12-19 · registration: no
 
@@ -48,7 +28,7 @@ kaleidoscope-park · 6 dates, 2026-11-14 → 2026-12-19 · registration: no
 
 ANSWER kid: ? | price: ? | note: 
 
-### 4. SaturYay: Christmas Edition
+### 2. SaturYay: Christmas Edition
 
 kaleidoscope-park · 5 dates, 2026-11-21 → 2026-12-19 · registration: no
 
@@ -58,7 +38,7 @@ kaleidoscope-park · 5 dates, 2026-11-21 → 2026-12-19 · registration: no
 
 ANSWER kid: ? | price: ? | note: 
 
-### 5. SaturYAY! Presented by Atmos Energy
+### 3. SaturYAY! Presented by Atmos Energy
 
 kaleidoscope-park · 4 dates, 2026-11-14 → 2027-01-09 · registration: no
 
@@ -68,29 +48,7 @@ kaleidoscope-park · 4 dates, 2026-11-14 → 2027-01-09 · registration: no
 
 ANSWER kid: ? | price: ? | note: 
 
-### 6. Sunrise Yoga
-
-play-frisco · 4 dates, 2026-10-10 → 2026-10-31 · registration: **YES**
-
-<!-- ids: play-frisco-7806 play-frisco-7807 play-frisco-7808 play-frisco-7809 -->
-
-> Sunrise Yoga invites you to pause, breathe, reconnect and experience well-being on Saturdays at 4th Street Plaza in Frisco. Each session features relaxing yoga, encouraging participants to slow their pace, find balance, and start the weekend with intention.
-> 
-> Free to attend! No pre-registration required. Please bring your own yoga mat.
-> 
-> October 3, 7:30 a.m.
-> 
-> October 10, 7:30 a.m.
-> 
-> October 17, 7:30 a.m.
-> 
-> October 24, 7:30 a.m.
-> 
-> October 31, 7:30 a.m.
-
-ANSWER kid: ? | price: ? | note: 
-
-### 7. Fitness Fun Classes
+### 4. Fitness Fun Classes
 
 kaleidoscope-park · 3 dates, 2026-10-24 → 2026-11-07 · registration: no
 
@@ -100,7 +58,7 @@ kaleidoscope-park · 3 dates, 2026-10-24 → 2026-11-07 · registration: no
 
 ANSWER kid: ? | price: ? | note: 
 
-### 8. Live After 5 Presented by New York Life North Dallas
+### 5. Live After 5 Presented by New York Life North Dallas
 
 kaleidoscope-park · 3 dates, 2026-10-22 → 2026-11-05 · registration: no
 
@@ -114,7 +72,7 @@ kaleidoscope-park · 3 dates, 2026-10-22 → 2026-11-05 · registration: no
 
 ANSWER kid: ? | price: ? | note: 
 
-### 9. SaturYAY! Presented by Atmos Energy
+### 6. SaturYAY! Presented by Atmos Energy
 
 kaleidoscope-park · 3 dates, 2026-10-24 → 2026-11-07 · registration: no
 
@@ -128,7 +86,7 @@ kaleidoscope-park · 3 dates, 2026-10-24 → 2026-11-07 · registration: no
 
 ANSWER kid: ? | price: ? | note: 
 
-### 10. Live After 5 Presented by New York Life North Dallas
+### 7. Live After 5 Presented by New York Life North Dallas
 
 kaleidoscope-park · 2 dates, 2026-11-12 → 2026-11-19 · registration: no
 
@@ -138,7 +96,7 @@ kaleidoscope-park · 2 dates, 2026-11-12 → 2026-11-19 · registration: no
 
 ANSWER kid: ? | price: ? | note: 
 
-### 11. Kaleidoscope Christmas
+### 8. Kaleidoscope Christmas
 
 kaleidoscope-park · 2026-11-21 · registration: no
 
@@ -148,7 +106,7 @@ kaleidoscope-park · 2026-11-21 · registration: no
 
 ANSWER kid: ? | price: ? | note: 
 
-### 12. Chalk the Park, Presented by The Andrea-Mennen Family Foundation
+### 9. Chalk the Park, Presented by The Andrea-Mennen Family Foundation
 
 kaleidoscope-park · 2026-11-08 · registration: no
 
@@ -162,7 +120,7 @@ kaleidoscope-park · 2026-11-08 · registration: no
 
 ANSWER kid: ? | price: ? | note: 
 
-### 13. Monthly Date Night
+### 10. Monthly Date Night
 
 kaleidoscope-park · 2026-12-06 · registration: **YES**
 
@@ -172,7 +130,7 @@ kaleidoscope-park · 2026-12-06 · registration: **YES**
 
 ANSWER kid: ? | price: ? | note: 
 
-### 14. Dia de los Muertos
+### 11. Dia de los Muertos
 
 kaleidoscope-park · 2026-10-30 · registration: no
 
@@ -182,7 +140,7 @@ kaleidoscope-park · 2026-10-30 · registration: no
 
 ANSWER kid: ? | price: ? | note: 
 
-### 15. Diwali
+### 12. Diwali
 
 kaleidoscope-park · 2026-11-01 · registration: **YES**
 
@@ -192,7 +150,7 @@ kaleidoscope-park · 2026-11-01 · registration: **YES**
 
 ANSWER kid: ? | price: ? | note: 
 
-### 16. Funder's Forum Gathering
+### 13. Funder's Forum Gathering
 
 kaleidoscope-park · 2026-12-01 · registration: **YES**
 
@@ -202,7 +160,7 @@ kaleidoscope-park · 2026-12-01 · registration: **YES**
 
 ANSWER kid: ? | price: ? | note: 
 
-### 17. How the Grinch Fights Hunger
+### 14. How the Grinch Fights Hunger
 
 kaleidoscope-park · 2026-12-05 · registration: **YES**
 
@@ -212,7 +170,7 @@ kaleidoscope-park · 2026-12-05 · registration: **YES**
 
 ANSWER kid: ? | price: ? | note: 
 
-### 18. Kaleidoscope Live Concert Series
+### 15. Kaleidoscope Live Concert Series
 
 kaleidoscope-park · 2026-11-08 · registration: no
 
@@ -226,7 +184,7 @@ kaleidoscope-park · 2026-11-08 · registration: no
 
 ANSWER kid: ? | price: ? | note: 
 
-### 19. Kaleidoscope Live Concert Series
+### 16. Kaleidoscope Live Concert Series
 
 kaleidoscope-park · 2026-12-06 · registration: no
 
@@ -236,7 +194,7 @@ kaleidoscope-park · 2026-12-06 · registration: no
 
 ANSWER kid: ? | price: ? | note: 
 
-### 20. MindTravel Silent Piano Concert
+### 17. MindTravel Silent Piano Concert
 
 kaleidoscope-park · 2026-11-11 · registration: **YES**
 
@@ -246,7 +204,7 @@ kaleidoscope-park · 2026-11-11 · registration: **YES**
 
 ANSWER kid: ? | price: ? | note: 
 
-### 21. Our Birthday Celebration
+### 18. Our Birthday Celebration
 
 kaleidoscope-park · 2026-10-24 · registration: no
 
@@ -256,442 +214,12 @@ kaleidoscope-park · 2026-10-24 · registration: no
 
 ANSWER kid: ? | price: ? | note: 
 
-### 22. Shop Local Vendor Market Presented by Fifth Third Bank
+### 19. Shop Local Vendor Market Presented by Fifth Third Bank
 
 kaleidoscope-park · 2026-11-28 · registration: no
 
 <!-- ids: kaleidoscope-park-shop-local-vendor-market-presented-by-fifth-thirds-bank-2026-11-28 -->
 
 > Monthly | 10 AM – 2 PM Discover one-of-a-kind finds at our Shop Local Vendor Markets, presented by Fifth Third Bank. With a curated lineup of local artisans, handmade goods and unique finds, it’s the perfect way to support small! Remaining 2026 Market Dates: September 19 October 17 November 28 Parking: The parking garage is located at 6605 Warren Parkway, right next to the playground. Self-parking is also available at 3011 Internet Blvd. and 3010 Gaylord on either side of the Park, in addition to the spots around the Park.
-
-ANSWER kid: ? | price: ? | note: 
-
-### 23. CLOSED for Training: Play Frisco Offices and Faci
-
-play-frisco · 2027-02-15 · registration: no
-
-<!-- ids: play-frisco-6383 -->
-
-> Play Frisco facilities and offices will be closed for training. This includes:
-
-ANSWER kid: ? | price: ? | note: 
-
-### 24. Frisco Festival of Colors
-
-play-frisco · 2027-03-20 · registration: no
-
-<!-- ids: play-frisco-6386 -->
-
-> The award-winning Frisco Festival of Colors celebrates the arrival of spring and the passing of winter. Join the fun with music, dancing, and throwing color on each other in traditional fashion!
-> 
-> For more details, visit playfrisco.org/festivalofcolors
-
-ANSWER kid: ? | price: ? | note: 
-
-### 25. Illuminate: Magic & Mayhem
-
-play-frisco · 2026-10-15 · registration: no
-
-<!-- ids: play-frisco-7688 -->
-
-> Step into the hauntingly beautiful glow of Magic and Mayhem: The Music of Villains, a candlelight concert inside the historic Lebanon Chapel. Hundreds of flickering candles set the stage for an enchanting evening where eerie string melodies and dramatic piano compositions bring the most iconic villain themes to life. As shadows dance along the chapel’s walls, guests will be immersed in a spellbinding symphony of magic and mystery, featuring beloved scores that evoke power, intrigue, and a touch of wicked charm.
-
-ANSWER kid: ? | price: ? | note: 
-
-### 26. Illuminate: Christmas Movie Classics
-
-play-frisco · 2026-11-20 · registration: no
-
-<!-- ids: play-frisco-7690 -->
-
-> Christmas Movie Classics will surround guests with the nostalgic glow of candlelight as beloved music from iconic holiday films fill the room. This festive performance blends timeless cinematic melodies with the cozy charm of the season, creating an atmosphere that feels both magical and familiar. From whimsical tunes to heartfelt favorites, the concert invites audiences to relive cherished Christmas moments through the power of music.
-
-ANSWER kid: ? | price: ? | note: 
-
-### 27. Breakfast with Santa
-
-play-frisco · 2026-12-05 · registration: **YES**
-
-<!-- ids: play-frisco-7692 -->
-
-> Gather your family and friends for a delicious breakfast with St. Nick! Make special holiday memories that include a visit and picture with Santa, crafts, hot cocoa bar, and a special take home favor.
-> 
-> Tickets are available for purchase online only. All children and adults except for children under 24 months (seated on a ticket-holding adults lap) count toward party total. Chairs may not be added to tables.
-> 
-> Breakfast Times
-> 
-> Tickets on sale starting October 19, 2026
-
-ANSWER kid: ? | price: ? | note: 
-
-### 28. Pumpkin Dunk
-
-play-frisco · 2026-10-17 · registration: **YES**
-
-<!-- ids: play-frisco-7696 -->
-
-> Swim in the Indoor Aquatic Center at the FAC and "pick" a pumpkin from our floating pumpkin patch! Paint and decorate your pumpkin and take it home to display for the season.
-> 
-> Admission for this special event includes one pumpkin per person, pumpkin decorating, swimming, face painting, and candy. Advance registration is not required.
-> 
-> This event is free for FAC members!
-> 
-> Day Pass purchase required for non-members. Passes can be purchased at the front desk of the FAC on the day of the event or anytime during normal hours.
-> 
-> Thank you to our sponsors for encouraging play!
-> 
-> Tinker Federal Credit Union and Texas Health Breeze Urgent Care.
-
-ANSWER kid: ? | price: ? | note: 
-
-### 29. Coffee & Culture
-
-play-frisco · 2026-10-21 · registration: no
-
-<!-- ids: play-frisco-7707 -->
-
-> Join Play Frisco's Cultural Affairs Manager to discus Frisco news and updates as we work towards creating a city where arts, culture, and community thrive together. Learn more about Coffee & Culture.
-
-ANSWER kid: ? | price: ? | note: 
-
-### 30. Heritage How-To: Collage with Zahra Jahanyfard
-
-play-frisco · 2026-10-10 · registration: no
-
-<!-- ids: play-frisco-7709 -->
-
-> Bring your creativity to life in this hands-on collage-making class! Learn techniques for layering, composition, color, and texture to create a collage that truly pops while still feeling cohesive and balanced. Experiment with a variety of materials and discover how to combine different images, patterns, and elements into a unique work of art. Whether you’re new to collage or looking to expand your creative skills, this class is a fun opportunity to cut, layer, and create!
-
-ANSWER kid: ? | price: ? | note: 
-
-### 31. Rail District Celebration at 4th Street Plaza
-
-play-frisco · 2026-10-13 · registration: **YES**
-
-<!-- ids: play-frisco-7740 -->
-
-> Celebrate the heart of Frisco and the opening of new community spaces in the Rail District! Explore the new 4th Street Plaza, park in the new 5-story parking garage, listen to live music, and shop at Rail District businesses.
-> 
-> 6 p.m. - Ribbon cutting ceremony at the 4th Street Plaza stage.
-> 
-> 6:30 to 9 p.m. - Live music & performances on the stage
-> 
-> 7 p.m. - Plated: A Chef's Table on Main (Tickets required)
-> 
-> 8 p.m. - Drone show over the Rail District
-> 
-> 9 p.m. - All festivities conclude
-> 
-> We can't wait to celebrate this special part of our city with y'all!
-> 
-> Texas's own Cherry Bomb is the quintessential tribute to the Women of Rock. Since 2015, they have blazed a rock and roll trail across the Southwest, wowing audiences with high energy performances and incredible musicianship. Cherry Bomb brings to life the biggest hits from the greatest voices of the 70s, 80s, and 90s, along with the one-hit wonders everybody loves and remembers. They are bringing the show to 4th Street Plaza to open the new community space with a bang!
-
-ANSWER kid: ? | price: ? | note: 
-
-### 32. Walnut Wednesday: Nature Adventure
-
-play-frisco · 2026-10-28 · registration: no
-
-<!-- ids: play-frisco-7741 -->
-
-> Roll up your sleeves for interactive crafts and activities that bring the prairie to life this Walnut Wednesday! Join us to make tree‑ring necklaces, create your own nature journal, craft seed balls, and explore our collection of animal skins and skulls. It’s a hands‑on adventure for all ages!
-
-ANSWER kid: ? | price: ? | note: 
-
-### 33. Heritage Halloween
-
-play-frisco · 2026-10-24 · registration: no
-
-<!-- ids: play-frisco-7742 -->
-
-> Join the holiday fun at the annual Heritage Halloween event!
-> 
-> Heritage Halloween brings kid-friendly spooky fun to the Heritage Museum and Village with trick‑or‑treating through historic buildings decorated for the season. Families can enjoy hands‑on crafts, popcorn and cotton candy, games, balloon animals, and a friendly fortune teller ready to add a dash of mystery to the evening. With activities for all ages, the event offers a safe, playful celebration where costumes take center stage and the village comes alive with Halloween cheer.This family-friendly event includes:
-
-ANSWER kid: ? | price: ? | note: 
-
-### 34. Plated: A Chef’s Table on Main
-
-play-frisco · 2026-10-14 · registration: **YES**
-
-<!-- ids: play-frisco-7744 -->
-
-> In partnership with the Merchants on Main, come celebrate the reopening of Main Street and the grand opening of the 4th Street Plaza by experiencing a beautiful outdoor community table.
-> 
-> Plated: A Chef’s Table is a community dining experience created in collaboration with Rail District businesses, and we believe the best way to bring people together is through good food. Guests will gather on Frisco Main Street to share a memorable meal that highlights the incredible culinary talent found throughout the Rail District, featuring chefs from La Finca, Dad Jokes Cheesyburgers, Didi's Downtown, Randy's Steakhouse, Heritage Table, and Eight 11 Place.
-> 
-> Dine with us and help bring the community together one plate at a time! Thank you to the Rail District partners.
-> 
-> This curated menu will be served as an outdoor dining experience expanding from 5th Street to North County. - Plates are $50 and include a drink; additional drink options will also be available for purchase.- No substitutions to the selected menus. - Each ticket includes a specially created meal and non-alcoholic beverage.- Alcohol available for purchase separately.
-> 
-> **September 28 Update: Simply Thai is no longer available to participate in this event due to a scheduling conflict.
-> 
-> **October 9 Update: La Suprema is no longer available to participate in this event due to a scheduling conflict.
-> 
-> **Reservations must be made by Sunday, 10/11 at 11:59 p.m.**
-
-ANSWER kid: ? | price: ? | note: 
-
-### 35. Artist-led Workshop: Watercolor Foundations with
-
-play-frisco · 2026-10-17 · registration: no
-
-<!-- ids: play-frisco-7745 -->
-
-> Jump back into another watercolor with artist Tricia Poupard. Enjoy a fall-themed class where you'll learn more watercolor techniques to paint a raven in all its spooky, wonder. You'll focus on layering colors, washes, and building depth and end with a piece of art that you can frame and hang immediately.
-> 
-> Check out Tricia's body of work while you wait for the class at www.TrishPoupard.com.
-
-ANSWER kid: ? | price: ? | note: 
-
-### 36. Rail District Celebration: Frisco Improv Players
-
-play-frisco · 2026-10-15 · registration: no
-
-<!-- ids: play-frisco-7747 -->
-
-> Celebrate the heart of Frisco and the opening of new community spaces in the Rail District! Explore the new 4th Street Plaza, park in the new 5-story parking garage, listen to live music, and shop at Rail District businesses.
-> 
-> The Frisco Improv Players are performing a free, family-friendly show at 4th Street Plaza on October 14 from 7-8 p.m.
-
-ANSWER kid: ? | price: ? | note: 
-
-### 37. Rail District Celebration: Glow in the Dark Yoga
-
-play-frisco · 2026-10-16 · registration: **YES**
-
-<!-- ids: play-frisco-7748 -->
-
-> Celebrate the heart of Frisco and the opening of new community spaces in the Rail District! Explore the new 4th Street Plaza, park in the new 5-story parking garage, listen to live music, and shop at Rail District businesses.
-> 
-> Play mindfully at Glow in the Dark Yoga Night on October 15! A live DJ will play tunes that will move you while you enjoy a free yoga class on the lawn at 4th Street Plaza.
-> 
-> Check-in opens at 7 p.m. The program runs from 7:30 to 8:30 p.m. No advanced registration required.
-
-ANSWER kid: ? | price: ? | note: 
-
-### 38. Rail District Celebration: Plaza Live! featuring
-
-play-frisco · 2026-10-17 · registration: no
-
-<!-- ids: play-frisco-7749 -->
-
-> Celebrate the heart of Frisco and the opening of new community spaces in the Rail District! Explore the new 4th Street Plaza, park in the new 5-story parking garage, listen to live music, and shop at Rail District businesses.
-> 
-> Enjoy live music from the Patrick Casey Band in the Plaza!
-
-ANSWER kid: ? | price: ? | note: 
-
-### 39. Rail District Celebration: From This Ground Art A
-
-play-frisco · 2026-10-17 · registration: no
-
-<!-- ids: play-frisco-7750 -->
-
-> Celebrate the heart of Frisco and the opening of new community spaces in the Rail District! Explore the new 4th Street Plaza, park in the new 5-story parking garage, listen to live music, and shop at Rail District businesses.
-> 
-> Come together for a community art activity at From This Ground, in partnership with Ktchn28.
-> 
-> This free program runs from 4 to 7 p.m. and features hands-on activities for all ages and abilities, live music, and more.
-
-ANSWER kid: ? | price: ? | note: 
-
-### 40. Community Parade
-
-play-frisco · 2026-11-14 · registration: **YES**
-
-<!-- ids: play-frisco-7751 -->
-
-> The Frisco Community Parade marches down Main Street again on Saturday, November 14! We hope to see you share your community spirit by registering to participate or gathering along the parade route in the The Rail District to watch.
-> 
-> The parade begins at 10 a.m. and runs from 1st Street and Main east to North County Road.
-> 
-> Find all event details, link to registration and entry requirements at FriscoParade.com!
-
-ANSWER kid: ? | price: ? | note: 
-
-### 41. Sunrise Yoga - CANCELLED
-
-play-frisco · 2026-10-03 · registration: **YES**
-
-<!-- ids: play-frisco-7805 -->
-
-> Sunrise Yoga invites you to pause, breathe, reconnect and experience well-being on Saturdays at 4th Street Plaza in Frisco. Each session features relaxing yoga, encouraging participants to slow their pace, find balance, and start the weekend with intention.
-> 
-> Free to attend! No pre-registration required. Please bring your own yoga mat.
-> 
-> October 3, 7:30 a.m.
-> 
-> October 10, 7:30 a.m.
-> 
-> October 17, 7:30 a.m.
-> 
-> October 24, 7:30 a.m.
-> 
-> October 31, 7:30 a.m.
-
-ANSWER kid: ? | price: ? | note: 
-
-### 42. Art in the Atrium 26 Public Reception
-
-play-frisco · 2026-11-03 · registration: no
-
-<!-- ids: play-frisco-7817 -->
-
-> Join us for the public reception on November 2 from 7 to 8 p.m. Meet the artists featured in this show and enjoy light refreshments!
-
-ANSWER kid: ? | price: ? | note: 
-
-### 43. "From Vision to Impact: An Evening with Jeff Chen
-
-play-frisco · 2026-10-27 · registration: **YES**
-
-<!-- ids: play-frisco-7818 -->
-
-> Join the Heritage Association of Frisco and former Frisco mayor Jeff Cheney for a discussion on his 20+ years of impact in making our city a place we proudly call home.
-> 
-> Space is limited. Register for free here.
-
-ANSWER kid: ? | price: ? | note: 
-
-### 44. "MG Anthony Woods Presents the Legacy of the Buff
-
-play-frisco · 2026-11-11 · registration: **YES**
-
-<!-- ids: play-frisco-7819 -->
-
-> Join the Heritage Association of Frisco and Major General (MG) Anthony Woods as he shares the legacy of the African American regiments of the U.S. Army that served from 1866 to 1951.
-> 
-> Register Here
-
-ANSWER kid: ? | price: ? | note: 
-
-### 45. Walnut Wednesday: Walnut’s Friendsgiving
-
-play-frisco · 2026-11-18 · registration: no
-
-<!-- ids: play-frisco-7823 -->
-
-> Gather the whole family for a festive Thanksgiving celebration at the Frisco Heritage Center, filled with fun, creativity, and holiday cheer! This Walnut Wednesday is the perfect way to kick off Thanksgiving with laughter, fun, and a little family time.
-
-ANSWER kid: ? | price: ? | note: 
-
-### 46. Walnut Wednesday: Winter Wonderland
-
-play-frisco · 2026-12-09 · registration: no
-
-<!-- ids: play-frisco-7824 -->
-
-> Celebrate the holiday season with festive family fun! Bring the whole family to create cheerful holiday crafts and make special keepsakes to take home. With hands-on activities for all ages and abilities, there’s something for everyone to enjoy.
-
-ANSWER kid: ? | price: ? | note: 
-
-### 47. Music on Main at 4th Street Plaza
-
-play-frisco · 2026-10-17 · registration: no
-
-<!-- ids: play-frisco-7825 -->
-
-> Join Melody of Hope on Saturday, October 17 in The Rail District for Music on Main. 4th Street Plaza will be one of several activation sites for live music. View updates from Melody of Hope on Facebook for more details.
-> 
-> Featured Artist at 4th Street Plaza: Chloe Clemente
-
-ANSWER kid: ? | price: ? | note: 
-
-### 48. Sidecar Jazz Lounge - Winter 2026
-
-play-frisco · 2026-12-18 · registration: no
-
-<!-- ids: play-frisco-7827 -->
-
-> Featured Musicians: Color Nativo
-> 
-> Color Nativo is a musical group that fuses Colombian rhythms, jazz, and Latin American music. Led by Mateo Orozco on guitar and vocals and Catalina Forero on vocals and bass, the project stands out for its lyrical content and interpretative skill. Since its creation, it has gained great popularity in Colombia, Chile, Argentina, Mexico, the United States, and Europe, making live appearances in Houston, Fort Worth, and Dallas, TX.
-> 
-> Thank you to Momo's Coffeehouse for providing refreshments at this concert.
-
-ANSWER kid: ? | price: ? | note: 
-
-### 49. Southwestern Watercolor Society Exhibition Opens
-
-play-frisco · 2026-10-28 · registration: no
-
-<!-- ids: play-frisco-7828 -->
-
-> The Southwestern Watercolor Society presents a showcase of their Signature Members, featuring 22 accomplished local artists. This exhibition highlights original 2D watercolor works ranging from expressive landscapes to pieces that capture human experience through thoughtful detail.
-
-ANSWER kid: ? | price: ? | note: 
-
-### 50. Artist-Led Workshop: Art Through Movement with Ma
-
-play-frisco · 2026-11-14 · registration: **YES**
-
-<!-- ids: play-frisco-7848 -->
-
-> Explore performance art through movement, repetition, and the everyday with artist Marina Shterenberg, founder of creative studio Ktchn28, here in Frisco. Through guided exercises and experimentation, discover how simple actions and familiar movements can inspire focus, creative expression, and new perspectives. Open to artists and non-artists alike.
-> 
-> November 14 from 1 to 3 p.m. at Frisco Heritage Center, The Depot
-> 
-> Check out Marina's body of work while you wait for the class at MarinaShterenberg.com!
-> 
-> TICKETS AVAILABLE SOON!
-
-ANSWER kid: ? | price: ? | note: 
-
-### 51. 4th Street Plaza Holiday Tree Lighting
-
-play-frisco · 2026-11-19 · registration: no
-
-<!-- ids: play-frisco-7849 -->
-
-> Be the first to see the new 4th Street Plaza holiday tree as we light it up for the first time! Celebrate the beginning of the holiday season with this special moment for our community.
-
-ANSWER kid: ? | price: ? | note: 
-
-### 52. Veterans Day Ceremony
-
-play-frisco · 2026-11-07 · registration: no
-
-<!-- ids: play-frisco-7878 -->
-
-> Join us for the annual Veterans Day Ceremony, hosted by the American Legion, Peter J Courcy Unit 178 and American Legion Auxiliary, Peter J Courcy Unit 178.
-
-ANSWER kid: ? | price: ? | note: 
-
-### 53. Sidecar Jazz Lounge ft. The Furgos
-
-play-frisco · 2027-01-23 · registration: **YES**
-
-<!-- ids: play-frisco-7886 -->
-
-> Sidecar Jazz Lounge is back for 2027!
-> 
-> Bring a date, a friend, or fly solo, and prepare to be captivated by jazzy rhythms sure to soothe away your stress! This atmospheric program features live jazz music thoughtfully paired with a delicious signature mocktail by Momo's Coffeehouse.
-> 
-> This month's performance features The Furgos, a jazz ensemble and husband-and-wife duo who share their musical chemistry by blending sophisticated jazz with the familiarity and timeless appeal of popular music.
-> 
-> Jeanette is the lead vocalist, and Jeff is a pianist, composer, arranger, and versatile musician. Together, they have released two albums, Nostalgia and Retrospective, and their third album, First Set, is scheduled for release in early 2027. They have performed throughout North Texas and across the country at venues and festivals including The Kitchen Caf&eacute;, Kimbell Art Museum, Sundance Square, Rudy's Jazz Room in Nashville, and the Jazz at Sledge Festival.
-> 
-> Learn more about them at thefurgos.com.
-> 
-> **Tickets on sale December 1, 2026
-
-ANSWER kid: ? | price: ? | note: 
-
-### 54. Learn to Fish
-
-play-frisco · 2026-12-21 · registration: **YES**
-
-<!-- ids: play-frisco-7887 -->
-
-> December 21 | 10 a.m. - 12 p.m. | Frisco Heritage Center
-> 
-> Registration Opens November 30 at 5:30 p.m.
-> 
-> Ready to try fishing for the first time? — no experience required! The workshop will focus on basic tackle, rod and reels, basic knot tying, fish habitat, fish identification, fish handling, and fishing ethics and regulations. The workshop is open to children age 5 and up accompanied by an adult. No actual fishing will be done during the class, please do not bring fishing equipment This workshop will be held indoors.
-> 
-> Age: 5 and up. Spots are Extremely Limited.
-> 
-> All attendees must pre-register.
 
 ANSWER kid: ? | price: ? | note: 
