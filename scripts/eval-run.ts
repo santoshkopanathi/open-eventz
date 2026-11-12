@@ -44,6 +44,9 @@ export interface RunRow {
     age_buckets: string[]
     price: string
     price_confidence: string
+    /** The model's one-sentence justification. The only way to tell a correct answer from a
+     *  lucky one, and the first thing a human needs when a label and a verdict disagree. */
+    reasoning: string
   } | null
   /** What the pipeline concluded after the deterministic rules — what a parent would see. */
   shipped: { price_class: string; price_confidence: string; shown: boolean } | null
@@ -137,6 +140,7 @@ async function main(): Promise<void> {
           age_buckets: result.age_buckets,
           price: result.price,
           price_confidence: result.price_confidence,
+          reasoning: result.reasoning ?? '',
         }
         row.shipped = {
           price_class: resolved.price_class,
