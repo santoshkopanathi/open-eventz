@@ -98,31 +98,182 @@ describe('resolvePriceClass', () => {
     expect(resolvePriceClass({ price: 'free', price_confidence: 'inferred', ...base })).toEqual({
       price_class: 'free',
       price_confidence: 'inferred',
+      decided_by: 'model',
     })
   })
 
   test('Layer 2: inferred free + structurally-paid keyword → unknown', () => {
     expect(
       resolvePriceClass({ price: 'free', price_confidence: 'inferred', title: 'Cookie Class', description: 'Fun class.', registration_required: false })
-    ).toEqual({ price_class: 'unknown', price_confidence: 'inferred' })
+    ).toEqual({ price_class: 'unknown', price_confidence: 'inferred', decided_by: 'rule-keyword' })
   })
 
   test('Layer 3: inferred free + registration_required → unknown', () => {
     expect(
       resolvePriceClass({ price: 'free', price_confidence: 'inferred', title: 'Mystery Event', description: 'Come join us.', registration_required: true })
-    ).toEqual({ price_class: 'unknown', price_confidence: 'inferred' })
+    ).toEqual({ price_class: 'unknown', price_confidence: 'inferred', decided_by: 'rule-registration' })
   })
 
   test('explicit free (confirmed) overrides Layer 2 keyword suspicion', () => {
     expect(
       resolvePriceClass({ price: 'free', price_confidence: 'confirmed', title: 'Free Summer Camp', description: 'No cost to attend.', registration_required: true })
-    ).toEqual({ price_class: 'free', price_confidence: 'confirmed' })
+    ).toEqual({ price_class: 'free', price_confidence: 'confirmed', decided_by: 'model' })
   })
 
   test('paid is never downgraded', () => {
     expect(
       resolvePriceClass({ price: 'paid', price_confidence: 'confirmed', title: 'Cookie Class', description: 'Buy tickets.', registration_required: true })
-    ).toEqual({ price_class: 'paid', price_confidence: 'confirmed' })
+    ).toEqual({ price_class: 'paid', price_confidence: 'confirmed', decided_by: 'model' })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Layer 1.5 — the CONFIRMED guard. "confirmed" drops the ✦ and the "estimated from event
+// description" line, so it must be earned from the text, not claimed by the model.
+// ---------------------------------------------------------------------------
+
+describe('resolvePriceClass — the confirmed guard', () => {
+  test('downgrades a claimed "confirmed" when the text states no price', () => {
+    // The real case: Frosty 5K came back paid/confirmed on text with no price, fee or ticket
+    // wording, reasoned from "an organized 5K with a sign-up link implies an entry fee". A
+    // sound inference; not a confirmation. Without this guard a parent saw a plain "Paid".
+    expect(
+      resolvePriceClass({
+        price: 'paid',
+        price_confidence: 'confirmed',
+        title: 'Frosty 5K',
+        description: 'A festive fun run for all ages. Visit the Frosty 5K website to sign up.',
+        registration_required: false,
+      })
+    ).toEqual({ price_class: 'paid', price_confidence: 'inferred', decided_by: 'model' })
+  })
+
+  test('the dangerous direction: a claimed-confirmed FREE keeps its marker', () => {
+    // An unmarked "Free admission" on an event we only assumed was free is the single failure
+    // this pipeline exists to prevent.
+    const r = resolvePriceClass({
+      price: 'free',
+      price_confidence: 'confirmed',
+      title: 'Community Parade',
+      description: 'A parade through downtown with music.',
+      registration_required: false,
+    })
+    expect(r.price_confidence).toBe('inferred')
+    expect(r.price_class).toBe('free')
+  })
+
+  test('leaves a genuinely confirmed price alone — paid', () => {
+    expect(
+      resolvePriceClass({
+        price: 'paid', price_confidence: 'confirmed',
+        title: 'Princess Tea', description: 'Tickets are $25 per child.', registration_required: true,
+      }).price_confidence
+    ).toBe('confirmed')
+  })
+
+  test('leaves a genuinely confirmed price alone — free', () => {
+    expect(
+      resolvePriceClass({
+        price: 'free', price_confidence: 'confirmed',
+        title: 'Diwali', description: 'Free admission for all.', registration_required: true,
+      }).price_confidence
+    ).toBe('confirmed')
+  })
+
+  test('never UPGRADES an inferred claim to confirmed, even with explicit text', () => {
+    // One-directional on purpose. A model that under-states its confidence keeps its ✦, which
+    // is the safe direction to be wrong in.
+    expect(
+      resolvePriceClass({
+        price: 'paid', price_confidence: 'inferred',
+        title: 'Workshop', description: 'Tickets are $25.', registration_required: false,
+      }).price_confidence
+    ).toBe('inferred')
+  })
+
+  test('does NOT veto a confirmation the model made from unusual phrasing', () => {
+    // The limit of the guard, asserted on purpose. "our FREE community music series" is not a
+    // phrase the fallback detector recognises, but it plainly states a price and the model
+    // reads it correctly. An earlier version of this guard deferred to that detector and
+    // stripped the confirmation from six such events — over-hedging, which is not free: if
+    // everything wears the ✦, the ✦ stops meaning anything.
+    expect(
+      resolvePriceClass({
+        price: 'free', price_confidence: 'confirmed',
+        title: 'Live After 5',
+        description: 'We make your evening plans easy with our FREE community music series.',
+        registration_required: true,
+      }).price_confidence
+    ).toBe('confirmed')
+  })
+
+  test('the guard is a floor, not a judge — ambiguous money wording still passes', () => {
+    // "Donations welcome" mentions money, so a confirmed claim survives. The guard asks only
+    // "could this text support a confirmation at all", never "is the model right". Catching a
+    // bad confirmation made from weak wording is the model's job and the eval's, not a
+    // regex's — a stricter rule here is what broke the six events above.
+    expect(
+      resolvePriceClass({
+        price: 'free', price_confidence: 'confirmed',
+        title: 'Gallery Night', description: 'Donations welcome at the door.', registration_required: false,
+      }).price_confidence
+    ).toBe('confirmed')
+  })
+
+  test('vetoes only on total silence about money', () => {
+    expect(
+      resolvePriceClass({
+        price: 'paid', price_confidence: 'confirmed',
+        title: 'Community Walk', description: 'Join us for a stroll through the park at 10am.',
+        registration_required: false,
+      }).price_confidence
+    ).toBe('inferred')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// decided_by — which layer settled the price. Stored so that "unknown" can be told apart
+// from "unknown", since model abstention and a deterministic override need opposite fixes.
+// ---------------------------------------------------------------------------
+
+describe('resolvePriceClass — decided_by attribution', () => {
+  test('model, when its answer stands', () => {
+    expect(resolvePriceClass({
+      price: 'free', price_confidence: 'inferred',
+      title: 'Story Time', description: 'Come along.', registration_required: false,
+    }).decided_by).toBe('model')
+  })
+
+  test('rule-keyword, when Layer 2 overrode an inferred free', () => {
+    expect(resolvePriceClass({
+      price: 'free', price_confidence: 'inferred',
+      title: 'Pottery Workshop', description: 'Come along.', registration_required: false,
+    }).decided_by).toBe('rule-keyword')
+  })
+
+  test('rule-registration, when Layer 3 overrode an inferred free', () => {
+    expect(resolvePriceClass({
+      price: 'free', price_confidence: 'inferred',
+      title: 'Community Parade', description: 'Come along.', registration_required: true,
+    }).decided_by).toBe('rule-registration')
+  })
+
+  test('keyword is attributed before registration when both apply', () => {
+    // Both would downgrade; the attribution records the first rule that fired, so a fix can
+    // be aimed at the right one rather than at whichever is guessed.
+    expect(resolvePriceClass({
+      price: 'free', price_confidence: 'inferred',
+      title: 'Pottery Workshop', description: 'Come along.', registration_required: true,
+    }).decided_by).toBe('rule-keyword')
+  })
+
+  test('a model "unknown" is attributed to the model, not to a rule', () => {
+    // This is the distinction the column exists for: both end as unknown, and they need
+    // opposite fixes — a prompt change versus a threshold change.
+    expect(resolvePriceClass({
+      price: 'unknown', price_confidence: 'inferred',
+      title: 'Pottery Workshop', description: 'Come along.', registration_required: true,
+    }).decided_by).toBe('model')
   })
 })
 

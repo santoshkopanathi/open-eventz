@@ -1,4 +1,4 @@
-import type { Event, PriceClass, PriceConfidence } from './types'
+import type { Event, PriceClass, PriceConfidence, PriceDecider } from './types'
 import { ESTIMATED_TOOLTIP } from './age-badge'
 
 // ===========================================================================
@@ -120,23 +120,77 @@ export interface ResolvePriceInput {
 export interface ResolvedPrice {
   price_class: PriceClass
   price_confidence: PriceConfidence
+  decided_by: PriceDecider
+}
+
+/**
+ * Does the text mention money AT ALL — in any wording, however vague?
+ *
+ * Deliberately far broader than `detectPriceSignal`, and for a different job.
+ * `detectPriceSignal` is the no-LLM fallback classifier: narrow set phrases, tuned for
+ * precision because it has to decide a price by itself. This one decides nothing. It only
+ * answers whether a confirmation is *possible* from this text, so it needs recall, not
+ * precision — a false positive here merely lets the model keep a claim it had already made.
+ *
+ * Built after the first version of the confirmed guard used `detectPriceSignal` and stripped
+ * the confirmation from six events whose text said "our FREE community music series" and one
+ * saying "Ticket available now!" — correct readings by the model, vetoed by a detector that
+ * was never built to recognise that phrasing.
+ */
+export function mentionsMoney(text: string): boolean {
+  return /\$|\bfree\b|\bfees?\b|\btickets?\b|\bcosts?\b|\bprices?\b|\badmission\b|\bcharges?\b|\bpaid\b|\bpay\b|\bdonations?\b|\bpurchase\b|\bregistration fee\b/i.test(text)
 }
 
 export function resolvePriceClass(input: ResolvePriceInput): ResolvedPrice {
-  const { price, price_confidence, title, description, registration_required } = input
+  const { price, title, description, registration_required } = input
+  const text = `${title} ${description}`
 
-  // Layers 2 & 3 only apply to an INFERRED free (no explicit signal). An explicit
-  // free statement ("free summer camp") always overrides the keyword suspicion.
+  // ---------------------------------------------------------------------------
+  // Layer 1.5 — the CONFIRMED guard.
+  //
+  // A "confirmed" price drops the ✦ and removes the "estimated from event description" line,
+  // so the badge reaches a parent as a source-backed fact. Until this existed,
+  // `price_confidence` was taken on trust from the model's own self-report — which meant the
+  // model could silently strip the one marker that tells a parent an answer was inferred.
+  //
+  // It fired for real. Frosty 5K came back `paid` / `confirmed` on text containing no price,
+  // no fee and no ticket wording, reasoned from "registration is required via sign-up,
+  // indicating a paid race entry fee typical of organized 5K events". That is a sound
+  // inference and it is not a confirmation, and a parent saw a plain "Paid" with nothing
+  // marking it as a guess.
+  //
+  // That instance was harmless: an over-stated PAID costs nobody money. The same move on a
+  // FREE would show an unmarked "Free admission" on an event we had only assumed was free,
+  // which is the single failure this price pipeline exists to prevent.
+  //
+  // THE RULE, deliberately narrow: you cannot confirm a price from text that never mentions
+  // money. Not "the model must agree with our keyword detector" — the model reads phrasing our
+  // detector was never built for, and the first version of this guard, which did defer to
+  // `detectPriceSignal`, stripped the confirmation from six events whose text said "our FREE
+  // community music series". Over-hedging is not free: if everything wears the ✦, the ✦ stops
+  // meaning anything, and the honest badge becomes noise.
+  //
+  // So the veto only fires on total silence, which is the one case where a confirmation cannot
+  // be anything but invention. The claim is only ever downgraded, never upgraded — a model that
+  // under-states its confidence keeps its ✦, which is the safe direction to be wrong in.
+  const price_confidence: PriceConfidence =
+    input.price_confidence === 'confirmed' && !mentionsMoney(text) ? 'inferred' : input.price_confidence
+
+  // Layers 2 & 3 only apply to an INFERRED free (no explicit signal). An explicit free
+  // statement ("free summer camp") always overrides the keyword suspicion.
   const isInferredFree = price === 'free' && price_confidence === 'inferred'
   if (isInferredFree) {
-    const text = `${title} ${description}`
-    const structurallyPaid = hasStructurallyPaidKeyword(text) // Layer 2
-    if (structurallyPaid || registration_required /* Layer 3 */) {
-      return { price_class: 'unknown', price_confidence: 'inferred' }
+    // Layer 2 — the text names an activity type that usually costs money.
+    if (hasStructurallyPaidKeyword(text)) {
+      return { price_class: 'unknown', price_confidence: 'inferred', decided_by: 'rule-keyword' }
+    }
+    // Layer 3 — registration is required, which usually means a fee is collected somewhere.
+    if (registration_required) {
+      return { price_class: 'unknown', price_confidence: 'inferred', decided_by: 'rule-registration' }
     }
   }
 
-  return { price_class: price, price_confidence }
+  return { price_class: price, price_confidence, decided_by: 'model' }
 }
 
 /**

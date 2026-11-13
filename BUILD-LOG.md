@@ -2490,3 +2490,102 @@ And the smaller one: **inspect a baseline before accepting it.** The instruction
 with --accept" is one keystroke, and the whole value of a human in that loop is that they looked.
 Looking is what found the Frosty 5K case, which is now the most interesting open question in the
 eval.
+
+---
+
+## A guard that used the wrong detector, and the measurement that caught it
+
+*Date: 2026-11-13. Modules: [`src/lib/price.ts`](src/lib/price.ts), [`src/lib/types.ts`](src/lib/types.ts), [`src/lib/ingest.ts`](src/lib/ingest.ts), [`supabase/migrations/009_price_decided_by.sql`](supabase/migrations/009_price_decided_by.sql).*
+
+Two changes, both from tracing where a price actually comes from.
+
+### 1. The ✦ can no longer be removed by the model's say-so
+
+`price_confidence: 'confirmed'` drops the ✦ and removes the "estimated from event
+description" line, so the badge reaches a parent as a source-backed fact. It was taken on
+trust from the model's own self-report. **Nothing checked it.**
+
+It had already fired. Frosty 5K came back `paid` / `confirmed` on text containing no price,
+fee or ticket wording, reasoned from *"registration is required via sign-up, indicating a paid
+race entry fee typical of organized 5K events."* A sound inference. Not a confirmation. A
+parent saw a plain **Paid**.
+
+Harmless in that direction — an over-stated PAID costs nobody money. **The same move on a FREE
+would show an unmarked "Free admission" on an event we had only assumed was free**, which is
+the one failure this price pipeline exists to prevent.
+
+**The first version of the guard was wrong, and the measurement is what said so.** It deferred
+to `detectPriceSignal`, on the assumption that it answered "does this text state a price".
+Running the eval:
+
+| | before | after the first attempt |
+|---|---|---|
+| confirmed badges | 11 | **2** |
+
+Nine events lost their confirmation, including six whose text reads *"our **FREE** community
+music series"* and one saying *"**Ticket** available now!"* — correct readings by the model,
+vetoed. Meanwhile *"feel **free** to bring your own"* was accepted as a confirmation.
+
+`detectPriceSignal` is the **no-LLM fallback classifier**: a narrow list of set phrases
+(`free admission`, `buy tickets`, `cost: $N`), tuned for precision because it has to decide a
+price unaided. Using it to veto the model's reading asks it a question it was never built for.
+I had assumed its behaviour from its name instead of reading it.
+
+**And over-hedging is not free.** If every badge wears the ✦, the ✦ stops meaning anything and
+the honest marker becomes noise. A guard that strips nine correct confirmations to catch one
+bad one has not made the product more honest.
+
+**The corrected rule is deliberately narrower:** *you cannot confirm a price from text that
+never mentions money.* Not "the model must agree with our detector" — only a veto on total
+silence, which is the one case where a confirmation cannot be anything but invention.
+`mentionsMoney()` is broad on purpose: it decides nothing, so it needs recall, and a false
+positive merely lets the model keep a claim it had already made.
+
+Result: **1 of 11 downgraded — Frosty 5K — and the ten correct confirmations untouched.** It is
+a floor, not a judge: catching a bad confirmation made from *weak* wording is the model's job
+and the eval's, not a regex's. The tests assert that limit rather than hiding it.
+
+### 2. `price_decided_by` — which layer settled the price
+
+`price_class = 'unknown'` is a terminal state reachable two ways that need opposite fixes: the
+model declining to commit (a prompt concern) and our own rules overriding a model answer (a
+threshold concern). The stored row could not tell them apart.
+
+Splitting the nine live `unknown` Play Frisco rows meant reading each `price_reasoning` and
+noticing it disagreed with the stored class — the model writes its reasoning *before* our rules
+run, so *"defaulting to free"* beside a stored `unknown` is the fingerprint of an override.
+That worked, and it is a forensic exercise rather than a query. The split: **5 overridden, 4
+genuine** — and one of the overridden five is a **Community Parade**, which is almost certainly
+free and currently shows no price at all.
+
+The column separates the FREE values too, which matters as much: a free from a library's
+institutional default, a free the source published in machine-readable form, a free read from a
+structured Cost field, and a free the model assumed because the text said nothing are **four
+different claims that look identical in the table today.**
+
+Nullable, with no backfill. Existing rows get NULL because we genuinely do not know
+retroactively which layer decided them, and inventing provenance in the one column whose job is
+to record provenance would be a poor joke. Rows acquire a value as they re-ingest.
+
+550 tests green. Migration 009 is written and needs running by hand in the Supabase SQL editor.
+
+### A known gap this surfaced, not yet fixed
+
+`scripts/eval-run.ts` applies `resolvePriceClass` to every frozen event, but **production
+locks the price for Kaleidoscope events whose source declares them free** and never calls it.
+So for those rows the eval models the Play Frisco path rather than the one that actually runs.
+The frozen inputs do not carry the source's `isAccessibleForFree` flag, so reproducing it needs
+a capture change. Recorded rather than quietly tolerated: it is the same fidelity failure the
+harness was rebuilt to remove, in a corner I had not checked.
+
+### The lesson
+
+**I assumed a function's behaviour from its name and built a safety check on top of it.** The
+name was accurate and the scope was not — it answered "does this text contain one of my
+phrases", and I read it as "does this text state a price". The gap between those two is where
+the nine false downgrades lived.
+
+What caught it was not review. It was running the eval and looking at a number that moved more
+than expected: **11 → 2 when I had predicted 11 → 10.** The discipline worth keeping is not
+"read more carefully" — it is **predict the number before you run it, and treat a surprise as a
+defect in your model of the system rather than a pleasant bonus.**

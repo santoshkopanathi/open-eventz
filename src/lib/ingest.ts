@@ -8,7 +8,7 @@ import { supabaseAdmin } from './supabase'
 import { EventCategory, EventSource } from './types'
 import { parseCommunicoAgeGroup, communicoIsFamily, mapFriscoAudienceIds } from './age-parsers'
 import { inferPlayFriscoEvent } from './age-inference'
-import { fallbackPriceClass, resolvePriceClass, priceClassToFields, interpretCostField } from './price'
+import { fallbackPriceClass, resolvePriceClass, priceClassToFields, interpretCostField, type ResolvedPrice } from './price'
 import { PER_INFERENCE_COST_USD } from './technical-metrics'
 import { markRecurring } from './recurring'
 import { parseFriscoEventLink } from './frisco-parse'
@@ -561,8 +561,8 @@ async function ingestPlayFrisco() {
       // Price: Cost field (confirmed) if present, else the keyword FALLBACK (used only if the
       // LLM call later fails; the LLM pass in POST overwrites the fallback for new events).
       const priceLocked = costFieldClass !== null
-      const resolved = priceLocked
-        ? { price_class: costFieldClass!, price_confidence: 'confirmed' as const }
+      const resolved: ResolvedPrice = priceLocked
+        ? { price_class: costFieldClass!, price_confidence: 'confirmed', decided_by: 'source-cost-field' }
         : fallbackPriceClass({ title, description, registration_required })
       const priceFields = priceClassToFields(resolved.price_class)
 
@@ -589,6 +589,10 @@ async function ingestPlayFrisco() {
         price_class: resolved.price_class,
         price_confidence: resolved.price_confidence,
         price_reasoning: priceLocked ? `Cost field: "${rawCost}"` : null, // LLM sets this otherwise
+        // Which layer settled the price. A locked price came from the page's structured Cost
+        // field and never reached a judgment; otherwise resolvePriceClass reports whether its
+        // own rules overrode the model, which is the distinction 'unknown' alone cannot carry.
+        price_decided_by: resolved.decided_by,
         _priceLocked: priceLocked, // transient (not a DB column): tells the LLM pass to keep this price
         age_min: null,
         age_max: null,
@@ -951,7 +955,7 @@ async function classifyEvents(db: ReturnType<typeof supabaseAdmin>, source: Even
   const ids = events.map((e: any) => e.id)
   const { data: priorRows } = await db
     .from('events')
-    .select('id, kid_relevant, kid_confidence, age_buckets, age_basis, age_confidence, age_reasoning, is_free, price_text, price_class, price_confidence, price_reasoning')
+    .select('id, kid_relevant, kid_confidence, age_buckets, age_basis, age_confidence, age_reasoning, is_free, price_text, price_class, price_confidence, price_reasoning, price_decided_by')
     .eq('source', source)
     .in('id', ids)
   const priorMap = new Map<string, any>((priorRows ?? []).map((r: any) => [r.id, r]))
@@ -970,6 +974,7 @@ async function classifyEvents(db: ReturnType<typeof supabaseAdmin>, source: Even
       e.age_reasoning = prior.age_reasoning
       e.price_class = prior.price_class
       e.price_confidence = prior.price_confidence
+      e.price_decided_by = prior.price_decided_by
       e.price_reasoning = prior.price_reasoning
       e.is_free = prior.is_free
       e.price_text = prior.price_text
@@ -1026,6 +1031,7 @@ async function classifyEvents(db: ReturnType<typeof supabaseAdmin>, source: Even
         const priceFields = priceClassToFields(resolved.price_class)
         e.price_class = resolved.price_class
         e.price_confidence = resolved.price_confidence
+        e.price_decided_by = resolved.decided_by
         e.price_reasoning = result.price_reasoning
         e.is_free = priceFields.is_free
         e.price_text = priceFields.price_text
@@ -1153,8 +1159,8 @@ async function ingestKaleidoscope() {
 
         // Price: isAccessibleForFree is the park's own statement; otherwise fall back to the
         // same inference the other sources use.
-        const resolved = parsed.isFree === true
-          ? { price_class: 'free' as const, price_confidence: 'confirmed' as const }
+        const resolved: ResolvedPrice = parsed.isFree === true
+          ? { price_class: 'free', price_confidence: 'confirmed', decided_by: 'source-declared' }
           : fallbackPriceClass({ title, description: description ?? '', registration_required: requiresRegistration(`${title} ${description ?? ''}`) })
         const priceFields = priceClassToFields(resolved.price_class)
 
@@ -1174,6 +1180,7 @@ async function ingestKaleidoscope() {
           price_class: resolved.price_class,
           price_confidence: resolved.price_confidence,
           price_reasoning: parsed.isFree === true ? 'Source states the event is free to attend' : null,
+          price_decided_by: resolved.decided_by,
           _priceLocked: parsed.isFree === true,
           age_min: null,
           age_max: null,

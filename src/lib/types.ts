@@ -43,6 +43,10 @@ export interface Event {
   // price_confidence: 'confirmed' = explicit signal in text; 'inferred' = free-by-default.
   price_class: PriceClass | null
   price_confidence: PriceConfidence | null
+  // price_decided_by: WHICH LAYER settled the price. Null on rows written before the column
+  // existed — honest, since the provenance of those is genuinely unknown. See migration 009:
+  // an 'unknown' from the model and an 'unknown' our own rules imposed need opposite fixes.
+  price_decided_by?: PriceDecider | null
   price_reasoning: string | null
   ingested_at: string
   created_at: string
@@ -59,6 +63,36 @@ export type PriceClass = 'free' | 'paid' | 'unknown'
 // 'confirmed' = an explicit price signal was found in the text (paid, or an explicit
 // free statement). 'inferred' = free-by-default (no signal) — rendered as "Free ✦".
 export type PriceConfidence = 'confirmed' | 'inferred'
+
+/**
+ * WHICH LAYER SETTLED AN EVENT'S PRICE.
+ *
+ * Stored because `price_class = 'unknown'` is a terminal state reachable two ways that need
+ * opposite fixes: the model declining to commit (a prompt concern) and our own deterministic
+ * rules overriding a model answer (a threshold concern). Before this existed, telling them
+ * apart meant reading the model's prose reasoning and noticing it disagreed with the stored
+ * class — which worked, because the reasoning is written before the rules run, but is a
+ * forensic exercise rather than a query.
+ *
+ * It separates the FREE values too, and that matters as much: a free from a library's
+ * institutional default, a free the source published in machine-readable form, a free read
+ * from a structured Cost field, and a free the model assumed because the text said nothing
+ * are four different claims that otherwise look identical in the table.
+ */
+export type PriceDecider =
+  /** A structured price field on the source page. Authoritative. */
+  | 'source-cost-field'
+  /** The source's own machine-readable "this is free" statement (Kaleidoscope JSON-LD). */
+  | 'source-declared'
+  /** Free because of what the venue is — library programming. No judgment involved. */
+  | 'source-institution'
+  /** The model's judgment stood unchanged. */
+  | 'model'
+  /** Layer 2 overrode an inferred free: the text names a fee-associated activity. */
+  | 'rule-keyword'
+  /** Layer 3 overrode an inferred free: the event requires registration. */
+  | 'rule-registration'
+
 
 export interface AgeInference {
   kid_relevant: boolean
