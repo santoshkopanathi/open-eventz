@@ -419,6 +419,54 @@ earlier write-up of this control overstated that. Two things still justify it:
 
 ---
 
+### A12. A price confidence must be earned from the text ⬤ *(2026-11-13)*
+**Purpose.** To stop the model removing its own honesty marker.
+**The problem it solves.** `price_confidence: 'confirmed'` drops the ✦ from the badge **and**
+removes the "estimated from event description" line, so the badge reaches a parent as a
+source-backed fact rather than an inference. That field was taken on trust from the model's own
+self-report. Nothing checked it, so **the model could declare its own guess a fact and silently
+strip the one signal that tells a parent otherwise.**
+**It had already fired.** Frosty 5K returned `paid` / `confirmed` on text containing no price,
+no fee and no ticket wording, reasoned from *"registration is required via sign-up, indicating a
+paid race entry fee typical of organized 5K events"*. A sound inference; not a confirmation.
+**Why it was worth fixing at an over-stated *paid*.** That instance costs nobody money — but the
+mechanism is direction-blind. The same move on a *free* shows an unmarked "Free admission" on an
+event we only assumed was free, which is the single failure this price pipeline exists to prevent.
+**How it works.** `resolvePriceClass` downgrades `confirmed` to `inferred` when
+`mentionsMoney(text)` is false. One-directional: a claim is never upgraded, so a model that
+under-states its confidence keeps its ✦ — the safe direction to be wrong in.
+**The rule is deliberately narrow: you cannot confirm a price from text that never mentions
+money.** Not "the model must agree with our keyword detector". The first version of this guard
+deferred to `detectPriceSignal` and took confirmed badges from **11 to 2**, vetoing six events
+whose text reads *"our FREE community music series"* and one saying *"Ticket available now!"* —
+correct readings by the model, overridden by a detector built for the no-LLM fallback path and
+tuned for precision on set phrases. **Over-hedging is not free:** if every badge wears the ✦, the
+✦ stops meaning anything and the honest disclosure becomes noise.
+**Measured effect:** 1 of 11 downgraded, the ten correct confirmations untouched.
+**It is a floor, not a judge.** Catching a bad confirmation made from *weak* wording is the
+model's job and the eval's, not a regex's — and the tests assert that limit rather than hiding it.
+
+### A13. Which layer decided a price is recorded ⬤ *(2026-11-13)*
+**Purpose.** Attribution. To make a failure answerable by query rather than by forensics.
+**The problem it solves.** `price_class = 'unknown'` is a terminal state reachable two ways that
+need **opposite** fixes: the model declining to commit (a prompt concern) and our own Layer 2/3
+rules overriding a model answer (a threshold concern). The stored row could not tell them apart.
+Splitting the nine live cases meant reading each `price_reasoning` and noticing it disagreed with
+the stored class — the model writes its reasoning *before* our rules run, so *"defaulting to
+free"* beside a stored `unknown` is the fingerprint of an override. That worked, and it is a
+forensic exercise rather than a query. The split: **5 overridden, 4 genuine** — and one of the
+five is a Community Parade, which is almost certainly free and currently shows no price at all.
+**It separates the *frees* too, which matters as much.** An institutional free (library), a
+source-declared free (Kaleidoscope's own machine-readable statement), a free read from a
+structured `Cost:` field, and a free the model assumed because the text said nothing are **four
+different claims that looked identical in the table.**
+**How it works.** `price_decided_by` — one of `source-cost-field`, `source-declared`,
+`source-institution`, `model`, `rule-keyword`, `rule-registration`. Set by the connectors for the
+source cases and returned by `resolvePriceClass` for the judgment cases. Migration 009.
+**Nullable, with no backfill.** Existing rows get NULL because we genuinely do not know
+retroactively which layer decided them, and **inventing provenance in the one column whose job is
+recording provenance would be a poor joke.** Rows acquire a value as they re-ingest.
+
 ## B. Structural guards — unsafe *shapes* of code cannot merge
 
 These assert against the source text, not behaviour. They exist because a reviewer cannot be
@@ -462,6 +510,24 @@ duplicates `ADULT_OVERRIDE` narrowly (importing `ingest.ts` would pull the Supab
 script that must not touch the database) and its comment said the copy "is asserted against the
 source below". **No such assertion existed.** It does now — the two regexes are compared as text,
 so a divergence that would silently make the whole red-team run meaningless fails instead.
+
+### B10. A CI path filter must be able to fire ⬤ *(2026-11-13)*
+**Purpose.** To stop a trigger existing with no assertion behind it.
+**The problem it solves.** The classifier-eval workflow blocks on a push touching the prompt, the
+model id, the deterministic rules the eval executes, or the golden set. **My first version of that
+filter named a file that has never existed** — only its test does. A filter entry matching nothing
+never fires, so the gate would have silently stopped covering what I believed it covered. Worse, I
+had nearly listed the API route holding the `kid_relevant` visibility gate, which *does* exist but
+which this eval never reads: a run triggered by a change there could not have detected it.
+**A trigger with no corresponding assertion is a green light wired to nothing**, and nothing in CI
+reports it — the job runs, passes, and shows green.
+**How it works.** A test parses the workflow's quoted path entries and asserts every literal one
+resolves to a real file, that the prompt and the two exercised rules are listed, and that the API
+route is **absent** — checked against the entries rather than the file text, because the workflow
+names that route in a comment explaining the exclusion and a blanket substring check failed on its
+own explanation.
+**The question it encodes:** *if this file changed in the worst possible way, which assertion in
+this job would go red?* If the answer is "none", the entry is decoration.
 
 ### B9. Every source belongs to exactly one city ⬤ *(2026-11-10)*
 `SOURCE_CITY` in `seo-indexable.ts` is a `Record<EventSource, CitySlug>`, so **adding a source
@@ -727,7 +793,7 @@ the risk.
 
 | Category | What it means | Does it apply here? | What we cover today | The gap |
 |---|---|---|---|---|
-| **Content failure** | The output itself is the problem. The system worked mechanically — called the API, got a response, rendered it — but what it produced is wrong, malformed, or erodes trust. The feature "succeeded" and still failed the user. | **Yes — our dominant risk**, in a different form. For a generative product this means bad prose; here the content is **event data**: start times, age ranges, kid-relevance, price, supervision guidance. A wrong start time is our broken bio — and worse, because a parent *acts* on it. | **Pre-write guard** (`screenBatch`): implausible times dropped, uniform shift or shrink rejects the batch — wrong data cannot be stored at all. **Post-write gate**: 13 checks against the live DB (age variety, adult-title leaks, filter-narrowing, start-time plausibility, freshness, live-source canary). **300 unit tests** under two timezones in CI. **Structural guards**: one write path only; every detail surface must render the supervision badge. **Fail-closed classification**: LLM error or low confidence hides the event. | LLM **classification quality has no automated eval on change** — `calibrate:price` is manual. No adversarial or edge cases (non-English, empty description, ambiguous age). **Nothing checks the rendered page** — both real incidents were caught by a human opening the site, not by a test. |
+| **Content failure** | The output itself is the problem. The system worked mechanically — called the API, got a response, rendered it — but what it produced is wrong, malformed, or erodes trust. The feature "succeeded" and still failed the user. | **Yes — our dominant risk**, in a different form. For a generative product this means bad prose; here the content is **event data**: start times, age ranges, kid-relevance, price, supervision guidance. A wrong start time is our broken bio — and worse, because a parent *acts* on it. | **Pre-write guard** (`screenBatch`): implausible times dropped, uniform shift or shrink rejects the batch — wrong data cannot be stored at all. **Post-write gate**: 13 checks against the live DB (age variety, adult-title leaks, filter-narrowing, start-time plausibility, freshness, live-source canary). **300 unit tests** under two timezones in CI. **Structural guards**: one write path only; every detail surface must render the supervision badge. **Fail-closed classification**: LLM error or low confidence hides the event. | ~~LLM classification quality has no automated eval on change~~ **— closed 2026-11-13.** A 65-event golden set with committed labels runs the **production** classifier in CI, blocking on a push to the prompt, the model id or the rules it exercises, and weekly for provider-side drift. Adversarial cases shipped 2026-10-26 (20 fixtures). **What remains:** the set is 65 of 184 frozen events, and the golden-set gate has **never gone red in CI** — it runs, it has not yet been seen to catch. **Nothing checks the rendered app page** — both real incidents were caught by a human opening the site, not by a test. |
 | **Behavioural failure** | The user's intent is the problem. Someone uses the feature for something it was never built for — offensive input, prompt injection, out-of-scope use — and the system complies, laundering it through your brand. You did not write the content, but your name is on it. | **Mostly no, for a structural reason.** There is no user-input path to a model: users filter and browse, they never submit text. That *deletes* the misuse surface rather than mitigating it. **Two real analogues remain**: scraped event text is untrusted input to our prompt, and we publish third-party descriptions verbatim under our masthead. | **Architecture, not a control** — the strongest kind: no user free-text surface exists. `/api/infer-age` and `/api/ingest` behind `CRON_SECRET`, which closed a genuine unauthenticated cost-DoS vector in July 2026. **Refusal equivalent**: fail-closed classification plus a hard `adults only / 21+ / 18+` override, so the model cannot opt an adult event into a kids app. Civic and library sources — low base rate of hostile content. | The prompt does **not** tell the model to treat event text as *data, never instructions* — injection via a *visible* scraped description is unguarded. **No content filter on descriptions we render verbatim.** *Invisible* injection is closed (A10). **Likelihood measured 2026-11-10, not assumed: 0 HTML comments and 0 markup tags across 2,371 production rows.** Low likelihood, non-zero severity: brand risk rather than user harm. |
 | **Economic failure** | The cost is the problem. Usage — legitimate or hostile — drives spend faster than value. No rate limit, no cap, no alert; you find out from the bill. | **Yes, but structurally bounded**, and the reason is the interesting part: LLM cost scales with **number of new events, not number of users**. Classification is nightly and batched, results are cached, and re-running an unchanged source costs **zero calls** (verified — a Play Frisco re-run after a refactor made none). A traffic spike costs Vercel bandwidth and Supabase egress, not tokens. | Batch, not per-request. Caching makes repeat runs free. No user-triggered generation exists. Both paid endpoints secret-gated. Per-run `llm_calls` and `llm_cost_usd` recorded in `ingest_runs` and surfaced on the Technical dashboard. | **No hard cap** — a source suddenly returning 10,000 events would be classified in full. **`llm_cost_usd` is `calls × $0.006`, an estimate, not metered spend** — a dashboard number, not a control. No spend alert or threshold. No rate limit on the public `/api/events` (Supabase egress). |
 
@@ -735,7 +801,7 @@ the risk.
 
 | Instrument | What it is | What we cover today | The gap |
 |---|---|---|---|
-| **1. Evals at scale** | A suite measuring whether the feature does what it should, extended with **edge cases** and **adversarial cases**, running **automatically** on every prompt change, model swap and deploy — so quality is a system property, not a launch criterion. | **300 unit tests** on every push, run under `TZ=UTC` **and** `TZ=America/Chicago`. The deterministic half of the price-calibration set runs free in CI; `calibrate:price` runs the **real model** against ground-truth fixtures. **Incident-derived cases**: every production bug becomes a permanent test — the timezone incident encoded with *verbatim source strings*, the age break as "healthy" vs "the-incident" fixtures. A doc-parity CI job stops the coverage doc claiming tests that no longer exist. | The **real-model eval is manual with no trigger** — the textbook "eval suite that only runs manually is a scaling liability." Nothing detects that the prompt or the `MODEL` constant changed. **No adversarial cases.** Calibration is price-focused; **kid-relevance classification has no eval of its own**. |
+| **1. Evals at scale** | A suite measuring whether the feature does what it should, extended with **edge cases** and **adversarial cases**, running **automatically** on every prompt change, model swap and deploy — so quality is a system property, not a launch criterion. | **300 unit tests** on every push, run under `TZ=UTC` **and** `TZ=America/Chicago`. The deterministic half of the price-calibration set runs free in CI; `calibrate:price` runs the **real model** against ground-truth fixtures. **Incident-derived cases**: every production bug becomes a permanent test — the timezone incident encoded with *verbatim source strings*, the age break as "healthy" vs "the-incident" fixtures. A doc-parity CI job stops the coverage doc claiming tests that no longer exist. | ~~The real-model eval is manual with no trigger~~ **— closed 2026-11-13.** `classifier-eval.yml` runs both suites against the production classifier: **blocking** on a push touching `age-inference.ts`, `price.ts`, `source-text.ts` or the golden set, and **weekly** for provider-side drift, alerting by failing like the heartbeat. Gates: wrongly-free = 0 and leaked = 0, both blocking; over-claim advisory. A failing score re-calls only the failing rows before stopping a merge. Cost measured, not estimated: **$0.32 a run with the prompt cached**. First CI run passed both jobs on its own path trigger. **What remains:** (a) 54 judgments still unlabelled, so the set is 65 of 184 frozen events; (b) **kid-relevance still cannot be gated from the sampled set** — 62 of 65 labels are "yes", so a classifier answering yes to everything scores 95% while being the worst possible product, which is why the adversarial set is the right instrument there rather than more sampling; (c) the gate has never gone red in CI. |
 | **2a. Guardrail — input classifier** | Fires **before** the model is called, rejecting input the feature was never designed for so the model never sees it. | **N/A in the user sense** — there is no user input. The nearest equivalent is the small **governance-keyword pre-filter** (city council, board meeting, work session) that skips civic-admin noise so we do not pay to classify it. | Scraped source text is not screened for *visible* injection before entering the prompt. Invisible text — comments, markup, zero-width characters — IS stripped first (A10), which is the only half that was ever reachable through a deterministic rule. |
 | **2b. Guardrail — output classifier** | Fires **after** the model responds and before the user sees it, catching broken formatting, wrong length or off-criteria output and falling back to a safe default. | **Our strongest instrument, and broader than the standard version.** `screenBatch` validates the whole batch **before the DB write**: per-event implausible-time drop, **uniform-shift batch rejection** (≥80% of ≥20 overlapping events moving by the same offset), shrink rejection, and refuse-if-we-cannot-read-current-state. On abort, purge and cleanup are skipped so previously-correct rows survive. It compares against **prior state**, which a stateless output classifier cannot do. | Covers **times and volume, not semantics**. A confidently-wrong `kid_relevant` passes every rule. |
 | **2c. Guardrail — refusal layer** | System-prompt instructions stating what the feature is *not* for, so the model itself refuses out-of-scope use. | The behavioural equivalent, **enforced in code rather than prose**: LLM failure or `low` confidence → `kid_relevant = false`; hard override for `adults only / 21+ / 18+`. Applied uniformly across cached and fresh results. | **Not expressed in the prompt** — enforcement is post-hoc. No explicit "you are a kids-event classifier, refuse anything else" framing. |
@@ -749,10 +815,9 @@ the risk.
 | | Strong | Partial | Open |
 |---|---|---|---|
 | **Categories** | Content · **Economic** | *(none)* | Behavioural (low severity) |
-| **Instruments** | 2b output classifier · **2d cost cap** · 4 fallback table · 5 audit trail | 1 evals · 2c refusal · 3 observability | *(none)* |
+| **Instruments** | **1 evals** *(2026-11-13)* · 2b output classifier · **2d cost cap** · 4 fallback table · 5 audit trail | 2c refusal · 3 observability | *(none)* |
 
-**Priority order to close:** eval-on-change trigger → ~~adversarial classifier cases~~ *(built 2026-10-26; one finding, closed 2026-11-10 — a design weakness, no live instances)* → prompt-injection framing
-→ Sentry → the two remaining fallback gaps (staleness signal, server-page broken image).
+**Priority order to close:** ~~eval-on-change trigger~~ *(live in CI 2026-11-13; blocking on prompt/model change, weekly otherwise)* → ~~adversarial classifier cases~~ *(built 2026-10-26; one finding, closed 2026-11-10 — a design weakness, no live instances)* → **finish the golden set** (54 judgments) → **see the gate go red once** — a guard nobody has watched fail is not yet a guard → prompt-injection framing → Sentry → the two remaining fallback gaps (staleness signal, server-page broken image).
 
 *Done 2026-08-17: the fallback table itself, plus four of the six gaps it surfaced.*
 

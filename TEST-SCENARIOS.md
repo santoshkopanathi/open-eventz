@@ -167,6 +167,58 @@ evidence — now driven by `age_basis`.
 | 1.6C.8 | Tilde removed | `Family ✦` not `~ Family ✦` — price never had a tilde | [A] [R] · age-badge.test.ts, e2e/smoke.spec.ts |
 | 1.6C.9 | Badge and filter share one fallback | `effectiveAgeBuckets` is imported by both, so a card reading "Family" always matches the toddler chip | [A] [R] · age-filter.test.ts |
 
+### 1.6J A price confidence is earned from the text *(new 2026-11-13)*
+
+**Why.** `price_confidence: 'confirmed'` drops the ✦ and the "estimated from event description"
+line, so the badge reaches a parent as a fact. The field was the model's own self-report, unchecked
+— it could declare its own guess a fact and strip the signal saying otherwise. It had already done
+so once (Frosty 5K: `paid`/`confirmed` on text with no price, fee or ticket wording).
+
+| # | Scenario | Expected |
+|---|---|---|
+| 1 | `confirmed` claimed, text never mentions money | downgraded to `inferred`; the ✦ stays |
+| 2 | `confirmed` claimed on *"our FREE community music series"* | **kept** — unusual phrasing the model read correctly |
+| 3 | `confirmed` claimed on *"Donations welcome"* | **kept** — the guard is a floor, not a judge |
+| 4 | `inferred` claimed on *"Tickets are $25"* | stays `inferred` — never upgraded |
+| 5 | genuinely confirmed free and paid | untouched |
+
+**The limit is asserted, not hidden.** An earlier version deferred to `detectPriceSignal` (the
+no-LLM fallback classifier, narrow by design) and took confirmed badges from 11 to 2 — over-hedging,
+which is not free: if every badge wears the ✦, the ✦ means nothing.
+
+### 1.6I Which layer decided a price *(new 2026-11-13)*
+
+**Why.** `unknown` is reachable two ways needing opposite fixes — the model abstaining, or our
+Layer 2/3 rules overriding it — and the row could not tell them apart. Splitting the nine live
+cases required reading prose.
+
+| # | Scenario | `decided_by` |
+|---|---|---|
+| 1 | model's answer stands | `model` |
+| 2 | Layer 2 overrode an inferred free (fee-associated noun) | `rule-keyword` |
+| 3 | Layer 3 overrode an inferred free (registration required) | `rule-registration` |
+| 4 | both would apply | `rule-keyword` — the first rule that fired |
+| 5 | the model itself returned `unknown` | `model`, **not** a rule |
+
+### 1.6H The eval gate and its CI trigger *(new 2026-11-13)*
+
+**Why.** A trigger with no corresponding assertion is a green light wired to nothing. The first
+path filter named a file that has never existed.
+
+| # | Scenario | Expected |
+|---|---|---|
+| 1 | every literal path in the workflow filter | resolves to a real file |
+| 2 | the API route holding the visibility gate | **absent** from the filter — this eval never reads it |
+| 3 | a frozen, **labelled** input whose source text changed | immutable |
+| 4 | a frozen, **unlabelled** input whose source text changed | refreshed |
+| 5 | a label whose frozen input is missing | never scored; counted and reported |
+| 6 | a row with no decision (API failure) | counted as an error, never as agreement |
+| 7 | over-claim rises within the measured ±2 | reported, does not fail the build |
+| 8 | over-claim rises above it | flagged, still advisory |
+| 9 | wrongly-free or leaked above zero | **fails** |
+| 10 | the scored set changed size | over-claim reported **NOT COMPARABLE**, and does not pass |
+| 11 | rows worth retrying | errors and blocking-gate offenders only — **never over-claim rows**, since re-rolling only the events that pushed a count up can lower it and never raise it |
+
 ### 1.6G Hidden text never reaches storage, and the exposure figure is watched *(new 2026-11-10)*
 The A10 correction wrote a measurement into five documents — *0 HTML comments, 0 markup tags across 2,371 rows* — and nothing kept it true. **A measurement in a document is a snapshot.** Two halves: invisible characters are *prevented* at the single write path (they can never be legitimate, and they are the fail-open case), while markup is *detected* by the post-ingest gate (markup means a source changed shape, which a human should see rather than have tidied away). The asymmetry is also what stops the gate check from being vacuous.
 | # | Scenario | Expected result | Tag |

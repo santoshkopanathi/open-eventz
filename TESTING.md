@@ -40,6 +40,29 @@ CI runs all three automatically on push / PR — see `.github/workflows/ci.yml`.
 
 **Git hooks** (`core.hooksPath=.githooks`): `pre-commit` runs `typecheck + unit` (fast, browser-free). **`pre-push` runs `typecheck + unit`, then the Playwright E2E smoke suite — but only when a browser is installed.** If no browser is found it prints a warning and *skips* E2E (so a browserless clone/CI-runner isn't blocked and forced onto `--no-verify`); CI runs E2E unconditionally regardless (`ci.yml`, job `e2e`). Install the browser locally with `npx playwright install chromium`. **Discipline for UI changes:** make sure the browser is installed so pre-push actually *runs* E2E rather than skipping it — a green pre-commit is not a green pipeline (this bit us on the Weekend Paper reskin: unit/typecheck green locally, E2E red in CI — see BUILD-LOG).
 
+**The classifier eval** (in CI since 2026-11-13, `classifier-eval.yml`). Two suites that call
+the real model, kept off the per-push gate on purpose — they cost money, take minutes, and can
+answer differently on identical input, so a per-push trigger would produce a red build for a CSS
+change and teach everyone to press re-run.
+
+| command | what it does |
+|---|---|
+| `npm run eval:snapshot` | freeze the current source text into `eval/golden/events.json` (append-only; labelled ids are immutable) |
+| `npm run eval:worksheet` | generate a labelling sheet; `-- --source <name>` scopes it, `-- --parse` reads it back |
+| `npm run eval:recover` | rebuild frozen inputs from the original hand-filled worksheet |
+| `npm run eval:run` | run the **production** classifier over the frozen set; `-- --retry-failures` re-calls only rows that failed a blocking gate |
+| `npm run eval:score` | gate it; `-- --accept` adopts the counts as the new baseline |
+| `npm run redteam` | 20 adversarial fixtures through the production classifier |
+
+**Triggers.** Blocking on a push touching `src/lib/age-inference.ts`, `price.ts`, `source-text.ts`,
+the eval scripts or `eval/golden/**`. Weekly on Monday for provider-side model drift, alerting by
+failing like the heartbeat. Manual `workflow_dispatch`. **~$0.32 a run** with the prompt cached.
+
+**Gates.** `wrongly-free = 0` and `leaked = 0` block; over-claim is advisory. That split is
+**measured, not assumed**: four runs over an unchanged 65-event set gave the existence metrics
+identically every time and the over-claim count a spread of ±2, so a non-increase gate on it would
+fail about half of all clean runs.
+
 **LLM price calibration** (manual, costs money): `npm run calibrate:price` runs the real Claude model against the ground-truth set in `src/lib/__fixtures__/price-calibration.ts` and prints a pass/fail table. Run it when the price/age prompt or model changes, or when drift is suspected — NOT in CI. Needs `ANTHROPIC_API_KEY`. The deterministic half of the calibration set runs for free in the normal Jest suite.
 
 **Data-quality gate** (post-ingest, runs against REAL data): `npm run validate` runs `scripts/validate-data.ts` against the **live Supabase** — real-data invariants (Frisco age variety, **no adult-title leaks**, the Toddler filter actually **narrows**, per-source non-empty, freshness, **no hidden text in stored event text**) + a **live-source canary** (BiblioCommons still exposes resolvable `audience_ids`) + a real-data filter regression. Writes a ✓/✗ summary and **exits non-zero on any violation**. Runs automatically as the **`data-quality` job in `.github/workflows/ingest.yml`** (`needs: ingest`) after the nightly per-source ingest — so a silent source change (a scraper going empty, a source moving its data) becomes a **RED pipeline**, not a green ingest over corrupt data. *Why this layer exists (short):* logic/mocked tests can't catch a **data** break — full story in BUILD-LOG "Frisco age filter broke". The pure checks live in `src/lib/data-quality.ts` (unit-tested against a "healthy" and a "the-incident" fixture). **One check there is unusual and worth knowing about:** `sourceTextHygieneCheck` does not protect a decision — `visibleText()` already does that — it protects a **claim**, the measured exposure figure that five documents quote (GUARDRAILS F4). It fails on *upcoming* events only and *reports* past ones, because a past row is inert and cannot be re-ingested, so failing on one would leave the gate permanently red over a row nothing reads. Needs the Supabase env vars (local: `.env.local`; CI: the `Production` environment secrets).

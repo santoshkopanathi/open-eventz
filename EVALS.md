@@ -808,6 +808,30 @@ than wait to collect them.**
 stated choice rather than an oversight: a wrong age chip is advisory and a parent corrects it by
 reading on, whereas kid-relevance and price are decisions taken on their behalf.
 
+## The free-by-default prior, tested against the source (2026-11-13)
+
+The question the over-claim count reduces to, once you accept that 15 of 17 are **one assumption
+applied fifteen times** rather than fifteen findings: *how often is "no price mentioned" actually
+free for this source?*
+
+Opened all 15 live city pages.
+
+| Outcome | Count |
+|---|---|
+| Source page now states **Free** in its Cost field | 4 |
+| Page says nothing about money, even now | 11 |
+| **Paid** | **0** |
+
+**The prior held on every event that could be verified.** The 11 silent ones are silent *at the
+source* too — nobody publishes a price, so free-by-default is the only answer available short of
+telephoning the city. The 4 with a Cost field are a stale-snapshot artifact rather than a defect:
+those rows were frozen in August, and the live scraper reads their Cost field today, storing them
+as `free/confirmed` — a plain `Free` badge with no ✦. Verified against the live database.
+
+**Verdict: leave the default alone.** It produced no wrong answer on a 15-event check, and every
+badge it produces wears the ✦ saying we inferred it. Worksheet and result:
+`eval/golden/free-default-check.md`.
+
 ## Recovery — the inputs were in the worksheet all along (2026-11-12)
 
 The user asked a question I should have asked myself: *"I filled a label set in a separate
