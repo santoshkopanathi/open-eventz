@@ -13,9 +13,9 @@ source too — nobody publishes a price, so "free by default" is the only answer
 of phoning the city.
 
 **The 4 with a Cost field are a stale-snapshot artifact, not a bug.** Those rows were frozen in
-August; the live scraper reads their Cost field today and stores them as  with
-reasoning  — a plain  badge, no ✦. The golden set is simply older
-than the page.
+August; the live scraper reads their Cost field today and stores them as `free/confirmed`,
+with the reasoning `Cost field: "FREE"` — a plain `Free` badge, no ✦. The golden set is simply
+older than the page.
 
 **Verdict: leave the default alone.** It produced no wrong answer on a 15-event check, and the
 badge it produces wears the ✦ saying we worked it out ourselves.
