@@ -1,6 +1,6 @@
 # Open items
 
-A running checklist of what is pending and who owns it. **Last reviewed 2026-11-13.**
+A running checklist of what is pending and who owns it. **Last reviewed 2026-11-17.**
 
 This is not a replacement for `../02-product/BACKLOG.md`, which holds the reasoning for each
 product item. This file holds the *state*: what is blocked, what is time-bound, and what is
@@ -24,23 +24,41 @@ CST) writes `price_decided_by` unconditionally in both upsert paths
 (`src/lib/ingest.ts:595`, `:1183`) and selects it in the prior-read (`:958`). Every source
 job will therefore fail on the next run.
 
+**It was predicted on 11-13 and it happened.** Measured 2026-11-17, four nights later:
+
 | | |
 |---|---|
-| Last successful ingest | 2026-11-13 11:30 UTC — **before** the writing code landed |
-| Next scheduled ingest | `40 3 * * *` → **2026-11-14 03:40 UTC** (21:40 CST tonight) |
-| Failure mode | fail-closed: the batch is rejected, nothing is written, the job exits non-zero |
-| Blast radius | stale data, not wrong data. The ≤48h per-source freshness guard catches it the following night |
+| Error, every night since 11-14 | `Could not find the 'price_decided_by' column of 'events' in the schema cache` |
+| Sources dead | **play-frisco** and **kaleidoscope-park** — the two LLM-classified sources |
+| Sources healthy | frisco-library, plano-library — they never write the column. Last ingested 11-17 12:24 |
+| Last good write to the dead two | **2026-11-13 11:29 UTC** |
+| Still being served | 47 upcoming play-frisco, 20 upcoming kaleidoscope-park — stale, and not refreshed or purged |
+| **LLM calls paid for and discarded** | **316 calls, $1.90**, across four nights |
+
+**The second-order finding, which is the interesting one.** The spend ceiling guards against
+*runaway* cost. It does not guard against *wasted* cost. The classifier pass runs to completion,
+bills for every call, and only then does the write fail and throw the whole batch away — so the
+pipeline paid full price for four nights of work it discarded. Fail-closed protected the data and
+spent the money anyway. A pre-flight schema check would have cost nothing and saved all of it.
 
 **To clear it:** paste the migration into the Supabase SQL Editor and run it. It is additive —
 one nullable column, a CHECK constraint, and a partial index — with no backfill, because
 inventing provenance in the column whose job is recording provenance would be a poor joke.
-Verification queries are at the bottom of the migration file.
+Verification queries are at the bottom of the migration file. Then trigger the ingest manually
+rather than waiting for the next cron, so the two dead sources catch up.
+
+**Then close the class, not the instance** — see §6.
+
+### A separate, smaller failure appeared on 11-17 · BUILD
+`kaleidoscope-park: https://www.kaleidoscopepark.org/events/funder-s-forum-gathering/ HTTP 404`
+New on 11-17 and unrelated to 009. Most likely an event withdrawn upstream between the listing
+page and the detail fetch. Worth confirming it degrades gracefully rather than failing the run.
 
 ---
 
 ## 2. Time-bound
 
-### #15 Billing handover · OWNER · **2026-11-18**
+### #15 Billing handover · OWNER · **2026-11-18 — tomorrow**
 Anthropic billing. Dated, and the date is the whole point. See `BACKLOG.md:634`.
 
 ---
@@ -99,6 +117,34 @@ Listed because an eval with unexamined gaps is the thing it exists to prevent.
 | Over-claim and wrongly-hidden are not split by cause | Both are single numbers mixing a model abstention with one of our own rule overrides, which need opposite fixes. Migration 009 is what finally makes that query answerable. |
 
 ---
+
+## 6. The class behind the 009 incident · BUILD
+
+Running 009 fixes tonight. It does not fix the design. **A schema change applied by hand, and
+code that depends on it, deployed by a system with no way to know the schema has not caught up.**
+Nothing connects the two. The code shipped at 13:08 on 11-13 and the column still did not exist
+four days later.
+
+Two ways to close it, and they are not exclusive:
+
+1. **A pre-flight schema check in the ingest.** Before the classifier pass, assert that every
+   column the upsert will write exists. Fail in the first second, at zero cost, instead of after
+   316 billed calls. This is the one that would have saved the $1.90 and it fits the existing
+   guard style — a check that is *able* to fail.
+2. **Expand-contract.** The code tolerates the column being absent until the migration lands. More
+   standard, and the right answer for a team; heavier here, where migrations are hand-run on purpose.
+
+### An open question worth answering first
+The runs are recorded with `status: 'err'`, so the workflow went red four nights running and the
+≤48h per-source freshness guard should have fired on both dead sources. **Nothing was acted on for
+four days.** Before building anything, find out which is true:
+
+- the alert fired and was not seen — then this is a routing and attention problem, not a detection
+  problem, and the fix is where alerts land, not another check;
+- the alert did not fire — then a guard that should have caught a four-day outage did not, which
+  is more serious than the outage and belongs with the "a guard nobody has watched fail" item in §5.
+
+Either answer is worth having. Do not skip to the fix.
 
 ## Closed recently
 
