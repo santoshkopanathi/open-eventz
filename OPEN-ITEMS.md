@@ -201,9 +201,8 @@ question (N03, Thanksgiving) that lands on these rows on purpose.
 
 ### List view uses a summer-time "midnight" all year · BUILD · found 2026-11-18 · **later**
 `src/app/api/events/route.ts` treats midnight Central as UTC-5. In winter Central is UTC-6, so
-"today" starts at 11 pm the night before: late on the previous evening (and before 7 pm the next
-day, for the date filters), the list's day boundaries are off by an hour. Small, but it's a
-date-correctness bug. Owner deferred it on 2026-11-18.
+every day boundary the list uses (where "today" starts, and the From/To date filters) falls at
+11 pm the night before instead of midnight. Small, but it's a date-correctness bug. Owner deferred it on 2026-11-18.
 
 ---
 
