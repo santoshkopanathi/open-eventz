@@ -3,11 +3,11 @@ import { LLM_CLASSIFIED_SOURCES, effectiveAgeBuckets } from './age-filter'
 
 // The badge "kinds" drive what the card vs. the detail view renders (spec §2 / §6).
 export type AgeBadgeKind =
-  | 'structured-specific'  // library single age group — DETAIL only ("Ages 0–5")
-  | 'structured-multi'     // library multi-group, not family — DETAIL only ("Ages 6–17")
+  | 'structured-specific'  // library single age group — CARD + detail ("Ages 0–5")
+  | 'structured-multi'     // library multi-group, not family — CARD + detail ("Ages 6–17")
   | 'confirmed-family'     // the source stated all-ages — CARD + detail ("Family")
   | 'inferred-family'      // we worked out family — CARD + detail ("Family ✦")
-  | 'inferred-specific'    // we worked out a range — DETAIL only ("Ages 13–17 ✦")
+  | 'inferred-specific'    // we worked out a range — CARD + detail ("Ages 13–17 ✦")
 
 export interface AgeBadge {
   kind: AgeBadgeKind
@@ -130,19 +130,19 @@ export interface RenderedBadge {
 }
 
 /**
- * What the LIST CARD renders (spec §2): **only Family**, confirmed or inferred.
+ * What the LIST CARD renders (spec §2, revised 2026-11-17): **every kind**, the same label the
+ * detail view shows, with a trailing ✦ and the hover tooltip on inferred badges.
  *
- * Specific age ranges are detail-only, and in v1.3 the bare "✦" that used to stand in for them
- * is gone too — a lone star with no text told a parent nothing. Net effect: a card shows an age
- * chip only when the answer is "Family". Every specific range, stated or inferred, is
- * detail-view only.
+ * Until 2026-11-17 the card showed only "Family" and specific ranges were detail-only, because
+ * the age filter chips already told a browsing parent the age group. Ask Open Eventz breaks that
+ * reasoning: a parent who types a question has set no chips, and the card beside the answer is
+ * where they check the age (ASK-SPEC.md). Drop-off stays detail-only.
  */
 export function cardAgeBadge(event: Event): RenderedBadge | null {
   const b = getAgeBadge(event)
   if (!b) return null
-  if (b.kind === 'confirmed-family') return { content: 'Family', bg: b.bg, color: b.text }
-  if (b.kind === 'inferred-family') return { content: 'Family ✦', tooltip: ESTIMATED_TOOLTIP, bg: b.bg, color: b.text }
-  return null // specific ranges — detail only
+  if (b.inferred) return { content: `${b.label} ✦`, tooltip: ESTIMATED_TOOLTIP, bg: b.bg, color: b.text }
+  return { content: b.label, bg: b.bg, color: b.text }
 }
 
 /**

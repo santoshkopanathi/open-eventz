@@ -21,9 +21,9 @@ function ev(over: Record<string, unknown>) {
 const BRANCHES = ['Davis Library', 'Haggard Library', 'Harrington Library', 'Parr Library', 'Schimelpfenig Library', 'Virtual']
 
 const FRISCO = [
-  ev({ id: 'f1', source: 'frisco-library', title: 'Frisco Kids Program', age_min: 6, age_max: 12 }),         // structured → NO card badge
+  ev({ id: 'f1', source: 'frisco-library', title: 'Frisco Kids Program', age_min: 6, age_max: 12 }),         // structured → "Ages 6–12" on card
   ev({ id: 'p1', source: 'play-frisco', title: 'Play Family Day', kid_relevant: true, age_confidence: 'high', age_buckets: ['family'] }), // Family ✦
-  ev({ id: 'p2', source: 'play-frisco', title: 'Teen Art Workshop', kid_relevant: true, age_confidence: 'high', age_buckets: ['teen'] }), // detail-only, no card chip
+  ev({ id: 'p2', source: 'play-frisco', title: 'Teen Art Workshop', kid_relevant: true, age_confidence: 'high', age_buckets: ['teen'] }), // "Ages 13–17 ✦" on card
   // Inferred free (family + free) → "Family ✦" + "Free ✦"; ONE combined disclosure in detail
   ev({ id: 'p3', source: 'play-frisco', title: 'Inferred Free Playtime', kid_relevant: true, age_confidence: 'high', age_buckets: ['family'], price_class: 'free', price_confidence: 'inferred', is_free: true, price_text: 'Free' }),
   // Inferred paid (family + paid, no Cost field) → "Paid ✦" + combined paid disclosure
@@ -35,7 +35,7 @@ const FRISCO = [
 
 const PLANO = [
   ev({ id: 'pl1', source: 'plano-library', title: 'Plano All Ages Fair', age_min: 0, age_max: 17, age_buckets: ['family'], location_name: 'Haggard Library' }), // Family (gold)
-  ev({ id: 'pl2', source: 'plano-library', title: 'Plano Kids Club', age_min: 6, age_max: 12, location_name: 'Davis Library' }), // structured → NO card badge
+  ev({ id: 'pl2', source: 'plano-library', title: 'Plano Kids Club', age_min: 6, age_max: 12, location_name: 'Davis Library' }), // structured → "Ages 6–12" on card
 ]
 
 let lastEventsUrl = ''
@@ -60,11 +60,14 @@ test.beforeEach(async ({ page }) => {
 
 // --- §1 / §2  card + detail badge rendering ---------------------------------
 
-test('cards show ONLY a Family chip — every specific age range is detail-only (§1.1–1.5)', async ({ page }) => {
+test('cards show the real age range, same label as detail (§2 revised 2026-11-17)', async ({ page }) => {
   const main = page.locator('main')
   await expect(main.getByText('Frisco Kids Program')).toBeVisible()
-  // structured age ranges are gone from cards
-  await expect(main.getByText(/^Ages \d/)).toHaveCount(0)
+  // structured ranges are back on cards: f1 (6–12) and f2 (0–5)
+  await expect(main.getByText('Ages 6–12', { exact: true })).toBeVisible()
+  await expect(main.getByText('Ages 0–5', { exact: true })).toBeVisible()
+  // inferred specific range carries the ✦ with text (p2, teen)
+  await expect(main.getByText('Ages 13–17 ✦', { exact: true })).toBeVisible()
   // v1.3: no tilde — the star already carries "estimated", and price never had one
   await expect(main.getByText('Family ✦').first()).toBeVisible()
   // v1.3: the bare "✦" that stood in for an inferred specific range is GONE. A lone star
