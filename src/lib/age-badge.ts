@@ -136,7 +136,7 @@ export interface RenderedBadge {
  * Until 2026-11-17 the card showed only "Family" and specific ranges were detail-only, because
  * the age filter chips already told a browsing parent the age group. Ask Open Eventz breaks that
  * reasoning: a parent who types a question has set no chips, and the card beside the answer is
- * where they check the age (ASK-SPEC.md). Drop-off stays detail-only.
+ * where they check the age (02-product/Ask Open Eventz Grounded Q&A Spec v2.md). Drop-off stays detail-only.
  */
 export function cardAgeBadge(event: Event): RenderedBadge | null {
   const b = getAgeBadge(event)

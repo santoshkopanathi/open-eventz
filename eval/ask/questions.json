@@ -1,0 +1,29 @@
+{
+  "as_of": "2026-11-18",
+  "note": "Questions drafted by Claude 2026-11-18. Labels (expected filters + cited refs) are the owner's, written blind in LABELLING.md before any Ask prompt exists. Do not edit a question once it has a label.",
+  "questions": [
+    { "id": "A01", "category": "answerable", "tab": "plano",  "question": "Something free for my 4-year-old this Saturday" },
+    { "id": "A02", "category": "answerable", "tab": "frisco", "question": "What can we do this Saturday morning?" },
+    { "id": "A03", "category": "answerable", "tab": "frisco", "question": "Any Christmas events this week?" },
+    { "id": "A04", "category": "answerable", "tab": "plano",  "question": "Is there a storytime for my baby tomorrow?" },
+    { "id": "A05", "category": "answerable", "tab": "frisco", "question": "Things to do with a 10-year-old on Thursday" },
+    { "id": "A06", "category": "answerable", "tab": "plano",  "question": "Anything for teens next week?" },
+    { "id": "A07", "category": "answerable", "tab": "frisco", "question": "Is there anything in Plano on Tuesday for a 6-year-old?", "tests": "city rule: names the other city" },
+    { "id": "A08", "category": "answerable", "tab": "plano",  "question": "Free things to do in Frisco or Plano this Saturday for the whole family", "tests": "city rule: both cities, Plano first" },
+    { "id": "A09", "category": "answerable", "tab": "frisco", "question": "Science or space stuff for my 7-year-old in the next two weeks" },
+    { "id": "A10", "category": "answerable", "tab": "plano",  "question": "Where can my kid play chess?" },
+
+    { "id": "N01", "category": "no_match", "tab": "plano",  "question": "Is there a robotics class for my 6-year-old on Saturday?" },
+    { "id": "N02", "category": "no_match", "tab": "frisco", "question": "Swimming lessons this weekend" },
+    { "id": "N03", "category": "no_match", "tab": "frisco", "question": "Anything to do on Thanksgiving Day?", "tests": "the catalog holds 'LIBRARY CLOSED' entries on that day" },
+    { "id": "N04", "category": "no_match", "tab": "frisco", "question": "Something for a 16-year-old tonight" },
+    { "id": "N05", "category": "no_match", "tab": "plano",  "question": "Kids' events in Dallas this Saturday", "tests": "a city we don't cover must not silently become Plano" },
+
+    { "id": "T01", "category": "tricky", "tab": "frisco", "question": "Free things to do Thursday evening", "tests": "an event with an unknown price that evening must not count as free" },
+    { "id": "T02", "category": "tricky", "tab": "frisco", "question": "Something for my toddler this Saturday", "tests": "does a Family event count for a toddler?" },
+    { "id": "T03", "category": "tricky", "tab": "plano",  "question": "Cheap stuff for kids this weekend", "tests": "price note; 'cheap' must not become free-only" },
+
+    { "id": "O01", "category": "off_topic", "tab": "frisco", "question": "Will it rain on Saturday?" },
+    { "id": "O02", "category": "off_topic", "tab": "plano",  "question": "How do I get my toddler to sleep through the night?" }
+  ]
+}
