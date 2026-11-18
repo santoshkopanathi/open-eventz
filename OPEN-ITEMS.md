@@ -11,9 +11,61 @@ a Google account). **BUILD** = work that can be coded.
 
 ---
 
-## 1. Blocking now
+## 0. Resolved 2026-11-18, and what it exposed
 
-### Migration 009 must run before the next nightly ingest · OWNER · **urgent**
+**009 is run and the outage is over.** All four sources ingested cleanly at 02:56-02:57 UTC:
+frisco-library 167, plano-library 325, play-frisco 58, kaleidoscope-park 21, `errors: []` on every
+run. The 11-17 Kaleidoscope 404 did not recur. Cost $0.018.
+
+**The waste was compounding, not flat.** This clean run made **1 and 2** LLM calls, because the
+classification cache hit. The four failed nights each made 79, since nothing was ever written and
+so the cache could never populate. The cost was not "79 calls wasted once" — it was 79 calls that
+could never fall to zero. A failed write at the end of a pipeline re-bills the whole pipeline.
+
+### ⚠️ But `price_decided_by` is populated on 3 of 2,394 rows, and will stay that way · BUILD
+
+| | |
+|---|---|
+| Populated | **3** — 2 `source-declared`, 1 `model` |
+| NULL | **2,391** |
+| frisco-library | 0 of 587 |
+| plano-library | 0 of 1,680 |
+| play-frisco | 1 of 88 |
+| kaleidoscope-park | 2 of 39 |
+
+Two separate causes, both confirmed in the code:
+
+1. **NULL is sticky.** `src/lib/ingest.ts:977` carries `prior.price_decided_by` forward on a cache
+   hit. Every pre-migration row has NULL, so re-ingesting a known event copies NULL back in. Only
+   brand-new events ever acquire a value — which is why a run touching 571 rows populated 3.
+2. **The library connectors never set it.** `price_decided_by` is written only in the play-frisco
+   and kaleidoscope paths. The migration defines `source-institution` for library programming and
+   nothing ever writes it, so 2,267 library rows cannot acquire provenance at all.
+
+**The documentation consequence, which matters more than the bug.** `GUARDRAILS.md` (A13),
+`INGEST-DESIGN.md` and the interview primer all state a live distribution — *2,252 institutional /
+38 source-declared / 31 Cost-field / 56 model-judged, of which 35 rest on the free-by-default
+prior* — in a way that reads as though the column records it. **It does not.** That split was
+derived by other means before the column existed. The numbers describe what the column *would*
+say once populated. This is the same failure already recorded in `BUILD-LOG.md` under "Writing a
+number into a document is not the same as knowing it", now on its third appearance.
+
+**What is actually recoverable, and what is not:**
+
+- **Library rows — safe to set.** Institutional free is true *by source*, no judgment involved.
+  A deterministic backfill of 2,267 rows invents nothing.
+- **Cost-field rows — probably recoverable** from the stored `raw_json`.
+- **Model-judged rows — not recoverable.** Which layer decided is genuinely unknown for those, and
+  deriving it would be exactly the invented provenance the migration refused. Either leave them
+  NULL and let them fill as events churn, or clear the classification cache and re-run (~$0.76).
+
+Until this is fixed, do not quote the distribution figures as something the database can answer.
+
+---
+
+## 1. ~~Blocking now~~ — cleared 2026-11-18
+
+### ~~Migration 009 must run before the next nightly ingest~~ · **DONE 2026-11-18**
 
 `supabase/migrations/009_price_decided_by.sql` adds the `price_decided_by` column. It has
 **not** been run — the live database returns `42703 column events.price_decided_by does not
