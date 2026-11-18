@@ -20,19 +20,15 @@ import { createClient } from '@supabase/supabase-js'
 import type { Event } from '../src/lib/types'
 import { cardAgeBadge } from '../src/lib/age-badge'
 import { cardPriceBadge } from '../src/lib/price'
+import { KID_VISIBILITY_GATE, NOT_ADULTS_ONLY, cityOf as cityKey } from '../src/lib/catalog'
 
 const DIR = 'eval/ask'
 const SNAPSHOT = `${DIR}/catalog-snapshot.json`
 const SHEET = `${DIR}/event-sheet.md`
 const TZ = 'America/Chicago'
 
-// Must match src/app/api/events/route.ts. Step 2 of the Ask backlog moves both into one shared
-// loader; until then this copy is checked by eye against the route.
-const LLM_CLASSIFIED = ['play-frisco', 'kaleidoscope-park']
-const KID_VISIBILITY_GATE =
-  `kid_relevant.eq.true,and(kid_relevant.is.null,source.not.in.(${LLM_CLASSIFIED.join(',')}))`
-
-const cityOf = (e: Event) => (e.source === 'plano-library' ? 'Plano' : 'Frisco')
+// Same gate as the list view, from the shared module.
+const cityOf = (e: Event) => (cityKey(e) === 'plano' ? 'Plano' : 'Frisco')
 
 function todayCtMidnightUtc(now: Date): string {
   const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 5))
@@ -58,14 +54,14 @@ async function main(): Promise<void> {
   const rows: Event[] = []
   for (let from = 0; ; from += 500) {
     const { data, error } = await db.from('events').select('*')
-      .or(KID_VISIBILITY_GATE).or('age_min.is.null,age_min.lt.18')
+      .or(KID_VISIBILITY_GATE).or(NOT_ADULTS_ONLY)
       .gte('start_datetime', iso).order('start_datetime').order('id').range(from, from + 499)
     if (error) throw new Error(error.message)
     rows.push(...((data ?? []) as Event[]))
     if ((data ?? []).length < 500) break
   }
   const { data: ongoing, error: e2 } = await db.from('events').select('*')
-    .or(KID_VISIBILITY_GATE).or('age_min.is.null,age_min.lt.18')
+    .or(KID_VISIBILITY_GATE).or(NOT_ADULTS_ONLY)
     .lt('start_datetime', iso).gte('end_datetime', iso).limit(500)
   if (e2) throw new Error(e2.message)
 

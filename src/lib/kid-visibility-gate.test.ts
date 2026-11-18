@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { KID_VISIBILITY_GATE, isCatalogVisible } from './catalog'
 
 // The events API gate decides what a parent is served. `kid_relevant IS NULL` means two
 // completely different things depending on the source, and the original gate conflated them:
@@ -16,32 +17,37 @@ import { join } from 'node:path'
 // The lesson generalises past this bug: **"write nothing" is only fail-closed when the row does
 // not already exist.** Verified non-vacuously against live PostgREST by setting one row's
 // kid_relevant to NULL — the old gate served it, the new gate did not — then restoring it.
+// 2026-11-18: the gate moved from the events route into src/lib/catalog.ts so Ask shares it.
 describe('the kid-visibility gate distinguishes "no inference" from "inference failed"', () => {
-  const src = readFileSync(join(process.cwd(), 'src/app/api/events/route.ts'), 'utf8')
+  const route = readFileSync(join(process.cwd(), 'src/app/api/events/route.ts'), 'utf8')
+  const catalog = readFileSync(join(process.cwd(), 'src/lib/catalog.ts'), 'utf8')
 
-  test('the gate is defined once and used by BOTH queries, so they cannot drift', () => {
+  test('the gate is defined once (catalog.ts) and used by BOTH list queries, so they cannot drift', () => {
     // There are two queries — upcoming and ongoing. The ongoing one was easy to forget.
-    expect([...src.matchAll(/or\(KID_VISIBILITY_GATE\)/g)]).toHaveLength(2)
-    expect([...src.matchAll(/const KID_VISIBILITY_GATE\s*=/g)]).toHaveLength(1)
+    expect([...route.matchAll(/or\(KID_VISIBILITY_GATE\)/g)]).toHaveLength(2)
+    expect([...route.matchAll(/or\(NOT_ADULTS_ONLY\)/g)]).toHaveLength(2)
+    expect([...route.matchAll(/const KID_VISIBILITY_GATE\s*=/g)]).toHaveLength(0)
+    expect([...catalog.matchAll(/export const KID_VISIBILITY_GATE\s*=/g)]).toHaveLength(1)
   })
 
   test('a bare "any NULL passes" gate is gone', () => {
     // This exact string is the fail-open. If it reappears, the bug is back.
-    expect(src).not.toContain("kid_relevant.is.null,kid_relevant.eq.true")
+    expect(route).not.toContain("kid_relevant.is.null,kid_relevant.eq.true")
+    expect(catalog).not.toContain("kid_relevant.is.null,kid_relevant.eq.true")
+    expect(KID_VISIBILITY_GATE).not.toContain("kid_relevant.is.null,kid_relevant.eq.true")
   })
 
   test('NULL only passes when the source is NOT LLM-classified', () => {
-    const gate = src.slice(src.indexOf('const KID_VISIBILITY_GATE'), src.indexOf('\n\n', src.indexOf('const KID_VISIBILITY_GATE')))
-    expect(gate).toContain('kid_relevant.eq.true')
-    expect(gate).toContain('kid_relevant.is.null')
-    expect(gate).toContain('source.not.in.')
+    expect(KID_VISIBILITY_GATE).toContain('kid_relevant.eq.true')
+    expect(KID_VISIBILITY_GATE).toContain('kid_relevant.is.null')
+    expect(KID_VISIBILITY_GATE).toContain('source.not.in.(play-frisco,kaleidoscope-park)')
   })
 
-  test('the LLM-classified source list covers every source the model classifies', () => {
-    // Adding a fifth source that the LLM classifies, without adding it here, would let its
-    // unclassified rows through the gate — silently, and only when a classification failed.
-    const decl = src.slice(src.indexOf('const LLM_CLASSIFIED'), src.indexOf('\n', src.indexOf('const LLM_CLASSIFIED')))
-    expect(decl).toContain('play-frisco')
-    expect(decl).toContain('kaleidoscope-park')
+  test('the pure form (used by Ask on frozen rows) agrees with the query form', () => {
+    expect(isCatalogVisible({ source: 'play-frisco', kid_relevant: null, age_min: null })).toBe(false)
+    expect(isCatalogVisible({ source: 'kaleidoscope-park', kid_relevant: false, age_min: null })).toBe(false)
+    expect(isCatalogVisible({ source: 'play-frisco', kid_relevant: true, age_min: null })).toBe(true)
+    expect(isCatalogVisible({ source: 'plano-library', kid_relevant: null, age_min: 5 })).toBe(true)
+    expect(isCatalogVisible({ source: 'frisco-library', kid_relevant: null, age_min: 18 })).toBe(false)
   })
 })

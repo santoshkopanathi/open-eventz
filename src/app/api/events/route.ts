@@ -2,14 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import type { Event } from '@/lib/types'
 import { passesAgeFilter } from '@/lib/age-filter'
-
-
-// Sources whose events are classified by the LLM. For these, kid_relevant = NULL means
-// "never successfully classified", not "not applicable" — so it must be treated as hidden.
-// Kept as one expression used by BOTH queries so they cannot drift apart.
-const LLM_CLASSIFIED = ['play-frisco', 'kaleidoscope-park']
-const KID_VISIBILITY_GATE =
-  `kid_relevant.eq.true,and(kid_relevant.is.null,source.not.in.(${LLM_CLASSIFIED.join(',')}))`
+// The visibility gate is defined once in catalog.ts and shared with Ask (/api/ask), so Ask can
+// never see an event the list hides. Used by BOTH queries below so they cannot drift apart.
+import { KID_VISIBILITY_GATE, NOT_ADULTS_ONLY } from '@/lib/catalog'
 
 // Convert a YYYY-MM-DD date string to a UTC ISO string at midnight CT (CDT = UTC-5)
 function dateToCtMidnightUtc(dateStr: string): string {
@@ -63,7 +58,7 @@ export async function GET(req: NextRequest) {
   query = query.or(KID_VISIBILITY_GATE)
 
   // Always exclude adults-only events (age_min >= 18 marks Frisco Library adult events)
-  query = query.or('age_min.is.null,age_min.lt.18')
+  query = query.or(NOT_ADULTS_ONLY)
 
   // Note: age filtering is applied in JS below (not in the DB query) so that Play Frisco
   // events — which have null age_min/age_max but carry LLM-inferred age_buckets — can be
@@ -92,7 +87,7 @@ export async function GET(req: NextRequest) {
   if (branches.length > 1) ongoingQuery = ongoingQuery.in('location_name', branches)
   if (is_free === 'true') ongoingQuery = ongoingQuery.eq('is_free', true)
   ongoingQuery = ongoingQuery.or(KID_VISIBILITY_GATE)
-  ongoingQuery = ongoingQuery.or('age_min.is.null,age_min.lt.18')
+  ongoingQuery = ongoingQuery.or(NOT_ADULTS_ONLY)
   const { data: ongoing } = await ongoingQuery.limit(100)
 
   // Merge, deduplicate by id, sort by start_datetime

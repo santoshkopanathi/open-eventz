@@ -1,0 +1,875 @@
+{
+  "summary": {
+    "run_at": "2026-11-18T15:57:05.103Z",
+    "model": "claude-sonnet-4-6",
+    "catalog_as_of": "2026-11-18",
+    "broken_prompt": false,
+    "labels": "PROVISIONAL — Claude-labelled 2026-11-18, not blind human labels",
+    "gates_pass": false,
+    "gates": {
+      "cited_not_retrieved": 0,
+      "raw_answer_fact_tokens": 8,
+      "shown_answer_fact_tokens": 0,
+      "free_only_non_free": 0,
+      "no_match_returned_events": 0,
+      "off_topic_not_redirected": 0,
+      "city_rule_broken": 0,
+      "forbidden_shown": 0,
+      "errors": 0
+    },
+    "parse_accuracy": {
+      "dates": "18/18",
+      "city": "18/18",
+      "free_only": "18/18",
+      "age": "18/18",
+      "scope": "20/20",
+      "price_note": "18/18"
+    },
+    "recall_at_5": 0.87,
+    "precision": 0.87,
+    "shown_with_answer": 5,
+    "cards_only_fallback": 8,
+    "cost": {
+      "calls": 37,
+      "input_tokens": 36592,
+      "output_tokens": 2858,
+      "cache_read": 0,
+      "usd": 0.1526,
+      "usd_per_question": 0.0076
+    }
+  },
+  "rows": [
+    {
+      "id": "A01",
+      "tab": "plano",
+      "question": "Something free for my 4-year-old this Saturday",
+      "kind": "answer",
+      "showing": "Showing: Sat Nov 21 · Plano · free · age 4",
+      "notes": [],
+      "answer_shown": "Family Storytime at Parr Library and Family Storytime at Davis Library both offer stories, songs, and movement activities that are perfect for little ones. Harness the Wind & Waves at Davis Library brings hands-on creative and problem-solving activities that curious kids tend to love too!",
+      "raw_answer": "Family Storytime at Parr Library and Family Storytime at Davis Library both offer stories, songs, and movement activities that are perfect for little ones. Harness the Wind & Waves at Davis Library brings hands-on creative and problem-solving activities that curious kids tend to love too!",
+      "raw_fact_tokens": [],
+      "cards": [
+        "E039",
+        "E041",
+        "E046"
+      ],
+      "acceptable": [
+        "E039",
+        "E041",
+        "E046",
+        "E047"
+      ],
+      "retrieved": 4,
+      "filters": {
+        "date_from": "2026-11-21",
+        "date_to": "2026-11-21",
+        "cities": [
+          "plano"
+        ],
+        "unsupported_city": false,
+        "free_only": true,
+        "age": [
+          4,
+          4
+        ],
+        "intent": null,
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 1530,
+        "output": 163,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.0070350000000000005
+      }
+    },
+    {
+      "id": "A02",
+      "tab": "frisco",
+      "question": "What can we do this Saturday morning?",
+      "kind": "cards",
+      "showing": "Showing: Sat Nov 21 · Frisco · any price · morning",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "Fitness Fun Classes offers rotating workout sessions for all levels, while SaturYAY! Presented by Atmos Energy and SaturYay: Christmas Edition both bring interactive arts, crafts, and movement activities with a festive holiday twist. Family Story Time rounds out the morning with songs, rhymes, and books at the library.",
+      "raw_fact_tokens": [
+        "morning"
+      ],
+      "cards": [
+        "E035",
+        "E036",
+        "E037",
+        "E038"
+      ],
+      "acceptable": [
+        "E035",
+        "E036",
+        "E037",
+        "E038",
+        "E040",
+        "E042"
+      ],
+      "retrieved": 8,
+      "filters": {
+        "date_from": "2026-11-21",
+        "date_to": "2026-11-21",
+        "cities": [
+          "frisco"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": null,
+        "intent": "morning",
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 2053,
+        "output": 175,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.008784
+      }
+    },
+    {
+      "id": "A03",
+      "tab": "frisco",
+      "question": "Any Christmas events this week?",
+      "kind": "answer",
+      "showing": "Showing: Wed Nov 18 – Sun Nov 22 · Frisco · any price · christmas",
+      "notes": [],
+      "answer_shown": "There are several Christmas events happening this week! The 4th Street Plaza Holiday Tree Lighting & Holiday kicks off the season with a Christmas tree lighting, Illuminate: Christmas Movie Classics offers a candlelit performance of beloved holiday film music, Kaleidoscope Christmas features live reindeer, local performances, and a visit from Santa, and SaturYay: Christmas Edition brings holiday-themed arts and crafts and festive family fun.",
+      "raw_answer": "There are several Christmas events happening this week! The 4th Street Plaza Holiday Tree Lighting & Holiday kicks off the season with a Christmas tree lighting, Illuminate: Christmas Movie Classics offers a candlelit performance of beloved holiday film music, Kaleidoscope Christmas features live reindeer, local performances, and a visit from Santa, and SaturYay: Christmas Edition brings holiday-themed arts and crafts and festive family fun.",
+      "raw_fact_tokens": [],
+      "cards": [
+        "E020",
+        "E021",
+        "E034",
+        "E037"
+      ],
+      "acceptable": [
+        "E020",
+        "E021",
+        "E034",
+        "E037"
+      ],
+      "retrieved": 22,
+      "filters": {
+        "date_from": "2026-11-18",
+        "date_to": "2026-11-22",
+        "cities": [
+          "frisco"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": null,
+        "intent": "christmas",
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 3312,
+        "output": 197,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.012891
+      }
+    },
+    {
+      "id": "A04",
+      "tab": "plano",
+      "question": "Is there a storytime for my baby tomorrow?",
+      "kind": "cards",
+      "showing": "Showing: Thu Nov 19 · Plano · any price · ages 0–1 · storytime",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "Yes! Rhyme Time and Babes in Arms are both wonderful lap-sit style sessions with rhymes, songs, and movement perfectly suited for the youngest ones, and Toddler Time offers simple stories and movement for slightly older little ones.",
+      "raw_fact_tokens": [
+        "toddler"
+      ],
+      "cards": [
+        "E011",
+        "E016",
+        "E015"
+      ],
+      "acceptable": [
+        "E011",
+        "E016"
+      ],
+      "retrieved": 3,
+      "filters": {
+        "date_from": "2026-11-19",
+        "date_to": "2026-11-19",
+        "cities": [
+          "plano"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": [
+          0,
+          1
+        ],
+        "intent": "storytime",
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 1471,
+        "output": 155,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.006738000000000001
+      }
+    },
+    {
+      "id": "A05",
+      "tab": "frisco",
+      "question": "Things to do with a 10-year-old on Thursday",
+      "kind": "cards",
+      "showing": "Showing: Thu Nov 19 · Frisco · any price · age 10",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "Friendship Bracelets at the Frisco Public Library is a great fit — kids get to craft braided bracelets and socialize with others the same age. The 4th Street Plaza Holiday Tree Lighting & Holiday, Live After 5 Presented by New York Life North Dallas, and Illuminate: Christmas Movie Classics are also fun Thursday outings with festive music, live performances, and holiday atmosphere the whole family can enjoy together.",
+      "raw_fact_tokens": [
+        "age",
+        "thursday"
+      ],
+      "cards": [
+        "E022",
+        "E020",
+        "E019",
+        "E021"
+      ],
+      "acceptable": [
+        "E022",
+        "E019",
+        "E020",
+        "E021"
+      ],
+      "retrieved": 4,
+      "filters": {
+        "date_from": "2026-11-19",
+        "date_to": "2026-11-19",
+        "cities": [
+          "frisco"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": [
+          10,
+          10
+        ],
+        "intent": null,
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 1654,
+        "output": 200,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.007962
+      }
+    },
+    {
+      "id": "A06",
+      "tab": "plano",
+      "question": "Anything for teens next week?",
+      "kind": "cards",
+      "showing": "Showing: Mon Nov 23 – Sun Nov 29 · Plano · any price · ages 13–17",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "Bank Accounts & Credit (Ages 13+) is a great fit, covering real-world financial skills like banking and credit building specifically for teens. STEAM Stop: Math Mania, STEAM Stop: Sensational Senses, and Paper Airplane Challenge also offer engaging hands-on experiments, puzzles, and building challenges that older kids tend to enjoy.",
+      "raw_fact_tokens": [
+        "teens"
+      ],
+      "cards": [
+        "E067",
+        "E056",
+        "E068",
+        "E092"
+      ],
+      "acceptable": [
+        "E067"
+      ],
+      "retrieved": 10,
+      "filters": {
+        "date_from": "2026-11-23",
+        "date_to": "2026-11-29",
+        "cities": [
+          "plano"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": [
+          13,
+          17
+        ],
+        "intent": null,
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 1854,
+        "output": 182,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.008292
+      }
+    },
+    {
+      "id": "A07",
+      "tab": "frisco",
+      "question": "Is there anything in Plano on Tuesday for a 6-year-old?",
+      "kind": "cards",
+      "showing": "Showing: Tue Nov 24 · Plano · any price · age 6",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "There's a great mix of options in Plano this Tuesday! STEAM Stop: Sensational Senses offers hands-on experiments, building, and math games, Live Raptors lets kids meet real birds of prey up close, Adapted Glitter Jar (Families) combines storytime with a calming craft activity, and both Family Storytime events bring stories, songs, and movement to life.",
+      "raw_fact_tokens": [
+        "tuesday"
+      ],
+      "cards": [
+        "E068",
+        "E070",
+        "E069",
+        "E072",
+        "E073"
+      ],
+      "acceptable": [
+        "E068",
+        "E069",
+        "E070",
+        "E072",
+        "E073"
+      ],
+      "retrieved": 5,
+      "filters": {
+        "date_from": "2026-11-24",
+        "date_to": "2026-11-24",
+        "cities": [
+          "plano"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": [
+          6,
+          6
+        ],
+        "intent": null,
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 1585,
+        "output": 200,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.007755
+      }
+    },
+    {
+      "id": "A08",
+      "tab": "plano",
+      "question": "Free things to do in Frisco or Plano this Saturday for the whole family",
+      "kind": "cards",
+      "showing": "Showing: Sat Nov 21 · Plano + Frisco · free",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "The Frisco Library Renaissance Faire is a wonderful all-ages celebration with knights, minstrels, and magic, and the Renaissance Faire workshops like the D&D Workshop and Renaissance Faire: Miniature Tudor Cottage Workshop offer hands-on creative fun for everyone. SaturYAY! Presented by Atmos Energy and SaturYay: Christmas Edition at Kaleidoscope Park also bring interactive activities, arts and crafts, and festive holiday cheer perfect for the whole family.",
+      "raw_fact_tokens": [
+        "ages"
+      ],
+      "cards": [
+        "E040",
+        "E036",
+        "E037",
+        "E043",
+        "E044"
+      ],
+      "acceptable": [
+        "E039",
+        "E041",
+        "E046",
+        "E047",
+        "E035",
+        "E036",
+        "E037",
+        "E040",
+        "E042",
+        "E043"
+      ],
+      "retrieved": 13,
+      "filters": {
+        "date_from": "2026-11-21",
+        "date_to": "2026-11-21",
+        "cities": [
+          "plano",
+          "frisco"
+        ],
+        "unsupported_city": false,
+        "free_only": true,
+        "age": null,
+        "intent": null,
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 2397,
+        "output": 216,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.010431
+      }
+    },
+    {
+      "id": "A09",
+      "tab": "frisco",
+      "question": "Science or space stuff for my 7-year-old in the next two weeks",
+      "kind": "answer",
+      "showing": "Showing: Wed Nov 18 – Wed Dec 2 · Frisco · any price · age 7 · science or space",
+      "notes": [],
+      "answer_shown": "What it's like to be an Astronaut? is a perfect fit, with a NASA Solar System Ambassador diving into life in space, EVAs, and astronaut training. Pop Up STEM: Tech rounds things out with hands-on coding exploration that curious kids tend to love.",
+      "raw_answer": "What it's like to be an Astronaut? is a perfect fit, with a NASA Solar System Ambassador diving into life in space, EVAs, and astronaut training. Pop Up STEM: Tech rounds things out with hands-on coding exploration that curious kids tend to love.",
+      "raw_fact_tokens": [],
+      "cards": [
+        "E055",
+        "E124"
+      ],
+      "acceptable": [
+        "E055",
+        "E124"
+      ],
+      "retrieved": 24,
+      "filters": {
+        "date_from": "2026-11-18",
+        "date_to": "2026-12-02",
+        "cities": [
+          "frisco"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": [
+          7,
+          7
+        ],
+        "intent": "science or space",
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 3627,
+        "output": 158,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.013251
+      }
+    },
+    {
+      "id": "A10",
+      "tab": "plano",
+      "question": "Where can my kid play chess?",
+      "kind": "cards",
+      "showing": "Showing: All upcoming dates · Plano · any price · chess",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "Game On: Chess Meet-Up is perfect for playing chess with another beginner, and Game On: Open Play welcomes chess sets for free-form play — both are great options for your kid!",
+      "raw_fact_tokens": [
+        "free"
+      ],
+      "cards": [
+        "E010",
+        "E033"
+      ],
+      "acceptable": [
+        "E010",
+        "E215",
+        "E260"
+      ],
+      "retrieved": 25,
+      "filters": {
+        "date_from": null,
+        "date_to": null,
+        "cities": [
+          "plano"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": null,
+        "intent": "chess",
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 2897,
+        "output": 125,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.010566
+      }
+    },
+    {
+      "id": "N01",
+      "tab": "plano",
+      "question": "Is there a robotics class for my 6-year-old on Saturday?",
+      "kind": "nothing",
+      "showing": "Showing: Sat Nov 21 · Plano · any price · age 6 · robotics class",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "",
+      "raw_fact_tokens": [],
+      "cards": [],
+      "acceptable": [],
+      "retrieved": 4,
+      "filters": {
+        "date_from": "2026-11-21",
+        "date_to": "2026-11-21",
+        "cities": [
+          "plano"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": [
+          6,
+          6
+        ],
+        "intent": "robotics class",
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 1539,
+        "output": 93,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.006012
+      }
+    },
+    {
+      "id": "N02",
+      "tab": "frisco",
+      "question": "Swimming lessons this weekend",
+      "kind": "nothing",
+      "showing": "Showing: Sat Nov 21 – Sun Nov 22 · Frisco · any price · swimming lessons",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "",
+      "raw_fact_tokens": [],
+      "cards": [],
+      "acceptable": [],
+      "retrieved": 9,
+      "filters": {
+        "date_from": "2026-11-21",
+        "date_to": "2026-11-22",
+        "cities": [
+          "frisco"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": null,
+        "intent": "swimming lessons",
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 2133,
+        "output": 90,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.007749
+      }
+    },
+    {
+      "id": "N03",
+      "tab": "frisco",
+      "question": "Anything to do on Thanksgiving Day?",
+      "kind": "nothing",
+      "showing": "Showing: Thu Nov 26 · Frisco · any price",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "",
+      "raw_fact_tokens": [],
+      "cards": [],
+      "acceptable": [],
+      "retrieved": 1,
+      "filters": {
+        "date_from": "2026-11-26",
+        "date_to": "2026-11-26",
+        "cities": [
+          "frisco"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": null,
+        "intent": null,
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 1371,
+        "output": 88,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.005433
+      }
+    },
+    {
+      "id": "N04",
+      "tab": "frisco",
+      "question": "Something for a 16-year-old tonight",
+      "kind": "nothing",
+      "showing": "Showing: Wed Nov 18 · Frisco · any price · age 16",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "",
+      "raw_fact_tokens": [],
+      "cards": [],
+      "acceptable": [],
+      "retrieved": 1,
+      "filters": {
+        "date_from": "2026-11-18",
+        "date_to": "2026-11-18",
+        "cities": [
+          "frisco"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": [
+          16,
+          16
+        ],
+        "intent": null,
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 1374,
+        "output": 90,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.005472
+      }
+    },
+    {
+      "id": "N05",
+      "tab": "plano",
+      "question": "Kids' events in Dallas this Saturday",
+      "kind": "nothing",
+      "showing": "Showing: Sat Nov 21 · outside Frisco and Plano · any price",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": null,
+      "raw_fact_tokens": [],
+      "cards": [],
+      "acceptable": [],
+      "retrieved": 0,
+      "filters": {
+        "date_from": "2026-11-21",
+        "date_to": "2026-11-21",
+        "cities": [],
+        "unsupported_city": true,
+        "free_only": false,
+        "age": null,
+        "intent": null,
+        "notes": []
+      },
+      "usage": {
+        "calls": 1,
+        "input": 846,
+        "output": 79,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.0037229999999999997
+      }
+    },
+    {
+      "id": "T01",
+      "tab": "frisco",
+      "question": "Free things to do Thursday evening",
+      "kind": "cards",
+      "showing": "Showing: Thu Nov 19 · Frisco · free · evening",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "Live After 5 Presented by New York Life North Dallas offers a community music series with live performances and lawn games, 4th Street Plaza Holiday Tree Lighting & Holiday kicks off the holiday season with a festive Christmas tree lighting, and Friendship Bracelets is a fun hands-on craft activity at the library — all happening Thursday evening!",
+      "raw_fact_tokens": [
+        "thursday",
+        "evening"
+      ],
+      "cards": [
+        "E019",
+        "E020",
+        "E022"
+      ],
+      "acceptable": [
+        "E019",
+        "E020",
+        "E022"
+      ],
+      "retrieved": 5,
+      "filters": {
+        "date_from": "2026-11-19",
+        "date_to": "2026-11-19",
+        "cities": [
+          "frisco"
+        ],
+        "unsupported_city": false,
+        "free_only": true,
+        "age": null,
+        "intent": "evening",
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 1705,
+        "output": 173,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.00771
+      }
+    },
+    {
+      "id": "T02",
+      "tab": "frisco",
+      "question": "Something for my toddler this Saturday",
+      "kind": "answer",
+      "showing": "Showing: Sat Nov 21 · Frisco · any price · ages 1–3",
+      "notes": [],
+      "answer_shown": "SaturYay: Christmas Edition offers festive arts and crafts, story time, and holiday-themed activities perfect for little ones, while Family Story Time brings songs, rhymes, and books in a cozy library setting. SaturYAY! Presented by Atmos Energy is another great option with interactive crafts, lawn games, and movement activities the whole family can enjoy.",
+      "raw_answer": "SaturYay: Christmas Edition offers festive arts and crafts, story time, and holiday-themed activities perfect for little ones, while Family Story Time brings songs, rhymes, and books in a cozy library setting. SaturYAY! Presented by Atmos Energy is another great option with interactive crafts, lawn games, and movement activities the whole family can enjoy.",
+      "raw_fact_tokens": [],
+      "cards": [
+        "E037",
+        "E038",
+        "E036"
+      ],
+      "acceptable": [
+        "E038",
+        "E035",
+        "E036",
+        "E037",
+        "E040",
+        "E042"
+      ],
+      "retrieved": 7,
+      "filters": {
+        "date_from": "2026-11-21",
+        "date_to": "2026-11-21",
+        "cities": [
+          "frisco"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": [
+          1,
+          3
+        ],
+        "intent": null,
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 1952,
+        "output": 182,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.008586
+      }
+    },
+    {
+      "id": "T03",
+      "tab": "plano",
+      "question": "Cheap stuff for kids this weekend",
+      "kind": "answer",
+      "showing": "Showing: Sat Nov 21 – Sun Nov 22 · Plano · any price",
+      "notes": [
+        "Open Eventz only knows whether an event is 'free' or 'paid'. Please look at the details view."
+      ],
+      "answer_shown": "Family Storytime at Parr Library and Family Storytime at Davis Library offer stories, songs, and movement activities, while Harness the Wind & Waves brings hands-on science and creativity, and Art Shop lets kids design their own masterpiece with a fun budgeting twist.",
+      "raw_answer": "Family Storytime at Parr Library and Family Storytime at Davis Library offer stories, songs, and movement activities, while Harness the Wind & Waves brings hands-on science and creativity, and Art Shop lets kids design their own masterpiece with a fun budgeting twist.",
+      "raw_fact_tokens": [],
+      "cards": [
+        "E039",
+        "E041",
+        "E046",
+        "E047"
+      ],
+      "acceptable": [
+        "E039",
+        "E041",
+        "E046",
+        "E047"
+      ],
+      "retrieved": 5,
+      "filters": {
+        "date_from": "2026-11-21",
+        "date_to": "2026-11-22",
+        "cities": [
+          "plano"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": null,
+        "intent": null,
+        "notes": [
+          "Open Eventz only knows whether an event is 'free' or 'paid'. Please look at the details view."
+        ]
+      },
+      "usage": {
+        "calls": 2,
+        "input": 1594,
+        "output": 164,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.007242
+      }
+    },
+    {
+      "id": "O01",
+      "tab": "frisco",
+      "question": "Will it rain on Saturday?",
+      "kind": "off_topic",
+      "showing": null,
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": null,
+      "raw_fact_tokens": [],
+      "cards": [],
+      "acceptable": [],
+      "retrieved": 0,
+      "filters": null,
+      "usage": {
+        "calls": 1,
+        "input": 845,
+        "output": 64,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.003495
+      }
+    },
+    {
+      "id": "O02",
+      "tab": "plano",
+      "question": "How do I get my toddler to sleep through the night?",
+      "kind": "off_topic",
+      "showing": null,
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": null,
+      "raw_fact_tokens": [],
+      "cards": [],
+      "acceptable": [],
+      "retrieved": 0,
+      "filters": null,
+      "usage": {
+        "calls": 1,
+        "input": 853,
+        "output": 64,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.003519
+      }
+    }
+  ]
+}
