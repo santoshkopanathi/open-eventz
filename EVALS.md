@@ -914,3 +914,67 @@ they are the blocking ones at this sample size.
 And the sharper one, because it cost 56 labels: **a test that degrades silently is worse than a
 test that breaks.** A broken test gets fixed on the day it breaks. This one kept printing a
 number for three months while the thing it measured dissolved.
+
+---
+
+# Part 4 — Ask Open Eventz: the second product's eval (2026-11-18)
+
+*On branch `ask-open-eventz` (folder `06-app-ask/`), flag off. Method and gates are in the spec,
+`../02-product/Ask Open Eventz Grounded Q&A Spec v2.md`; every run is in
+`06-app-ask/eval/ask/RUN-LOG.md`. This section is the summary.*
+
+## What it evaluates
+
+Grounded Q&A over the catalog: the model parses a parent's question into filters, code retrieves,
+the model picks up to 5 retrieved events and writes a sentence that may state no facts, and a code
+check fails closed to cards-only. The eval runs the **production pipeline** (the same functions
+`/api/ask` calls) against a **frozen catalog** of 430 events, so results don't drift with the
+nightly ingest. Scoring is deterministic code; there is no LLM judge.
+
+## The set, and an honest caveat about its labels
+
+20 questions: 10 answerable (two test the city rule), 5 that should find nothing, 3 tricky on price
+or age, 2 off-topic. Each records the city tab it is asked from. **The labels were written by
+Claude at the owner's request** and committed before any Ask code existed (`56d81d7`), so the
+"labels before build" order holds, but the labeller also built the system. They are provisional
+until an owner-labelled set (`eval/ask/LABELLING.md`) replaces them.
+
+## Gates
+
+Blocking, all existence counts (the lesson from Part 3: small samples answer existence, not
+rates): cited event not retrieved · fact token in the model's raw text · fact token in shown
+text · free-only question showing a non-free event · no-match question showing events · off-topic
+not redirected · city rule broken · forbidden event shown. Advisory: parse accuracy per field,
+recall@5, precision, cost.
+
+## Results
+
+| | Run 1 | Run 2 (one prompt change) | Broken prompt |
+|---|---|---|---|
+| Parse accuracy, every field | 18/18 | 18/18 | — |
+| Invented events / free errors / wrong city / forbidden shown | 0 / 0 / 0 / 0 | 0 / 0 / 0 / 0 | 0 invented |
+| No-match and off-topic handled | 5/5, 2/2 | 5/5, 2/2 | — |
+| Recall@5 / precision | 0.85 / 0.91 | 0.87 / 0.87 | — |
+| Raw drafts stating a fact | 8 of 13 | 8 of 13 | 17 of 17 |
+| Shown text stating a fact | 0 | 0 | 0 |
+| Cost per question | $0.0073 | $0.0076 | — |
+
+## What it found
+
+1. **The prompt doesn't hold the rule; the code does.** The model echoes the parent ("for your
+   baby", "Saturday morning", "at no cost"). Telling it not to changed nothing (8 → 8). The check
+   caught every case. This is the strongest argument for the design: the guarantee lives in code
+   that can't be talked out of it.
+2. **The check discriminates.** Ordinary prompt: about 60% of drafts blocked. Broken prompt: 100%.
+   Shown fact-bearing text: zero in both. That is the spec's "done when".
+3. **The accepted gap is real.** "Great for little ones" passed: an age claim with no age word.
+4. **Real use found what the set didn't.** The owner's first test, "…in Friso…", read the typo as
+   an uncovered city. No question had a typo. Fixed in code; the next set gets typo questions.
+5. **Cost came in at a third of the estimate.** Under a cent a question. Prompt caching does not
+   engage yet: both system prompts are below the model's minimum cacheable length.
+
+## What this eval does not yet give
+
+Human labels; a held-out set (tuning against these 20 would fit the test, which is why tuning
+stopped after one change); repeat runs to measure noise, as Part 3 did for the classifier; and any
+measure of value, since nothing is live.

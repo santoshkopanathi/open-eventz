@@ -2589,3 +2589,54 @@ What caught it was not review. It was running the eval and looking at a number t
 than expected: **11 → 2 when I had predicted 11 → 10.** The discipline worth keeping is not
 "read more carefully" — it is **predict the number before you run it, and treat a surprise as a
 defect in your model of the system rather than a pleasant bonus.**
+
+---
+
+## 2026-11-18 — Ask Open Eventz: prototype, spec v2, build, first eval
+
+**Branch `ask-open-eventz` (folder `06-app-ask/`), flag off, not merged.** The spec moved to
+`../02-product/Ask Open Eventz Grounded Q&A Spec v2.md`.
+
+**Order of work, which is the point:** clickable prototype reviewed by the owner → spec updated
+with the owner's decisions → catalog frozen (430 events) → 20 questions → labels committed →
+only then any Ask code → run 1 logged before tuning → one prompt change → run 2 → broken-prompt
+proof → the Ask box behind a flag.
+
+**Decisions the owner made in review:** no list of example questions under the box (the example
+lives in the placeholder); approved copy for off-topic and the price note; with no city named the
+tab decides, and "both cities" shows the current tab's city first; the Ask box is in scope but
+behind a flag; a daily ceiling of 100 questions (~$2). And one that reaches the live list: **the
+list card now shows the real age range** ("Ages 0–5", "Ages 13–17 ✦"), reversing the v1.1
+decision that ranges were detail-only. The old reason (age chips already tell the parent) doesn't
+hold for a parent who typed a question. Drop-off stays on the detail page.
+
+**What was built:** `src/lib/catalog.ts` holds the visibility gate once, now imported by
+`/api/events`, `/api/ask` and the eval, so Ask can never see an event the list hides.
+`src/lib/ask/` holds the validate / retrieve / check / framing code (no model, unit-tested) and
+the two model calls. `scripts/eval-ask.ts` scores the gates in code.
+
+**What the eval found:** see `EVALS.md` Part 4. In one line: every safety gate held, the model
+stated facts in 8 of 13 drafts anyway, a prompt fix didn't help, and the code check caught all of
+them.
+
+**Labels caveat:** written by Claude at the owner's request (interview prep, no time), committed
+before the build, provisional.
+
+### Two things found in passing, deferred by the owner (in `OPEN-ITEMS.md`)
+
+"LIBRARY CLOSED" notices are live in the list as events ("Free · Ages 0–17"), and the events
+route treats midnight Central as UTC-5 all year. Found while freezing the catalog.
+
+### The typo the eval didn't have
+
+The owner's first hands-on question, "…in Friso for my 10 year old…", returned "Nothing matched.
+Open Eventz covers Frisco and Plano only." The parse read the typo as an uncovered city. Fixed in
+code, not the prompt (run 2 had just shown prompt instructions don't reliably change behaviour):
+when the parse says "unsupported", a near-spelling of Frisco or Plano is used, and the screen says
+so. My first version turned "piano" into Plano; the unit test caught it.
+
+### The lesson
+
+**The eval measured what I asked it to, and the first real user asked something else.** Twenty
+questions, all spelled correctly. The fix was ten lines; the gap was in the question set. Every
+hands-on finding goes back into the next set.

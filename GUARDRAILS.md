@@ -795,6 +795,11 @@ and both LLM-touching endpoints sit behind `CRON_SECRET`. **No user free-text ev
 model.** That deletes most of the misuse surface and makes output correctness carry nearly all
 the risk.
 
+**Pending change (2026-11-18): Ask Open Eventz.** On branch `ask-open-eventz`, behind a flag that
+is OFF, a parent's typed question *would* reach a model through `/api/ask`. The statements above
+hold for production today. The controls Ask adds are listed under *Ask Open Eventz controls* at
+the end of this document; re-score this section when the flag is turned on.
+
 ## Table 1 — The three failure categories
 
 | Category | What it means | Does it apply here? | What we cover today | The gap |
@@ -902,3 +907,31 @@ and it is invisible to every test that only asks whether the happy path works.
 While fixing them, one more of the same kind was folded in: the Share button used a native
 `alert()` popup — an OS-level modal you must dismiss — where every other message in the app is
 a calm inline note. Now inline.
+
+---
+
+# Ask Open Eventz controls (branch `ask-open-eventz`, flag OFF, 2026-11-18)
+
+Not in production. Spec: `../02-product/Ask Open Eventz Grounded Q&A Spec v2.md`. Code in
+`src/lib/ask/` and `src/lib/catalog.ts` on that branch.
+
+| Risk | Control | Fails to |
+|---|---|---|
+| Invented event | Cited ids must be in the retrieved set; an uncited id can never become a card | Cards only |
+| Invented or wrong fact in the text | The text may state no facts. A code check rejects digits, `$`, price words, day and month names, time-of-day words, `drop`, ages and age words. Exact cited titles are removed first (they come from records) | Cards only |
+| "Free" claimed for unknown or paid | `free_only` uses the card's own price badge (Free / Free ✦); unknown and paid never count | — |
+| Adult or unclassified event in an answer | Retrieval uses the list view's visibility gate, now ONE shared definition in `src/lib/catalog.ts` used by `/api/events`, `/api/ask` and the eval | Excluded |
+| Wrong parse (dates, age, city) | Validated in code; dropped constraints are said on screen; the parsed filters are always shown; a city typo is rescued in code with a note | Visible to the parent |
+| A city we don't cover silently becomes the tab's city | An `unsupported` city searches nothing and says so | "Nothing matched" |
+| Prompt injection in event text | Event text and the question passed as delimited data through `visibleText()`; JSON-only output; both checks above | Cards only |
+| Runaway cost | Max 2 model calls a question, output-token caps (300 / 400), daily ceiling of 100 questions | Filter view |
+| Feature reaches parents unmeasured | `ASK_ENABLED` and `NEXT_PUBLIC_ASK_ENABLED` both off by default; `/api/ask` returns 404 | List unchanged |
+
+**Measured, not assumed (eval run 2):** the model's text broke the no-facts rule in 8 of 13
+drafts; the check caught 8 of 8. A prompt fix did not change that. A deliberately broken prompt
+broke it 17 of 17; 0 shown. Details: `06-app-ask/eval/ask/RUN-LOG.md`.
+
+**Known gaps, accepted for the MVP:** the word check blocks fact words, not meaning ("great for
+little ones" passes; the card shows the real age). "May" is not blocked as a month because it is
+mostly a verb. The daily ceiling is in server memory (per instance, resets on restart) and must
+move to a shared store before production. Questions are not logged.

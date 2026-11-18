@@ -1,6 +1,6 @@
 # Open items
 
-A running checklist of what is pending and who owns it. **Last reviewed 2026-11-17.**
+A running checklist of what is pending and who owns it. **Last reviewed 2026-11-18.**
 
 This is not a replacement for `../02-product/BACKLOG.md`, which holds the reasoning for each
 product item. This file holds the *state*: what is blocked, what is time-bound, and what is
@@ -190,6 +190,18 @@ nothing records the verdict. `BACKLOG.md:474`.
 
 ### #26 LLM-as-judge · BUILD · ~2-3 hours
 Can a model screen prompt changes? `BACKLOG.md:819`.
+
+### Ask Open Eventz — built on a branch, not live · BUILD + OWNER · 2026-11-18
+Branch `ask-open-eventz` (folder `06-app-ask/`), flag off. Not merged, not pushed. Open before it
+could go live, in order:
+1. **Owner-labelled question set** (OWNER) via `eval/ask/LABELLING.md`, plus a held-out set. Today's
+   labels are Claude-written and provisional. Add typo and look-alike questions ("Friso", "piano").
+2. **Daily ceiling to a shared store** (BUILD). It is in server memory today.
+3. **Merge decision** (OWNER). The branch also carries the list-card age-range change, which
+   changes the live list.
+4. **Value measurement** (BUILD): GA4 events for question asked / answer shown / fallback / card
+   clicked, and does Ask lead to more detail views than browsing?
+Results: `06-app-ask/eval/ask/RUN-LOG.md`; summary in `EVALS.md` Part 4.
 
 ### "LIBRARY CLOSED" notices are shown to parents as events · BUILD · found 2026-11-18 · **later**
 Found while freezing the Ask eval catalog. 9 Frisco Library entries titled "LIBRARY CLOSED"
