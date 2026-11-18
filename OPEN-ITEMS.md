@@ -191,6 +191,20 @@ nothing records the verdict. `BACKLOG.md:474`.
 ### #26 LLM-as-judge · BUILD · ~2-3 hours
 Can a model screen prompt changes? `BACKLOG.md:819`.
 
+### "LIBRARY CLOSED" notices are shown to parents as events · BUILD · found 2026-11-18 · **later**
+Found while freezing the Ask eval catalog. 9 Frisco Library entries titled "LIBRARY CLOSED"
+(Thanksgiving week and after, listed at 12:00 AM) are live in the list, badged "Free" and
+"Ages 0–17". Likely cause: the Frisco Library connector imports closure notices as events.
+Fix at ingest, before the write; check whether Plano has the same; removing rows already in
+production needs the owner's OK. Owner deferred it on 2026-11-18. The Ask eval keeps one
+question (N03, Thanksgiving) that lands on these rows on purpose.
+
+### List view uses a summer-time "midnight" all year · BUILD · found 2026-11-18 · **later**
+`src/app/api/events/route.ts` treats midnight Central as UTC-5. In winter Central is UTC-6, so
+"today" starts at 11 pm the night before: late on the previous evening (and before 7 pm the next
+day, for the date filters), the list's day boundaries are off by an hour. Small, but it's a
+date-correctness bug. Owner deferred it on 2026-11-18.
+
 ---
 
 ## 5. The eval's own gaps
