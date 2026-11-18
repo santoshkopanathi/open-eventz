@@ -130,7 +130,7 @@ often it happens.
 | Wrong parse (dates, age) | Validation in code + parsed filters shown to the parent | Visible to the parent |
 | Prompt injection in event text | Descriptions passed as data through `visibleText()`, JSON-only output, both checks above | Cards only |
 | Personal data in questions | MVP logs nothing. Later: question text only, no IP or user ID, 30-day retention | — |
-| Runaway cost | Max 2 model calls per question, an output-token cap, a daily call ceiling (same idea as `llm-budget.ts`) | Filter view |
+| Runaway cost | Max 2 model calls per question, an output-token cap, a daily ceiling of **100 questions (200 calls), about $2 a day**, approved by the owner 2026-11-18 (same idea as `llm-budget.ts`) | Filter view |
 | Unmeasured release | Behind a flag, off in production until the gates below pass | — |
 
 ## MVP eval — written before the build
