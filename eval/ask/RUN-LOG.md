@@ -104,3 +104,18 @@ and whether it is free".
 
 So the check discriminates: ordinary prompt ≈ 60% of drafts blocked, broken prompt 100%, and in
 both cases zero fact-bearing text shown.
+
+---
+
+## Hands-on finding — 2026-11-18, first owner test of the Ask box
+
+**Question:** "give me top 3 event recommendations in Friso for my 10 year old son for this
+weekend" (Frisco tab). **Got:** "Showing: … outside Frisco and Plano … Nothing matched. Open
+Eventz covers Frisco and Plano only." The parse read the typo "Friso" as an uncovered city.
+
+**Why the eval missed it:** none of the 20 questions has a typo. A gap in the question set,
+not in the scoring. **Fix (in code, not the prompt):** when the parse says "unsupported", check
+the question for a near-spelling of Frisco or Plano; use that city and say so on screen ("We
+read 'friso' as Frisco"). A unit test pins it, and pins the false positive the first version
+had: "piano lessons" must never become Plano. **Add to the next eval set:** at least two typo
+questions and one look-alike word.

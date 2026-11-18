@@ -5,7 +5,7 @@
  */
 import type { Event } from '../types'
 import {
-  validateParse, retrieve, checkAnswer, showingLine, nothingMatched, orderCards, COPY,
+  validateParse, retrieve, checkAnswer, showingLine, nothingMatched, orderCards, COPY, misspelledCity, typoNote,
   type City, type Filters, type RawParse, type CheckResult,
 } from './core'
 import type { Selection, Usage } from './llm'
@@ -39,7 +39,11 @@ export async function ask(question: string, tab: City, today: string, catalog: E
   if (!raw) return base
   if (raw.out_of_scope) return { ...base, kind: 'off_topic', offTopic: COPY.offTopic }
 
-  const f = validateParse(raw, tab, today)
+  // A typo of a covered city ("Friso") must not become "outside Frisco and Plano". Only when the
+  // model thinks a place was named: with no place named, the tab already decides.
+  const typo = raw.city === 'unsupported' ? misspelledCity(question) : null
+  const f = validateParse(typo ? { ...raw, city: typo.city } : raw, tab, today)
+  if (typo) f.notes.unshift(typoNote(typo.word, typo.city))
   base.debug.filters = f
   const showing = showingLine(f)
   const retrieved = retrieve(catalog, f, today)

@@ -103,6 +103,36 @@ export function validateParse(raw: RawParse, tab: City, today: string): Filters 
   return { date_from, date_to, cities, unsupported_city, free_only, age, intent: raw.intent ?? null, notes }
 }
 
+// ── City typos ──────────────────────────────────────────────────────────────────────────────
+function editDistance(a: string, b: string): number {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)])
+  for (let j = 1; j <= b.length; j++) d[0][j] = j
+  for (let i = 1; i <= a.length; i++)
+    for (let j = 1; j <= b.length; j++)
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1))
+  return d[a.length][b.length]
+}
+
+/**
+ * A near-spelling of Frisco or Plano in the question ("Friso", "Fricso", "Plno"), or null.
+ * Found 2026-11-18 in the first hands-on test: "…in Friso for my 10 year old…" parsed as an
+ * uncovered city and returned "Nothing matched". Decided in code, not left to the prompt: the
+ * eval showed prompt instructions don't reliably change model behaviour. Exact matches are left
+ * to the parse; this only rescues a typo, and the screen says so.
+ */
+export function misspelledCity(question: string): { city: City; word: string } | null {
+  // Real words one or two letters from a city name. "piano lessons" must never become Plano.
+  const LOOKALIKES = new Set(['piano', 'pianos', 'plan', 'plans', 'plane', 'planes', 'plant', 'disco', 'fresco', 'risco'])
+  for (const word of question.toLowerCase().match(/[a-z]+/g) ?? []) {
+    if (word.length < 4 || LOOKALIKES.has(word)) continue
+    for (const city of ['frisco', 'plano'] as const) {
+      if (word !== city && editDistance(word, city) <= (city === 'plano' ? 1 : 2)) return { city, word }
+    }
+  }
+  return null
+}
+export const typoNote = (word: string, city: City) => `We read “${word}” as ${city === 'frisco' ? 'Frisco' : 'Plano'}.`
+
 /** "Free" means what the card shows as Free or Free ✦. Unknown and paid never count. */
 export const isFree = (e: Event) => getPriceBadge(e)?.kind.startsWith('free') === true
 

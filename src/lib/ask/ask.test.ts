@@ -1,5 +1,5 @@
 import type { Event } from '../types'
-import { validateParse, retrieve, factTokens, checkAnswer, showingLine, nothingMatched, orderCards, addDays, COPY, type RawParse } from './core'
+import { validateParse, retrieve, factTokens, checkAnswer, showingLine, nothingMatched, orderCards, addDays, COPY, misspelledCity, type RawParse } from './core'
 import { ask } from './ask'
 import { emptyUsage } from './llm'
 
@@ -114,6 +114,23 @@ describe('framing', () => {
   test('cards put the parent’s tab city first', () => {
     const p = ev({ id: 'p' }), fr = ev({ id: 'f', source: 'frisco-library' })
     expect(orderCards([fr, p], ['plano', 'frisco']).map(e => e.id)).toEqual(['p', 'f'])
+  })
+})
+
+describe('city typos (found in the first hands-on test, 2026-11-18)', () => {
+  test('near-spellings of Frisco and Plano are recognised; real other places are not', () => {
+    expect(misspelledCity('top 3 events in Friso for my 10 year old')).toEqual({ city: 'frisco', word: 'friso' })
+    expect(misspelledCity('things in Fricso')?.city).toBe('frisco')
+    expect(misspelledCity('anything in Plno?')?.city).toBe('plano')
+    for (const q of ['Kids events in Dallas', 'Allen this weekend', 'piano lessons', 'a picnic plan', 'Frisco events']) expect(misspelledCity(q)).toBeNull()
+  })
+  test('"Friso" parsed as unsupported is searched as Frisco, and the screen says so', async () => {
+    const catalog = [ev({ id: 'f', source: 'frisco-library', title: 'Story Hour' })]
+    const r = await ask('top 3 events in Friso this Saturday', 'plano', TODAY, catalog, {
+      parse: async () => raw({ city: 'unsupported', date_from: '2026-11-21', date_to: '2026-11-21' }),
+      select: async () => ({ cited: ['f'], answer: 'Story Hour has songs.' }),
+    }, emptyUsage())
+    expect(r.showing).toContain('Frisco'); expect(r.notes[0]).toBe('We read “friso” as Frisco.'); expect(r.cards.map(e => e.id)).toEqual(['f'])
   })
 })
 
