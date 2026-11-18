@@ -22,16 +22,52 @@ classification cache hit. The four failed nights each made 79, since nothing was
 so the cache could never populate. The cost was not "79 calls wasted once" — it was 79 calls that
 could never fall to zero. A failed write at the end of a pipeline re-bills the whole pipeline.
 
-### ⚠️ But `price_decided_by` is populated on 3 of 2,394 rows, and will stay that way · BUILD
+### Provenance re-run — DONE 2026-11-18 03:39-03:42 UTC
+
+Scope deliberately limited to **upcoming** events, since nothing reads a past one. 69 rows had
+`kid_relevant` cleared to force re-classification, snapshotted first (the nightly fetch is
+upcoming-only, so nulling a row the fetch will not re-collect hides it permanently). All came back:
 
 | | |
 |---|---|
-| Populated | **3** — 2 `source-declared`, 1 `model` |
-| NULL | **2,391** |
-| frisco-library | 0 of 587 |
-| plano-library | 0 of 1,680 |
-| play-frisco | 1 of 88 |
-| kaleidoscope-park | 2 of 39 |
+| Rows re-classified | **69 / 69** — play-frisco 48, kaleidoscope-park 21 |
+| Left unclassified | **0.** Snapshot restore not needed |
+| Verdicts | play-frisco 35 relevant / 13 not · kaleidoscope 20 / 1 |
+| LLM calls | **69** (48 + 21) |
+| Cost | **$0.414** — estimate was ~$0.76, so 55% of it |
+| Errors | `[]` on all four source runs |
+
+The 10 play-frisco rows fetched but not re-called were past-dated and hit the cache, which is the
+cache behaving exactly as designed.
+
+**Measured provenance, upcoming rows only:**
+
+| Value | Count |
+|---|---|
+| `source-cost-field` | 36 — all play-frisco |
+| `source-declared` | 21 — all kaleidoscope-park |
+| `model` | 11 |
+| `rule-keyword` | 1 |
+| `source-institution` | **0** |
+| `rule-registration` | 0 |
+
+So **11 of 69 visible prices rest on a model judgment — 16%.** That is now a measured number
+rather than a quoted one, and it is the figure to use.
+
+### ⚠️ `price_decided_by` is still 69 of 2,394 rows overall · BUILD
+
+| | |
+|---|---|
+| Populated | **69** (was 3) |
+| NULL | **2,325** |
+| frisco-library | 0 of 587 — **0 of 142 upcoming** |
+| plano-library | 0 of 1,680 — **0 of 325 upcoming** |
+| play-frisco | 48 of 88 — **48 of 48 upcoming** ✅ |
+| kaleidoscope-park | 21 of 39 — **21 of 21 upcoming** ✅ |
+
+The re-run fixed 100% of what a visitor can see on the two LLM-classified sources. **The library
+half is untouched and cannot be fixed by re-running** — it needs the code change below. 467
+upcoming library events still have no provenance.
 
 Two separate causes, both confirmed in the code:
 
@@ -56,10 +92,11 @@ number into a document is not the same as knowing it", now on its third appearan
   A deterministic backfill of 2,267 rows invents nothing.
 - **Cost-field rows — probably recoverable** from the stored `raw_json`.
 - **Model-judged rows — not recoverable.** Which layer decided is genuinely unknown for those, and
-  deriving it would be exactly the invented provenance the migration refused. Either leave them
-  NULL and let them fill as events churn, or clear the classification cache and re-run (~$0.76).
+  deriving it would be exactly the invented provenance the migration refused. **Done for upcoming
+  rows 2026-11-18** by clearing the cache and re-running, $0.414. Past rows stay NULL on purpose.
 
-Until this is fixed, do not quote the distribution figures as something the database can answer.
+Until the library half is fixed, do not quote a site-wide distribution as something the database
+can answer. The **upcoming** figures above it *can* answer, for two of four sources.
 
 ---
 

@@ -465,7 +465,13 @@ different claims that looked identical in the table.**
 source cases and returned by `resolvePriceClass` for the judgment cases. Migration 009.
 **Nullable, with no backfill.** Existing rows get NULL because we genuinely do not know
 retroactively which layer decided them, and **inventing provenance in the one column whose job is
-recording provenance would be a poor joke.** Rows acquire a value as they re-ingest.
+recording provenance would be a poor joke.**
+**"Rows acquire a value as they re-ingest" was false, and that is the lesson (2026-11-18).** Two
+bugs stopped it: `ingest.ts:977` carries a NULL prior forward on a cache hit, so a known event
+copies its own blank back in; and the library connectors never write the column at all. A run
+touching 571 rows populated **3**. Clearing the cache on the 69 upcoming LLM-classified rows and
+re-paying for them ($0.414) populated those; the 2,267 library rows still cannot acquire a value.
+A guard that records provenance is worth exactly as much as the write path that fills it.
 
 ## B. Structural guards — unsafe *shapes* of code cannot merge
 

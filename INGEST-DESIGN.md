@@ -201,9 +201,18 @@ Two behaviours follow. The run record gets **one line** naming the cause, the re
 
 **Price provenance (2026-11-13).** Every stored price now records **which layer decided it** —
 `price_decided_by`, one of `source-cost-field`, `source-declared`, `source-institution`, `model`,
-`rule-keyword`, `rule-registration`. Live distribution across 2,377 rows: **2,252 library
-(institutional), 38 Kaleidoscope (source-declared), 31 Play Frisco Cost field, 56 model-judged** —
-of which **35 rest on the free-by-default prior**, i.e. 1.5% of the site. The column exists because
+`rule-keyword`, `rule-registration`.
+
+**What the column actually holds (measured 2026-11-18).** 69 of 2,394 rows, all of them *upcoming*
+play-frisco and kaleidoscope-park: 36 `source-cost-field`, 21 `source-declared`, 11 `model`,
+1 `rule-keyword`, **0 `source-institution`**. So **16% of visible prices on those two sources
+rest on a model judgment.** The 2,267 library rows are NULL — the library connectors never write
+the column, which is a bug, not a property of libraries. The earlier figure quoted here (*2,252
+institutional / 38 source-declared / 31 Cost-field / 56 model-judged, 35 on the free-by-default
+prior*) was derived by other means **before** the column existed; it described what the column
+*would* say, and it was written as though the column already said it. See `OPEN-ITEMS.md` §0.
+
+The column exists because
 `price_class = 'unknown'` is reachable from a model abstention *and* from one of our own Layer 2/3
 overrides, and those need opposite fixes; before it, telling them apart meant reading the model's
 prose reasoning and noticing it disagreed with the stored class.
