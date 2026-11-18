@@ -177,14 +177,30 @@ code that depends on it, deployed by a system with no way to know the schema has
 Nothing connects the two. The code shipped at 13:08 on 11-13 and the column still did not exist
 four days later.
 
-Two ways to close it, and they are not exclusive:
+### The fix, in one sentence · BUILD · **do this one**
 
-1. **A pre-flight schema check in the ingest.** Before the classifier pass, assert that every
-   column the upsert will write exists. Fail in the first second, at zero cost, instead of after
-   316 billed calls. This is the one that would have saved the $1.90 and it fits the existing
-   guard style — a check that is *able* to fail.
-2. **Expand-contract.** The code tolerates the column being absent until the migration lands. More
-   standard, and the right answer for a team; heavier here, where migrations are hand-run on purpose.
+**One cheap check at the start: does the database have the fields I am about to write?**
+It would have failed in one second and cost nothing.
+
+Instead the pipeline did all the expensive thinking first and saved at the very end. The save
+failed, so it threw the thinking away and paid for it again the next night, and the next. Four
+sources made that 48 cents a night. At forty sources the same failure is five dollars a night,
+quietly, until somebody notices.
+
+Where it goes: before the classifier pass in `src/lib/ingest.ts`, assert that every column the
+upsert will write exists in the schema. It fits the existing guard style — a check that is *able*
+to fail — and it is the cheapest item on this page relative to what it prevents.
+
+The alternative, **expand-contract** (code tolerates a missing column until the migration lands),
+is more standard and the right answer for a team. It is heavier here, where migrations are hand-run
+on purpose, and it does not catch the *other* direction — a column misspelled in the code.
+
+### Related bug found 2026-11-18 · BUILD
+`src/lib/ingest.ts:977` overwrites a freshly-parsed `price_decided_by` with the prior row's value
+on a cache hit, **even when the prior value is NULL**. So the `source-cost-field` and
+`source-declared` values set at parse time are clobbered by a blank. Fixing this one line lets
+those rows populate on an ordinary nightly run at zero cost and with no cache clearing. It is the
+reason a run touching 571 rows populated 3.
 
 ### An open question worth answering first
 The runs are recorded with `status: 'err'`, so the workflow went red four nights running and the
