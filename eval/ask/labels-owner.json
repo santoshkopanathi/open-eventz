@@ -1,5 +1,5 @@
 {
-  "labelled_by": "Owner, 2026-11-19, in chat. For each question the owner saw every event for that city and window with the exact text the model sees (title, day/time, venue, first 300 characters of the description) plus the card's price/age/registration labels. The owner had not seen Claude's labels. The owner had seen eval summary numbers and two live answers (the Christmas and 'Friso' questions), so these are owner labels, mostly but not perfectly blind.",
+  "labelled_by": "Owner, 2026-11-19, in chat, blind: the owner had not seen Claude's labels or the model's answers to these questions. For each question the owner saw every event for that city and window with the exact text the model sees (title, day/time, venue, first 300 characters of the description) plus the card labels. Owner's judgment: fully blind.",
   "as_of": "2026-11-18",
   "labels": [
     {
@@ -274,7 +274,8 @@
     "One card per program (avoid near-duplicates) unless the parent asked for that specific program.",
     "A general question with no category (e.g. something for my 4-year-old) gets a varied mix, framed like: Here are a variety of things you could do...",
     "Unsupported city: say Nothing matched. Open Eventz covers Frisco and Plano only, then offer up to 5 varied events from the tab city on those dates.",
-    "LIBRARY CLOSED notices must never be shown; show Nothing matched instead."
+    "LIBRARY CLOSED notices must never be shown; show Nothing matched instead.",
+    "Price note copy (owner, 2026-11-19): Open Eventz only shows whether an event is 'free' or 'paid'. It does not determine if something is cheap or pricey."
   ],
   "parse_expectations": "Dates, city, free and age are read from the question wording; the owner accepted Claude's reading (labels.json expect fields) and did not change any. The owner's picks are consistent with them (e.g. Q9 includes Dec 2)."
 }
