@@ -200,11 +200,16 @@ Open before it could go live, in order:
    questions ("Friso", "piano").
 2. **Word check misses "week"** (BUILD): "happening this week!" got through in run 4.
 2a. **Daily ceiling to a shared store** (BUILD). It is in server memory today.
+2b. **After the 100th question, hide Ask** (BUILD; owner decision 2026-11-20). For the rest of
+   that Central day the Ask box is not shown at all; the list works as normal. Today the box
+   stays and shows an "unavailable" line. Needs a status check on page load, not only on submit.
+2c. **Measure speed** (BUILD): log time per question and per call; report median and p95.
 3. **Merge decision** (OWNER). The branch also carries the list-card age-range change, which
    changes the live list.
 4. **Value measurement** (BUILD): GA4 events for question asked / answer shown / fallback / card
    clicked, and does Ask lead to more detail views than browsing?
-Results: `06-app-ask/eval/ask/RUN-LOG.md`; summary in `EVALS.md` Part 4.
+Results: `06-app-ask/eval/ask/RUN-LOG.md`; summary in `EVALS.md` Part 4. One-page printable
+metrics sheet: `08-portfolio/ai-pm-sprint/ask-rag-metrics-table.html`.
 
 ### Two data oddities found while labelling · BUILD · found 2026-11-19 · **later**
 - **Kaleidoscope Park lists "SaturYAY!" and "SaturYay: Christmas Edition" at the same time and place

@@ -924,7 +924,7 @@ Not in production. Spec: `../02-product/Ask Open Eventz Grounded Q&A Spec v2.md`
 | Wrong parse (dates, age, city) | Validated in code; dropped constraints are said on screen; the parsed filters are always shown; a city typo is rescued in code with a note | Visible to the parent |
 | A city we don't cover silently becomes the tab's city | An `unsupported` city searches nothing and says so | "Nothing matched" |
 | Prompt injection in event text | Event text and the question passed as delimited data through `visibleText()`; JSON-only output; both checks above | Cards only |
-| Runaway cost | Max 2 model calls a question, output-token caps (300 / 400), daily ceiling of 100 questions | Filter view |
+| Runaway cost | Max 2 model calls a question, output-token caps (300 / 400), daily ceiling of 100 questions | **Decided 2026-11-20:** after the 100th question, Ask is hidden for the rest of that Central day and the list works as normal. Today the box stays and says "unavailable" (to build, OPEN-ITEMS 2b) |
 | Feature reaches parents unmeasured | `ASK_ENABLED` and `NEXT_PUBLIC_ASK_ENABLED` both off by default; `/api/ask` returns 404 | List unchanged |
 
 **Measured, not assumed (eval run 2):** the model's text broke the no-facts rule in 8 of 13

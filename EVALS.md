@@ -1007,3 +1007,22 @@ floor on single runs of the classifier. The next measurement is 3–4 repeats of
 **Two owner corrections, kept as evidence:** the owner first picked a 10 AM event for "tonight",
 and an unknown-price event for "free", then corrected both. A careful human misses exactly what
 the code rules catch.
+
+### The metrics in one sheet (2026-11-20)
+
+`08-portfolio/ai-pm-sprint/ask-rag-metrics-table.html` is the printable view: nine RAG areas
+(finding, answering, understanding, saying no, safety, cost and speed, stability, user value,
+operations), who owns each (code, model, or both), how Ask handles it, the run 4 result, and
+whether it is good, with plain-language Q&A underneath. Where it stands:
+
+- **Proven:** safety and groundedness. Every blocking gate is 0, and no fact the model drafted
+  has ever been shown.
+- **Promising, not proven:** recall@5 0.80 and precision 0.89, from one run of 14 scored questions.
+- **Not measured yet:**
+  - **Speed:** log time per question and per call; report median and p95.
+  - **Stability:** about 5 repeats of the 20 questions on the frozen catalog, with the same
+    model. Report the spread of recall, precision and facts drafted, and how often the same
+    cards come back. Cost is under $1; re-run on any model change.
+  - **User value:** not live, so nothing to measure.
+- **Model drafting facts (5 of 13):** safe, because the check drops them. To waste fewer drafts,
+  offer fixed openings instead of free text if the rate stays above about 1 in 5.
