@@ -13,7 +13,7 @@ import EventCard from '@/components/EventCard'
 type Link = { city: City; date_from: string | null; date_to: string | null }
 type Result =
   | { kind: 'answer' | 'cards'; showing: string; notes: string[]; answer: string | null; cards: Event[]; disclosure: string }
-  | { kind: 'nothing'; showing: string; notes: string[]; nothing: { text: string; linkText: string; link: Link | null } }
+  | { kind: 'nothing'; showing: string; notes: string[]; nothing: { text: string; linkText: string; link: Link | null }; fallback: { heading: string; cards: Event[] } | null }
   | { kind: 'off_topic'; offTopic: string }
   | { kind: 'error' | 'unavailable' }
 
@@ -91,6 +91,14 @@ export default function AskBox({ city, selectedId, onSelect, onFilterView }: {
                   onClick={() => { onFilterView(result.nothing.link!); clear() }}>{result.nothing.linkText}</button>
               )}
             </p>
+          )}
+          {result.kind === 'nothing' && result.fallback && (
+            <>
+              <p style={{ fontSize: '15px', color: 'var(--color-ink-body)' }}>{result.fallback.heading}</p>
+              <div className="flex flex-col gap-3">
+                {result.fallback.cards.map(ev => <EventCard key={ev.id} event={ev} selected={selectedId === ev.id} onClick={() => onSelect(ev)} />)}
+              </div>
+            </>
           )}
           {result.kind === 'off_topic' && (
             <div className="flex flex-wrap items-baseline gap-x-3">

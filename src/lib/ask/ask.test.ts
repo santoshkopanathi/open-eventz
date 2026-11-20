@@ -1,5 +1,5 @@
 import type { Event } from '../types'
-import { validateParse, retrieve, factTokens, checkAnswer, showingLine, nothingMatched, orderCards, addDays, COPY, misspelledCity, type RawParse } from './core'
+import { validateParse, retrieve, factTokens, checkAnswer, showingLine, nothingMatched, orderCards, addDays, COPY, misspelledCity, topicWords, onePerProgram, type RawParse } from './core'
 import { ask } from './ask'
 import { emptyUsage } from './llm'
 
@@ -131,6 +131,53 @@ describe('city typos (found in the first hands-on test, 2026-11-18)', () => {
       select: async () => ({ cited: ['f'], answer: 'Story Hour has songs.' }),
     }, emptyUsage())
     expect(r.showing).toContain('Frisco'); expect(r.notes[0]).toBe('We read “friso” as Frisco.'); expect(r.cards.map(e => e.id)).toEqual(['f'])
+  })
+})
+
+describe('owner decisions, 2026-11-19', () => {
+  test('LIBRARY CLOSED notices are never retrieved', () => {
+    const f = validateParse(raw({ city: 'frisco', date_from: '2026-11-26', date_to: '2026-11-26' }), 'frisco', TODAY)
+    const closed = ev({ id: 'c', source: 'frisco-library', title: 'LIBRARY CLOSED', start_datetime: '2026-11-26T06:00:00Z', age_min: 0, age_max: 17 })
+    expect(retrieve([closed], f, TODAY)).toEqual([])
+  })
+
+  test('topic first: an undated "chess" question reaches a chess event past the first 25', () => {
+    const early = Array.from({ length: 30 }, (_, i) => ev({ id: `s${String(i).padStart(2, '0')}`, title: 'Storytime', start_datetime: `2026-11-${String(19 + (i % 9)).padStart(2, '0')}T16:00:00Z` }))
+    const chess = ev({ id: 'chess', title: 'Chess Meet-Up', start_datetime: '2026-12-11T22:00:00Z' })
+    const f = validateParse(raw({ intent: 'chess' }), 'plano', TODAY)
+    const got = retrieve([...early, chess], f, TODAY)
+    expect(got).toHaveLength(25); expect(got[0].id).toBe('chess')
+  })
+
+  test('topic words ignore filler ("robotics class" → robotics; "swimming lessons" → swimming)', () => {
+    expect(topicWords('robotics class')).toEqual(['robotics'])
+    expect(topicWords('swimming lessons')).toEqual(['swimming'])
+    expect(topicWords('science or space')).toEqual(['science', 'space'])
+    expect(topicWords(null)).toEqual([])
+  })
+
+  test('one card per program, unless the parent asked for that very thing', () => {
+    const a = ev({ id: 'a', title: 'Family Storytime' }), b = ev({ id: 'b', title: 'Family Storytime' }), c = ev({ id: 'c', title: 'Art Shop' })
+    expect(onePerProgram([a, b, c], null).map(e => e.id)).toEqual(['a', 'c'])
+    expect(onePerProgram([a, b, c], 'storytime').map(e => e.id)).toEqual(['a', 'b', 'c'])
+  })
+
+  test('the new price note', () => {
+    expect(COPY.priceNote).toBe("Open Eventz only shows whether an event is 'free' or 'paid'. It does not determine if something is cheap or pricey.")
+  })
+
+  test('an uncovered city: Nothing matched, then a headed set from the tab city, never a silent swap', async () => {
+    const plano = [ev({ id: 'p1', title: 'Family Storytime' }), ev({ id: 'p2', title: 'Family Storytime' }), ev({ id: 'p3', title: 'Art Shop' })]
+    const frisco = ev({ id: 'f1', source: 'frisco-library', title: 'Faire' })
+    let mode: string | undefined
+    const r = await ask('Kids events in Dallas this Saturday', 'plano', TODAY, [...plano, frisco], {
+      parse: async () => raw({ city: 'unsupported', date_from: '2026-11-21', date_to: '2026-11-21' }),
+      select: async (_q, _i, events, _u, o) => { mode = o?.mode; return { cited: events.map(e => e.id), answer: 'x' } },
+    }, emptyUsage())
+    expect(r.kind).toBe('nothing'); expect(r.nothing?.text).toBe(`Nothing matched. ${COPY.unsupportedCity}`)
+    expect(r.cards).toEqual([]); expect(mode).toBe('fallback')
+    expect(r.fallback?.heading).toBe('Here are a few events in Plano on Saturday, Nov 21:')
+    expect(r.fallback?.cards.map(e => e.id)).toEqual(['p1', 'p3'])
   })
 })
 

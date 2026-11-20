@@ -8,6 +8,7 @@ import type { Event } from '../types'
 import { passesAgeFilter } from '../age-filter'
 import { getPriceBadge } from '../price'
 import { cityOf, isCatalogVisible } from '../catalog'
+import { visibleText } from '../source-text'
 
 export type City = 'frisco' | 'plano'
 export const TZ = 'America/Chicago'
@@ -19,7 +20,8 @@ export const MAX_DAYS_AHEAD = 183 // "can't be more than 6 months out"
 export const COPY = {
   disclosure: 'Answers come only from events listed on Open Eventz. Check details with the venue.',
   offTopic: "'Ask' only answers questions about events listed on Open Eventz. Try something like “things to do in Plano this Saturday”.",
-  priceNote: "Open Eventz only knows whether an event is 'free' or 'paid'. Please look at the details view.",
+  // Owner revision 2026-11-19.
+  priceNote: "Open Eventz only shows whether an event is 'free' or 'paid'. It does not determine if something is cheap or pricey.",
   datesDropped: "We couldn't use those dates, so this shows all upcoming dates.",
   unsupportedCity: 'Open Eventz covers Frisco and Plano only.',
 }
@@ -144,19 +146,74 @@ function inWindow(e: Event, from: string, to: string): boolean {
 }
 
 /**
+ * Not an event at all: a closure notice the library publishes on its event feed. Owner rule
+ * 2026-11-19: never shown by Ask. (The same rows still appear in the list view; that is the
+ * deferred ingest fix in OPEN-ITEMS.md.)
+ */
+export const isNonEvent = (e: Pick<Event, 'title'>) => /\blibrary closed\b/i.test(e.title)
+
+// Words in an intent that say nothing about the topic. Time-of-day words are left to the model.
+const NON_TOPIC = new Set(['things', 'thing', 'stuff', 'events', 'event', 'activities', 'activity', 'fun', 'kids', 'kid',
+  'family', 'class', 'classes', 'lessons', 'lesson', 'program', 'programs', 'something', 'anything', 'ideas',
+  'morning', 'afternoon', 'evening', 'night', 'tonight', 'weekend', 'indoor', 'outdoor', 'near', 'with', 'for', 'and'])
+
+/** Topic words from the parse's intent ("science or space" → science, space). */
+export function topicWords(intent: string | null): string[] {
+  return (intent ?? '').toLowerCase().match(/[a-z&]+/g)?.filter(w => w.length >= 4 && !NON_TOPIC.has(w)) ?? []
+}
+
+/** Does an event's title or description mention a topic word (whole word, or plural)? */
+export function mentionsTopic(e: Pick<Event, 'title' | 'description'>, words: string[]): boolean {
+  if (!words.length) return false
+  const text = `${e.title} ${visibleText(e.description)}`.toLowerCase()
+  return words.some(w => new RegExp(`\\b${w.replace(/[^a-z]/g, '')}(s|es)?\\b`).test(text))
+}
+
+/**
  * Step 3 — retrieve. The same visible catalog the list serves, then the hard filters, in code.
- * Returns up to 25 per city, each in start-time order, cities in display order.
+ * Returns up to 25 per city, cities in display order.
+ *
+ * TOPIC FIRST (fix A, 2026-11-19). An undated question ("where can my kid play chess?") matches
+ * hundreds of events, and the first 25 by start time are mostly storytimes, so a later chess
+ * meet-up never reached the model. Events whose title or description mention the topic now go
+ * first, then the rest, each in start-time order. Same cap, same cost; only the order changes.
  */
 export function retrieve(catalog: Event[], f: Filters, today: string): Event[] {
   const from = f.date_from ?? today
   const to = f.date_to ?? addDays(today, MAX_DAYS_AHEAD)
+  const words = topicWords(f.intent)
   const base = catalog.filter(e =>
     isCatalogVisible(e) &&
+    !isNonEvent(e) &&
     inWindow(e, from, to) &&
     (!f.free_only || isFree(e)) &&
     (!f.age || passesAgeFilter(e, [f.age])),
   ).sort((a, b) => a.start_datetime.localeCompare(b.start_datetime) || a.id.localeCompare(b.id))
-  return f.cities.flatMap(c => base.filter(e => cityOf(e) === c).slice(0, MAX_RETRIEVED_PER_CITY))
+  const ranked = words.length ? [...base.filter(e => mentionsTopic(e, words)), ...base.filter(e => !mentionsTopic(e, words))] : base
+  return f.cities.flatMap(c => ranked.filter(e => cityOf(e) === c).slice(0, MAX_RETRIEVED_PER_CITY))
+}
+
+/**
+ * One card per program (owner rule 2026-11-19): the same title twice is the same program at
+ * another time or branch. Keep the first. Exception: when the parent asked for that very thing
+ * ("chess", "storytime"), more sessions of it are the answer, so copies stay.
+ */
+export function onePerProgram(cards: Event[], intent: string | null): Event[] {
+  const words = topicWords(intent)
+  const seen = new Set<string>()
+  return cards.filter(e => {
+    const key = e.title.trim().toLowerCase()
+    if (!seen.has(key)) { seen.add(key); return true }
+    return mentionsTopic({ title: e.title, description: null }, words)
+  })
+}
+
+/** "Here are a few events in Plano on Saturday, Nov 21:" — the uncovered-city fallback heading. */
+export function fallbackHeading(city: City, f: Filters): string {
+  const name = city === 'frisco' ? 'Frisco' : 'Plano'
+  if (f.date_from && f.date_to && f.date_from === f.date_to) return `Here are a few events in ${name} on ${weekdayName(f.date_from)}, ${shortDay(f.date_from).split(' ').slice(1).join(' ')}:`
+  if (f.date_from && f.date_to) return `Here are a few events in ${name} from ${shortDay(f.date_from)} to ${shortDay(f.date_to)}:`
+  return `Here are a few events coming up in ${name}:`
 }
 
 // ── Step 5 — the check ──────────────────────────────────────────────────────────────────────
