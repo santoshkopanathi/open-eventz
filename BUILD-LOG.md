@@ -2640,3 +2640,28 @@ so. My first version turned "piano" into Plano; the unit test caught it.
 **The eval measured what I asked it to, and the first real user asked something else.** Twenty
 questions, all spelled correctly. The fix was ten lines; the gap was in the question set. Every
 hands-on finding goes back into the next set.
+
+---
+
+## 2026-11-19 — Ask: the owner's blind labels, and what they changed
+
+The owner labelled all 20 Ask eval questions in chat, blind, from the exact text the model sees.
+Partway through, the owner asked for no hints about what the system does; from Q16 on, each
+question showed every event for the city and window, unmarked. Labels in
+`06-app-ask/eval/ask/labels-owner.json`; they replace the provisional key.
+
+**Labelling produced five product decisions, all built** (`e140c84`): one card per program;
+a varied mix for general questions; an uncovered city says so and then offers the tab city's
+events under a heading; "LIBRARY CLOSED" never shown; a new price note. Plus **fix A**: topic
+matches first in retrieval, after the labels showed an undated "chess" question could never
+reach December's chess sessions.
+
+**Results** (`EVALS.md` Part 4 update): every safety gate 0; parse 18/18; recall@5 0.80,
+precision 0.89 (0.81 / 0.87 before the build — flat within single-run noise); the Dallas
+fallback now works; facts in raw drafts 5 of 13, all caught.
+
+### The lesson
+
+**Writing the answer key was product design.** Five of today's changes came from the owner
+deciding what a right answer looks like, and one from seeing what the model was never given.
+None would have come from staring at a score.

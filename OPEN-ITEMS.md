@@ -191,19 +191,31 @@ nothing records the verdict. `BACKLOG.md:474`.
 ### #26 LLM-as-judge · BUILD · ~2-3 hours
 Can a model screen prompt changes? `BACKLOG.md:819`.
 
-### Ask Open Eventz — built on a branch, not live · BUILD + OWNER · 2026-11-18
-Branch `ask-open-eventz` (folder `06-app-ask/`), flag off. Not merged, not pushed. Open before it
-could go live, in order:
-1. **Owner-labelled question set** (OWNER) via `eval/ask/LABELLING.md`, plus a held-out set. Today's
-   labels are Claude-written and provisional. Add typo and look-alike questions ("Friso", "piano").
-2. **Daily ceiling to a shared store** (BUILD). It is in server memory today.
+### Ask Open Eventz — built on a branch, not live · BUILD + OWNER · updated 2026-11-19
+Branch `ask-open-eventz` (folder `06-app-ask/`), flag off. Not merged, not pushed. **Owner labels
+done 2026-11-19 (blind)**; the owner's five labelling decisions and retrieval fix A are built.
+Open before it could go live, in order:
+1. **Repeat runs** (BUILD): run the same 20 questions 3–4 times and report the spread before
+   claiming any recall change. Then a **held-out set** (OWNER labels) with typo and look-alike
+   questions ("Friso", "piano").
+2. **Word check misses "week"** (BUILD): "happening this week!" got through in run 4.
+2a. **Daily ceiling to a shared store** (BUILD). It is in server memory today.
 3. **Merge decision** (OWNER). The branch also carries the list-card age-range change, which
    changes the live list.
 4. **Value measurement** (BUILD): GA4 events for question asked / answer shown / fallback / card
    clicked, and does Ask lead to more detail views than browsing?
 Results: `06-app-ask/eval/ask/RUN-LOG.md`; summary in `EVALS.md` Part 4.
 
+### Two data oddities found while labelling · BUILD · found 2026-11-19 · **later**
+- **Kaleidoscope Park lists "SaturYAY!" and "SaturYay: Christmas Edition" at the same time and place
+  on Sat Nov 21** (only the Christmas Edition on Nov 28). Likely a duplicate or conflicting listing
+  from the source; a parent sees both. The owner flagged it twice while labelling.
+- **"Wind Chimes (Ages 16+)" shows "Ages 13–17" on its card.** The library age group, not the
+  program's own 16+. The age chip shows the library's group, so a 13-year-old's parent could be
+  misled. Check how the Plano connector maps "16+".
+
 ### "LIBRARY CLOSED" notices are shown to parents as events · BUILD · found 2026-11-18 · **later**
+(Ask now excludes them at retrieval; the list view still shows them.)
 Found while freezing the Ask eval catalog. 9 Frisco Library entries titled "LIBRARY CLOSED"
 (Thanksgiving week and after, listed at 12:00 AM) are live in the list, badged "Free" and
 "Ages 0–17". Likely cause: the Frisco Library connector imports closure notices as events.

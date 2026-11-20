@@ -935,3 +935,12 @@ broke it 17 of 17; 0 shown. Details: `06-app-ask/eval/ask/RUN-LOG.md`.
 little ones" passes; the card shows the real age). "May" is not blocked as a month because it is
 mostly a verb. The daily ceiling is in server memory (per instance, resets on restart) and must
 move to a shared store before production. Questions are not logged.
+
+**Added 2026-11-19, from the owner's labelling (built in `e140c84`):**
+
+| Risk | Control | Fails to |
+|---|---|---|
+| A closure notice shown as an event | "LIBRARY CLOSED" excluded at retrieval; a blocking eval gate for every question | Excluded / "Nothing matched" |
+| An uncovered city quietly answered with another city's events | Fixed copy first ("Nothing matched. Open Eventz covers Frisco and Plano only."), then a fixed heading naming the tab's city; the model's sentence is not shown for the fallback | Headed alternative, never a silent swap |
+| The same program shown twice | One card per program, enforced in code (copies allowed only when the parent asked for that very thing) | Fewer cards |
+| The right event never reaches the model (undated topic questions) | Topic matches go first before the 25-per-city cap | Best-effort; vectors remain the later option |

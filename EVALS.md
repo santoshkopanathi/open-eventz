@@ -978,3 +978,32 @@ recall@5, precision, cost.
 Human labels; a held-out set (tuning against these 20 would fit the test, which is why tuning
 stopped after one change); repeat runs to measure noise, as Part 3 did for the classifier; and any
 measure of value, since nothing is live.
+
+## Update 2026-11-19 — owner labels, and what labelling changed
+
+**The owner labelled all 20 questions blind** (`eval/ask/labels-owner.json`), from exactly the
+text the model sees plus the card labels, without seeing the model's answers or Claude's key.
+These labels replace Claude's provisional key; runs 1–2 above used the provisional key.
+
+**Labelling changed the product.** Five decisions came out of it and were built: one card per
+program; a varied mix for general questions; an uncovered city gets "Nothing matched. Open Eventz
+covers Frisco and Plano only." then a headed set of the tab city's events; "LIBRARY CLOSED"
+never shown; a new price note. It also exposed a **retrieval** limit: an undated topic question
+saw only the first 25 events by date, so December chess sessions were unreachable. Fixed by
+putting topic matches first (fix A). Labelling is design work, not just scoring.
+
+| | Run 3 (owner labels, old code) | Run 4 (owner labels, decisions + fix A) |
+|---|---|---|
+| Safety gates | 0 | 0 |
+| Raw drafts stating a fact | 6 of 13 | 5 of 13 (all caught, 0 shown) |
+| Parse accuracy | 18/18 per field | 18/18 per field |
+| Recall@5 / precision | 0.81 / 0.87 | 0.80 / 0.89 |
+| Duplicate cards | 3 | 2 (chess sessions, allowed when chess is asked for) |
+| Uncovered-city fallback | 0/4 | 3/4 |
+
+**Not claimed: a recall gain.** Single picks moved between runs, and Part 3 measured a ±2 noise
+floor on single runs of the classifier. The next measurement is 3–4 repeats of the same set.
+
+**Two owner corrections, kept as evidence:** the owner first picked a 10 AM event for "tonight",
+and an unknown-price event for "free", then corrected both. A careful human misses exactly what
+the code rules catch.
