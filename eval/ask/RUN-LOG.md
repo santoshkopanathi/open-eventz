@@ -119,3 +119,78 @@ the question for a near-spelling of Frisco or Plano; use that city and say so on
 read 'friso' as Frisco"). A unit test pins it, and pins the false positive the first version
 had: "piano lessons" must never become Plano. **Add to the next eval set:** at least two typo
 questions and one look-alike word.
+
+---
+
+## Owner labels — 2026-11-19 · blind · these replace Claude's labels from here on
+
+The owner labelled all 20 questions in chat (`labels-owner.json`, commit `020deeb`), from the
+same text the model sees (title, time, venue, first 300 characters of the description) plus the
+card's price/age/registration labels. The owner had not seen Claude's labels or the model's
+answers to these questions. **Owner's judgment: blind.** Claude's `labels.json` is kept for
+history and for the parse expectations (dates, city, free, age), which the owner accepted.
+
+Richer than Claude's labels: *acceptable* / *secondary* (fine to show, not required) /
+*not good* / *forbidden*, plus **duplicate groups** (copies of one program count once).
+
+**Decisions made while labelling (built in `e140c84`):**
+1. One card per program, unless the parent asked for that very thing ("chess").
+2. A general question gets a varied mix: "Here are a variety of things you could do…".
+3. An uncovered city ("Dallas"): "Nothing matched. Open Eventz covers Frisco and Plano only.",
+   then up to 5 varied events from the tab's city under a heading. Never a silent swap.
+4. "LIBRARY CLOSED" notices must never be shown (now a blocking gate everywhere).
+5. New price note: "Open Eventz only shows whether an event is 'free' or 'paid'. It does not
+   determine if something is cheap or pricey."
+
+**Two owner corrections worth keeping.** Q14: first picked a 10 AM event for "tonight", then
+corrected to none. Q16: first included an unknown-price event in a "free" answer, then kept the
+rule. A careful human missed both on first pass; both are rules the code enforces, which is the
+point of putting them in code.
+
+**What labelling exposed — fix A.** An undated topic question ("Where can my kid play chess?")
+matched 253 Plano events and the model saw only the first 25 by start time, nearly all
+storytimes; three of the owner's five chess picks were in December, out of reach. A search
+problem, not a model problem.
+
+---
+
+## Run 3 — 2026-11-19 · old code, owner labels · gates FAIL (6)
+
+Measures the change of answer key alone.
+
+| | Run 2 (Claude labels) | Run 3 (owner labels) |
+|---|---|---|
+| Safety gates (invented, free, city, no-match, off-topic, forbidden) | 0 | **0** |
+| Raw drafts stating a fact | 8 of 13 | **6 of 13** (all caught, 0 shown) |
+| Parse accuracy, every field | 18/18 | **18/18** |
+| Recall@5 / precision | 0.87 / 0.87 | **0.81 / 0.87** |
+| Duplicate cards shown | — | **3** |
+| N05 Dallas | — | **0/4** (fallback not built) |
+
+---
+
+## Run 4 — 2026-11-19 · owner decisions + fix A built · gates FAIL (5)
+
+| | Run 3 | Run 4 |
+|---|---|---|
+| Safety gates | 0 | **0** |
+| Raw drafts stating a fact | 6 | **5** (all caught, 0 shown) |
+| Parse accuracy | 18/18 | **18/18** |
+| Recall@5 / precision | 0.81 / 0.87 | **0.80 / 0.89** |
+| Duplicate cards shown | 3 | **2** (both are chess sessions, which the rule allows when chess was asked for) |
+| N05 Dallas fallback | 0/4 | **3/4** |
+| A10 chess | Open Play + tonight's meet-up | **tonight + both December meet-ups** (reached past the old cap) |
+| Cost per question | $0.0076 | **$0.0079** |
+
+**What moved, and what didn't.** The two built behaviours work: Dallas now gets the headed
+fallback, and the chess question reaches December. Recall is flat overall because single
+picks moved: A01 chose the clean-energy talk (owner: not good) over Art Shop; A08 picked a
+different five; A10 chose three chess sessions over "Open Play". These are one run each, and the
+classifier work measured a ±2 noise floor on single runs, so a one-point move is not a finding.
+**Next measurement worth doing: run the same set 3–4 times and report the spread.**
+
+**New gap in the word check:** A03's shown answer says "happening this week!". "weekend" is
+blocked; "week" is not. Not tuned here; listed for the next change.
+
+**"Variety" framing works as decided:** A02 and T03 open "Here are a variety of things you
+could do".

@@ -1,6 +1,6 @@
 {
   "summary": {
-    "run_at": "2026-11-20T04:20:38.307Z",
+    "run_at": "2026-11-20T04:26:49.210Z",
     "model": "claude-sonnet-4-6",
     "catalog_as_of": "2026-11-18",
     "broken_prompt": false,
@@ -8,7 +8,7 @@
     "gates_pass": false,
     "gates": {
       "cited_not_retrieved": 0,
-      "raw_answer_fact_tokens": 6,
+      "raw_answer_fact_tokens": 5,
       "shown_answer_fact_tokens": 0,
       "free_only_non_free": 0,
       "no_match_returned_events": 0,
@@ -25,7 +25,7 @@
       "scope": "20/20",
       "price_note": "18/18"
     },
-    "recall_at_5": 0.81,
+    "recall_at_5": 0.8,
     "recall_by_question": {
       "A01": "1/2",
       "A02": "3/5",
@@ -34,25 +34,25 @@
       "A05": "4/4",
       "A06": "3/3",
       "A07": "3/3",
-      "A08": "5/5",
+      "A08": "3/5",
       "A09": "2/2",
-      "A10": "2/2",
-      "N05": "0/4",
+      "A10": "1/2",
+      "N05": "3/4",
       "T01": "3/3",
       "T02": "2/4",
       "T03": "3/4"
     },
-    "precision": 0.87,
-    "duplicate_cards_shown": 3,
-    "shown_with_answer": 7,
-    "cards_only_fallback": 6,
+    "precision": 0.89,
+    "duplicate_cards_shown": 2,
+    "shown_with_answer": 8,
+    "cards_only_fallback": 5,
     "cost": {
       "calls": 37,
-      "input_tokens": 36592,
-      "output_tokens": 2796,
+      "input_tokens": 38330,
+      "output_tokens": 2884,
       "cache_read": 0,
-      "usd": 0.1517,
-      "usd_per_question": 0.0076
+      "usd": 0.1583,
+      "usd_per_question": 0.0079
     }
   },
   "rows": [
@@ -63,12 +63,11 @@
       "kind": "answer",
       "showing": "Showing: Sat Nov 21 · Plano · free · age 4",
       "notes": [],
-      "answer_shown": "Family Storytime at both Parr Library and Davis Library offer stories, songs, and movement activities that are perfect for little ones, and Harness the Wind & Waves at Davis Library brings hands-on creative and problem-solving activities to life.",
-      "raw_answer": "Family Storytime at both Parr Library and Davis Library offer stories, songs, and movement activities that are perfect for little ones, and Harness the Wind & Waves at Davis Library brings hands-on creative and problem-solving activities to life.",
+      "answer_shown": "Family Storytime is a lovely mix of stories, songs, and movement that young ones enjoy, and Harness the Wind & Waves offers hands-on science activities that spark curiosity and creativity.",
+      "raw_answer": "Family Storytime is a lovely mix of stories, songs, and movement that young ones enjoy, and Harness the Wind & Waves offers hands-on science activities that spark curiosity and creativity.",
       "raw_fact_tokens": [],
       "cards": [
         "E039",
-        "E041",
         "E046"
       ],
       "fallback": [],
@@ -102,11 +101,11 @@
       },
       "usage": {
         "calls": 2,
-        "input": 1530,
-        "output": 154,
+        "input": 1636,
+        "output": 139,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.0069
+        "usd": 0.006993
       }
     },
     {
@@ -116,14 +115,14 @@
       "kind": "answer",
       "showing": "Showing: Sat Nov 21 · Frisco · any price · morning",
       "notes": [],
-      "answer_shown": "Fitness Fun Classes offers a rotating mix of movement and workout sessions to get the body going, while SaturYay: Christmas Edition and SaturYAY! Presented by Atmos Energy bring festive and interactive arts, crafts, and lawn games for the whole family. Family Story Time rounds things out with songs, rhymes, and books in a cozy storytime setting.",
-      "raw_answer": "Fitness Fun Classes offers a rotating mix of movement and workout sessions to get the body going, while SaturYay: Christmas Edition and SaturYAY! Presented by Atmos Energy bring festive and interactive arts, crafts, and lawn games for the whole family. Family Story Time rounds things out with songs, rhymes, and books in a cozy storytime setting.",
+      "answer_shown": "Here are a variety of things you could do: Fitness Fun Classes offers rotating workout sessions for all levels, SaturYay: Christmas Edition brings holiday-themed arts, crafts, and storytime to the park, Family Story Time at Frisco Public Library features songs, rhymes, and books, and the Saturday Music Series at Frisco Fresh Market showcases live local music on the patio.",
+      "raw_answer": "Here are a variety of things you could do: Fitness Fun Classes offers rotating workout sessions for all levels, SaturYay: Christmas Edition brings holiday-themed arts, crafts, and storytime to the park, Family Story Time at Frisco Public Library features songs, rhymes, and books, and the Saturday Music Series at Frisco Fresh Market showcases live local music on the patio.",
       "raw_fact_tokens": [],
       "cards": [
         "E035",
         "E037",
-        "E036",
-        "E038"
+        "E038",
+        "E042"
       ],
       "fallback": [],
       "acceptable": [
@@ -159,11 +158,11 @@
       },
       "usage": {
         "calls": 2,
-        "input": 2053,
-        "output": 185,
+        "input": 2159,
+        "output": 188,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.008934000000000001
+        "usd": 0.009297
       }
     },
     {
@@ -173,8 +172,8 @@
       "kind": "answer",
       "showing": "Showing: Wed Nov 18 – Sun Nov 22 · Frisco · any price · christmas",
       "notes": [],
-      "answer_shown": "There are some wonderful Christmas events this week! The 4th Street Plaza Holiday Tree Lighting & Holiday, Illuminate: Christmas Movie Classics, Kaleidoscope Christmas, and SaturYay: Christmas Edition all bring festive holiday spirit with tree lightings, candlelit music performances, visits from Santa, and holiday-themed activities for the whole family.",
-      "raw_answer": "There are some wonderful Christmas events this week! The 4th Street Plaza Holiday Tree Lighting & Holiday, Illuminate: Christmas Movie Classics, Kaleidoscope Christmas, and SaturYay: Christmas Edition all bring festive holiday spirit with tree lightings, candlelit music performances, visits from Santa, and holiday-themed activities for the whole family.",
+      "answer_shown": "There are several Christmas events happening this week! The 4th Street Plaza Holiday Tree Lighting & Holiday and Kaleidoscope Christmas both feature festive tree lighting ceremonies, while Illuminate: Christmas Movie Classics offers a candlelit musical performance of beloved holiday film scores, and SaturYay: Christmas Edition brings holiday-themed crafts and activities for the whole family.",
+      "raw_answer": "There are several Christmas events happening this week! The 4th Street Plaza Holiday Tree Lighting & Holiday and Kaleidoscope Christmas both feature festive tree lighting ceremonies, while Illuminate: Christmas Movie Classics offers a candlelit musical performance of beloved holiday film scores, and SaturYay: Christmas Edition brings holiday-themed crafts and activities for the whole family.",
       "raw_fact_tokens": [],
       "cards": [
         "E020",
@@ -192,6 +191,10 @@
       "recall": "4/4",
       "retrieved": 22,
       "retrieved_refs": [
+        "E020",
+        "E021",
+        "E034",
+        "E037",
         "E003",
         "E004",
         "E007",
@@ -199,15 +202,11 @@
         "E013",
         "E017",
         "E019",
-        "E020",
-        "E021",
         "E022",
         "E025",
         "E029",
-        "E034",
         "E035",
         "E036",
-        "E037",
         "E038",
         "E040",
         "E042",
@@ -229,29 +228,26 @@
       },
       "usage": {
         "calls": 2,
-        "input": 3312,
-        "output": 180,
+        "input": 3418,
+        "output": 182,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.012636000000000001
+        "usd": 0.012983999999999999
       }
     },
     {
       "id": "A04",
       "tab": "plano",
       "question": "Is there a storytime for my baby tomorrow?",
-      "kind": "cards",
+      "kind": "answer",
       "showing": "Showing: Thu Nov 19 · Plano · any price · ages 0–1 · storytime",
       "notes": [],
-      "answer_shown": null,
-      "raw_answer": "Yes! Rhyme Time and Babes in Arms are both wonderful lap-sit style storytimes with rhymes, songs, and movement perfect for little ones, and Toddler Time offers short stories and movement activities for slightly older children.",
-      "raw_fact_tokens": [
-        "toddler"
-      ],
+      "answer_shown": "Babes in Arms at Schimelpfenig Library and Rhyme Time at Parr Library are both wonderful storytime options for little ones, with lap sit stories, rhymes, songs, and movement to help develop language and motor skills.",
+      "raw_answer": "Babes in Arms at Schimelpfenig Library and Rhyme Time at Parr Library are both wonderful storytime options for little ones, with lap sit stories, rhymes, songs, and movement to help develop language and motor skills.",
+      "raw_fact_tokens": [],
       "cards": [
-        "E011",
         "E016",
-        "E015"
+        "E011"
       ],
       "fallback": [],
       "acceptable": [
@@ -261,9 +257,9 @@
       "recall": "2/2",
       "retrieved": 3,
       "retrieved_refs": [
+        "E016",
         "E011",
-        "E015",
-        "E016"
+        "E015"
       ],
       "filters": {
         "date_from": "2026-11-19",
@@ -282,11 +278,11 @@
       },
       "usage": {
         "calls": 2,
-        "input": 1471,
-        "output": 154,
+        "input": 1577,
+        "output": 153,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.006723000000000001
+        "usd": 0.007026000000000001
       }
     },
     {
@@ -297,17 +293,15 @@
       "showing": "Showing: Thu Nov 19 · Frisco · any price · age 10",
       "notes": [],
       "answer_shown": null,
-      "raw_answer": "Friendship Bracelets at the Frisco Public Library is a great hands-on crafting activity perfectly suited for that age group, and the 4th Street Plaza Holiday Tree Lighting & Holiday, Live After 5 Presented by New York Life North Dallas, and Illuminate: Christmas Movie Classics all offer festive, fun outings to enjoy together on Thursday evening.",
+      "raw_answer": "Here are a variety of things you could do: the 4th Street Plaza Holiday Tree Lighting & Holiday kicks off the festive season with a cheerful outdoor celebration, Illuminate: Christmas Movie Classics offers a magical candlelit musical experience, Friendship Bracelets at Frisco Public Library is a fun hands-on craft activity perfectly suited for that age group, and Live After 5 Presented by New York Life North Dallas brings live music and lawn games for the whole family.",
       "raw_fact_tokens": [
-        "age",
-        "thursday",
-        "evening"
+        "age"
       ],
       "cards": [
-        "E022",
         "E020",
-        "E019",
-        "E021"
+        "E021",
+        "E022",
+        "E019"
       ],
       "fallback": [],
       "acceptable": [
@@ -341,11 +335,11 @@
       },
       "usage": {
         "calls": 2,
-        "input": 1654,
-        "output": 185,
+        "input": 1760,
+        "output": 208,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.007737000000000001
+        "usd": 0.008400000000000001
       }
     },
     {
@@ -356,14 +350,13 @@
       "showing": "Showing: Mon Nov 23 – Sun Nov 29 · Plano · any price · ages 13–17",
       "notes": [],
       "answer_shown": null,
-      "raw_answer": "Bank Accounts & Credit (Ages 13+) is a great fit, covering banking, credit scores, and financial skills specifically for teens. STEAM Stop: Math Mania, STEAM Stop: Sensational Senses, and Paper Airplane Challenge also offer engaging hands-on experiments, puzzles, and building activities that older kids tend to enjoy.",
+      "raw_answer": "Bank Accounts & Credit (Ages 13+) is a great fit, covering real-world financial skills like credit building presented by a university program. STEAM Stop: Math Mania and Paper Airplane Challenge offer hands-on building and problem-solving fun that teens would enjoy too.",
       "raw_fact_tokens": [
         "teens"
       ],
       "cards": [
         "E067",
         "E056",
-        "E068",
         "E092"
       ],
       "fallback": [],
@@ -403,11 +396,11 @@
       },
       "usage": {
         "calls": 2,
-        "input": 1854,
-        "output": 180,
+        "input": 1960,
+        "output": 161,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.008262
+        "usd": 0.008295
       }
     },
     {
@@ -418,16 +411,16 @@
       "showing": "Showing: Tue Nov 24 · Plano · any price · age 6",
       "notes": [],
       "answer_shown": null,
-      "raw_answer": "There's a great mix of options in Plano on Tuesday! STEAM Stop: Sensational Senses offers hands-on experiments, building, and math games, Live Raptors lets kids meet real birds of prey up close, Adapted Glitter Jar (Families) combines storytime with a calming craft, and both Family Storytime events bring stories, songs, and movement to life.",
+      "raw_answer": "Here are a variety of things you could do in Plano on Tuesday: Live Raptors lets kids meet real birds of prey up close, STEAM Stop: Sensational Senses offers experiments, building, and games, Adapted Glitter Jar (Families) combines storytime with a calming craft, and Family Storytime brings stories, songs, and movement together for a fun evening.",
       "raw_fact_tokens": [
-        "tuesday"
+        "tuesday",
+        "evening"
       ],
       "cards": [
-        "E068",
         "E070",
+        "E068",
         "E069",
-        "E072",
-        "E073"
+        "E072"
       ],
       "fallback": [],
       "acceptable": [
@@ -461,11 +454,11 @@
       },
       "usage": {
         "calls": 2,
-        "input": 1585,
-        "output": 199,
+        "input": 1691,
+        "output": 194,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.00774
+        "usd": 0.007983
       }
     },
     {
@@ -476,16 +469,16 @@
       "showing": "Showing: Sat Nov 21 · Plano + Frisco · free",
       "notes": [],
       "answer_shown": null,
-      "raw_answer": "The Frisco Library Renaissance Faire and its companion workshops like the Renaissance Faire: D&D Workshop and Renaissance Faire: Miniature Tudor Cottage Workshop offer a full day of medieval-themed storytelling, crafting, and hands-on fun for all ages. SaturYAY! Presented by Atmos Energy and SaturYay: Christmas Edition bring interactive activities, arts and crafts, and festive holiday cheer to the whole family outdoors.",
+      "raw_answer": "Here are a variety of things you could do — the Frisco Library Renaissance Faire is a magical all-ages celebration with knights, minstrels, and medieval fun, while SaturYAY: Christmas Edition brings festive crafts, lawn games, and holiday cheer to Kaleidoscope Park. Harness the Wind & Waves offers hands-on science activities for the curious, Family Storytime blends stories, songs, and movement for younger ones, and the Saturday Music Series at Frisco Fresh Market rounds things out with live local music on the patio.",
       "raw_fact_tokens": [
         "ages"
       ],
       "cards": [
+        "E046",
+        "E039",
         "E040",
         "E036",
-        "E037",
-        "E043",
-        "E044"
+        "E042"
       ],
       "fallback": [],
       "acceptable": [
@@ -499,7 +492,7 @@
         "E044",
         "E035"
       ],
-      "recall": "5/5",
+      "recall": "3/5",
       "retrieved": 13,
       "retrieved_refs": [
         "E039",
@@ -531,11 +524,11 @@
       },
       "usage": {
         "calls": 2,
-        "input": 2397,
-        "output": 208,
+        "input": 2503,
+        "output": 231,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.010311
+        "usd": 0.010974000000000001
       }
     },
     {
@@ -545,8 +538,8 @@
       "kind": "answer",
       "showing": "Showing: Wed Nov 18 – Wed Dec 2 · Frisco · any price · age 7 · science or space",
       "notes": [],
-      "answer_shown": "What it's like to be an Astronaut? is a perfect fit, with a NASA Solar System Ambassador covering life in space, astronaut training, and the real challenges of space exploration. Pop Up STEM: Tech rounds things out with hands-on coding activities that make technology tangible and fun.",
-      "raw_answer": "What it's like to be an Astronaut? is a perfect fit, with a NASA Solar System Ambassador covering life in space, astronaut training, and the real challenges of space exploration. Pop Up STEM: Tech rounds things out with hands-on coding activities that make technology tangible and fun.",
+      "answer_shown": "What it's like to be an Astronaut? is a perfect fit, with a NASA Ambassador exploring life in space, the human body in zero gravity, and the realities of spacewalking. Pop Up STEM: Tech offers hands-on coding exploration that's great for a curious young mind.",
+      "raw_answer": "What it's like to be an Astronaut? is a perfect fit, with a NASA Ambassador exploring life in space, the human body in zero gravity, and the realities of spacewalking. Pop Up STEM: Tech offers hands-on coding exploration that's great for a curious young mind.",
       "raw_fact_tokens": [],
       "cards": [
         "E055",
@@ -558,10 +551,11 @@
         "E124"
       ],
       "recall": "2/2",
-      "retrieved": 24,
+      "retrieved": 20,
       "retrieved_refs": [
-        "E004",
         "E008",
+        "E055",
+        "E004",
         "E019",
         "E020",
         "E021",
@@ -573,15 +567,10 @@
         "E042",
         "E043",
         "E048",
-        "E055",
-        "E083",
-        "E084",
-        "E085",
         "E086",
         "E087",
         "E088",
         "E091",
-        "E093",
         "E113",
         "E124"
       ],
@@ -602,11 +591,11 @@
       },
       "usage": {
         "calls": 2,
-        "input": 3627,
+        "input": 3355,
         "output": 162,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.013311000000000002
+        "usd": 0.012495000000000001
       }
     },
     {
@@ -616,12 +605,13 @@
       "kind": "answer",
       "showing": "Showing: All upcoming dates · Plano · any price · chess",
       "notes": [],
-      "answer_shown": "Game On: Chess Meet-Up is perfect for playing chess with other beginners, and Game On: Open Play welcomes kids to bring a chess set and enjoy it their own way.",
-      "raw_answer": "Game On: Chess Meet-Up is perfect for playing chess with other beginners, and Game On: Open Play welcomes kids to bring a chess set and enjoy it their own way.",
+      "answer_shown": "The Game On: Chess Meet-Up sessions at Davis Library are perfect for this — your kid can sit down and play chess with another beginner, and chessboards are available to borrow if needed.",
+      "raw_answer": "The Game On: Chess Meet-Up sessions at Davis Library are perfect for this — your kid can sit down and play chess with another beginner, and chessboards are available to borrow if needed.",
       "raw_fact_tokens": [],
       "cards": [
         "E010",
-        "E033"
+        "E215",
+        "E260"
       ],
       "fallback": [],
       "acceptable": [
@@ -631,15 +621,19 @@
         "E260",
         "E281"
       ],
-      "recall": "2/2",
+      "recall": "1/2",
       "retrieved": 25,
       "retrieved_refs": [
+        "E010",
+        "E033",
+        "E215",
+        "E260",
+        "E281",
         "E001",
         "E002",
         "E005",
         "E006",
         "E009",
-        "E010",
         "E011",
         "E012",
         "E014",
@@ -654,11 +648,7 @@
         "E030",
         "E031",
         "E032",
-        "E033",
-        "E039",
-        "E041",
-        "E045",
-        "E046"
+        "E039"
       ],
       "filters": {
         "date_from": null,
@@ -674,11 +664,11 @@
       },
       "usage": {
         "calls": 2,
-        "input": 2897,
-        "output": 122,
+        "input": 3022,
+        "output": 130,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.010521
+        "usd": 0.011016
       }
     },
     {
@@ -719,11 +709,11 @@
       },
       "usage": {
         "calls": 2,
-        "input": 1539,
+        "input": 1645,
         "output": 93,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.006012
+        "usd": 0.0063300000000000006
       }
     },
     {
@@ -766,11 +756,11 @@
       },
       "usage": {
         "calls": 2,
-        "input": 2133,
+        "input": 2239,
         "output": 90,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.007749
+        "usd": 0.008067
       }
     },
     {
@@ -778,19 +768,17 @@
       "tab": "frisco",
       "question": "Anything to do on Thanksgiving Day?",
       "kind": "nothing",
-      "showing": "Showing: Thu Nov 26 · Frisco · any price",
+      "showing": "Showing: Thu Nov 26 · Frisco · any price · thanksgiving",
       "notes": [],
       "answer_shown": null,
-      "raw_answer": "",
+      "raw_answer": null,
       "raw_fact_tokens": [],
       "cards": [],
       "fallback": [],
       "acceptable": [],
       "recall": null,
-      "retrieved": 1,
-      "retrieved_refs": [
-        "E083"
-      ],
+      "retrieved": 0,
+      "retrieved_refs": [],
       "filters": {
         "date_from": "2026-11-26",
         "date_to": "2026-11-26",
@@ -800,16 +788,16 @@
         "unsupported_city": false,
         "free_only": false,
         "age": null,
-        "intent": null,
+        "intent": "thanksgiving",
         "notes": []
       },
       "usage": {
-        "calls": 2,
-        "input": 1371,
-        "output": 88,
+        "calls": 1,
+        "input": 848,
+        "output": 77,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.005433
+        "usd": 0.003699
       }
     },
     {
@@ -847,11 +835,11 @@
       },
       "usage": {
         "calls": 2,
-        "input": 1374,
+        "input": 1480,
         "output": 90,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.005472
+        "usd": 0.00579
       }
     },
     {
@@ -862,19 +850,33 @@
       "showing": "Showing: Sat Nov 21 · outside Frisco and Plano · any price",
       "notes": [],
       "answer_shown": null,
-      "raw_answer": null,
+      "raw_answer": "We don't cover Dallas directly, but here are some nearby ideas: Family Storytime offers stories, songs, and movement activities, Harness the Wind & Waves brings hands-on science and creativity exploring clean energy, and Art Shop lets kids budget play money to build their own unique artwork.",
       "raw_fact_tokens": [],
-      "cards": [],
-      "fallback": [],
+      "cards": [
+        "E039",
+        "E046",
+        "E047"
+      ],
+      "fallback": [
+        "E039",
+        "E046",
+        "E047"
+      ],
       "acceptable": [
         "E039",
         "E045",
         "E046",
         "E047"
       ],
-      "recall": "0/4",
-      "retrieved": 0,
-      "retrieved_refs": [],
+      "recall": "3/4",
+      "retrieved": 5,
+      "retrieved_refs": [
+        "E039",
+        "E041",
+        "E045",
+        "E046",
+        "E047"
+      ],
       "filters": {
         "date_from": "2026-11-21",
         "date_to": "2026-11-21",
@@ -886,12 +888,12 @@
         "notes": []
       },
       "usage": {
-        "calls": 1,
-        "input": 846,
-        "output": 79,
+        "calls": 2,
+        "input": 1770,
+        "output": 163,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.0037229999999999997
+        "usd": 0.007755
       }
     },
     {
@@ -902,9 +904,8 @@
       "showing": "Showing: Thu Nov 19 · Frisco · free · evening",
       "notes": [],
       "answer_shown": null,
-      "raw_answer": "Live After 5 Presented by New York Life North Dallas offers a community music series with live performances and lawn games, 4th Street Plaza Holiday Tree Lighting & Holiday kicks off the holiday season with a festive Christmas tree lighting, and Friendship Bracelets is a fun hands-on craft activity at the library — all happening Thursday evening!",
+      "raw_answer": "Live After 5 Presented by New York Life North Dallas offers a fun community music series with live performances and lawn games, while 4th Street Plaza Holiday Tree Lighting & Holiday kicks off the holiday season with a festive celebration. Friendship Bracelets at the library is a creative hands-on craft activity perfect for wrapping up the evening.",
       "raw_fact_tokens": [
-        "thursday",
         "evening"
       ],
       "cards": [
@@ -941,11 +942,11 @@
       },
       "usage": {
         "calls": 2,
-        "input": 1705,
-        "output": 173,
+        "input": 1811,
+        "output": 174,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.00771
+        "usd": 0.008043
       }
     },
     {
@@ -955,13 +956,13 @@
       "kind": "answer",
       "showing": "Showing: Sat Nov 21 · Frisco · any price · ages 1–3",
       "notes": [],
-      "answer_shown": "SaturYay: Christmas Edition and SaturYAY! Presented by Atmos Energy both offer interactive arts and crafts, movement activities, and family-friendly fun perfect for little ones, while Family Story Time brings songs, rhymes, and books in a cozy storytime setting.",
-      "raw_answer": "SaturYay: Christmas Edition and SaturYAY! Presented by Atmos Energy both offer interactive arts and crafts, movement activities, and family-friendly fun perfect for little ones, while Family Story Time brings songs, rhymes, and books in a cozy storytime setting.",
+      "answer_shown": "Family Story Time is a lovely pick, with songs, rhymes, and books perfect for little ones. SaturYay: Christmas Edition and SaturYAY! Presented by Atmos Energy both offer interactive arts and crafts, movement, and hands-on activities that young children tend to enjoy.",
+      "raw_answer": "Family Story Time is a lovely pick, with songs, rhymes, and books perfect for little ones. SaturYay: Christmas Edition and SaturYAY! Presented by Atmos Energy both offer interactive arts and crafts, movement, and hands-on activities that young children tend to enjoy.",
       "raw_fact_tokens": [],
       "cards": [
+        "E038",
         "E037",
-        "E036",
-        "E038"
+        "E036"
       ],
       "fallback": [],
       "acceptable": [
@@ -999,11 +1000,11 @@
       },
       "usage": {
         "calls": 2,
-        "input": 1952,
-        "output": 163,
+        "input": 2058,
+        "output": 165,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.008301
+        "usd": 0.008649
       }
     },
     {
@@ -1013,14 +1014,13 @@
       "kind": "answer",
       "showing": "Showing: Sat Nov 21 – Sun Nov 22 · Plano · any price",
       "notes": [
-        "Open Eventz only knows whether an event is 'free' or 'paid'. Please look at the details view."
+        "Open Eventz only shows whether an event is 'free' or 'paid'. It does not determine if something is cheap or pricey."
       ],
-      "answer_shown": "Family Storytime at Parr Library and Family Storytime at Davis Library offer stories, songs, and movement activities, while Harness the Wind & Waves brings hands-on problem-solving and creativity, and Art Shop lets kids budget play money to craft their own unique artwork.",
-      "raw_answer": "Family Storytime at Parr Library and Family Storytime at Davis Library offer stories, songs, and movement activities, while Harness the Wind & Waves brings hands-on problem-solving and creativity, and Art Shop lets kids budget play money to craft their own unique artwork.",
+      "answer_shown": "Here are a variety of things you could do: Family Storytime brings stories, songs, and movement activities to life, Harness the Wind & Waves offers hands-on science and creativity challenges, and Art Shop lets kids budget play money to craft their own unique artwork.",
+      "raw_answer": "Here are a variety of things you could do: Family Storytime brings stories, songs, and movement activities to life, Harness the Wind & Waves offers hands-on science and creativity challenges, and Art Shop lets kids budget play money to craft their own unique artwork.",
       "raw_fact_tokens": [],
       "cards": [
         "E039",
-        "E041",
         "E046",
         "E047"
       ],
@@ -1052,16 +1052,16 @@
         "age": null,
         "intent": null,
         "notes": [
-          "Open Eventz only knows whether an event is 'free' or 'paid'. Please look at the details view."
+          "Open Eventz only shows whether an event is 'free' or 'paid'. It does not determine if something is cheap or pricey."
         ]
       },
       "usage": {
         "calls": 2,
-        "input": 1594,
-        "output": 163,
+        "input": 1700,
+        "output": 156,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.007227
+        "usd": 0.00744
       }
     },
     {
