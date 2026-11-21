@@ -147,7 +147,15 @@ page and the detail fetch. Worth confirming it degrades gracefully rather than f
 
 ## 2. Time-bound
 
-### #15 Billing handover · OWNER · **2026-11-18 — tomorrow**
+### ⚠️ Anthropic spend limit reached · OWNER · **found 2026-11-21, urgent**
+During the Ask eval on 2026-11-21 the API began refusing every call: *"You have reached your
+specified API usage limits. You will regain access on 2026-12-01 at 00:00 UTC."* This is a
+limit set on the account, not a lack of credit. If the nightly ingest uses the same account,
+**event classification fails every night until Dec 1**, the same failure as 2026-10-21. Fix:
+raise the monthly limit in the Anthropic Console (Settings → Limits), then confirm the next
+nightly run is green. Not verified yet: whether the ingest key is on the same account.
+
+### #15 Billing handover · OWNER · **2026-11-18**
 Anthropic billing. Dated, and the date is the whole point. See `BACKLOG.md:634`.
 
 ---
