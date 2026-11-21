@@ -219,6 +219,28 @@ metrics sheet: `08-portfolio/ai-pm-sprint/ask-rag-metrics-table.html`.
   program's own 16+. The age chip shows the library's group, so a 13-year-old's parent could be
   misled. Check how the Plano connector maps "16+".
 
+### The classification cache never notices a changed description · BUILD · found 2026-11-20 · **later**
+The cache-hit test in `classifyEvents` (`src/lib/ingest.ts`) is `prior.kid_relevant !== null`,
+keyed by event ID only. If a source rewrites a known event's description, for example by adding
+"$10 entry" or "adults only", the stored kid, age and price judgment is carried forward and the
+event is **not** re-classified. A second gap sits in the same branch: the cache hit copies
+`prior.price_class` over tonight's value unconditionally, so a **new or changed structured
+`Cost:` field** on a known event is also ignored, even though the Cost field is meant to win
+outright. The adults-only / 21+ override and the low-confidence hide *are* re-applied to cached
+events, in the fail-closed pass after the loop.
+
+Fixes:
+- ~~On a cache hit, let a locked Cost-field price (`_priceLocked`) beat the stored one.~~
+  **DONE 2026-11-20.** The cache hit now goes through `applyCachedClassification`
+  (`src/lib/classify-cache.ts`), which keeps tonight's locked price (a Cost field, or
+  Kaleidoscope's declared free). Tested in `classify-cache.test.ts`. Rows correct themselves on
+  the next nightly ingest; no backfill is needed.
+- **Still open:** store a hash of the classified text and re-classify when it changes. Watch the
+  cost: an upstream reformat would re-classify a whole source in one night, though the spend cap
+  bounds it.
+
+Scenarios: TEST-SCENARIOS §1.5E.5–6. Found while documenting the decision map (BUILD-LOG note (a)).
+
 ### "LIBRARY CLOSED" notices are shown to parents as events · BUILD · found 2026-11-18 · **later**
 (Ask now excludes them at retrieval; the list view still shows them.)
 Found while freezing the Ask eval catalog. 9 Frisco Library entries titled "LIBRARY CLOSED"

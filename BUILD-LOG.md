@@ -17,6 +17,301 @@ Use this to prep for portfolio conversations, interviews, or stakeholder demos.
 
 ---
 
+### Diagrams — current as of 2026-11-20
+
+*Added 2026-11-20. The written sections a)–b4) below are the original July–August descriptions,
+kept as written per the documentation convention. Where they differ (three sources instead of
+four, scraping the "Suitable for:" HTML), these diagrams are current. Drawn from
+`src/lib/ingest.ts`, `src/lib/ingest-guard.ts` and `.github/workflows/ingest.yml`. Ask Open
+Eventz is on branch `ask-open-eventz`, behind a flag that is off. It is not on `master` or live.*
+
+#### Process flow — the nightly write path
+
+```mermaid
+flowchart TD
+  FL[Frisco Library<br/>event JSON records] --> F
+  PL[Plano Library<br/>branch RSS feeds] --> F
+  PF[Play Frisco<br/>city calendar] --> F
+  KP[Kaleidoscope Park<br/>event pages] --> F
+  F[Fetch and parse<br/>nightly, one job per source] --> N
+  N[Normalize<br/>one event shape, Central time,<br/>ages, registration, stable ID] --> R
+  N --> C
+  R[Rules first<br/>libraries, cost fields, 21+] --> G
+  C[Claude<br/>free text only: kids? age? free?] --> G
+  G[Pre-write guard<br/>drop bad events, refuse bad batches] --> D
+  D[(Supabase<br/>single source of truth)]
+  classDef ai fill:#EEEDFE,stroke:#534AB7,color:#26215C
+  classDef check fill:#E1F5EE,stroke:#0F6E56,color:#04342C
+  class C ai
+  class G check
+```
+
+**Normalize** turns four source formats (JSON, RSS, calendar HTML, in-page structured data)
+into one event shape. It decodes HTML into plain text, converts times to the venue's time zone
+(America/Chicago, never the server's), parses age text into min/max, sets registration
+required, adds venue and coordinates, assigns a category and gives each event a stable ID.
+
+#### Process flow — the read path and monitoring
+
+```mermaid
+flowchart TD
+  D[(Supabase)] --> L[Event list<br/>browse with filters, live]
+  D --> K[Ask Open Eventz<br/>built, flag off]
+  L --> P[Parent sees event cards<br/>free, age, registration, drop-off]
+  K --> P
+  H[Daily heartbeat<br/>did data arrive? is the site current?] -. watches .- D
+  E[CI eval gate<br/>blocks risky prompt, model, price changes] -. guards .- C2[Classifier code]
+  classDef ai fill:#EEEDFE,stroke:#534AB7,color:#26215C
+  classDef check fill:#E1F5EE,stroke:#0F6E56,color:#04342C
+  class K ai
+  class H,E check
+```
+
+#### Sequence — the nightly ingest, one source job
+
+```mermaid
+sequenceDiagram
+  participant S as GitHub scheduler
+  participant J as Source job
+  participant W as Source website
+  participant C as Claude
+  participant G as Pre-write guard
+  participant D as Supabase
+  participant Q as Data-quality gate
+  participant A as Alert
+  S->>J: Nightly trigger (one job per source)
+  J->>W: Fetch listings and detail pages
+  W-->>J: JSON, RSS or HTML
+  J->>J: Normalize: plain text, Central time, ages, registration, stable ID
+  alt Library source
+    J->>J: Rules: structured ages, free by institution
+  else Play Frisco or Kaleidoscope
+    J->>D: Already classified? (cache)
+    alt Cache hit
+      D-->>J: Stored answer, no AI call
+    else New event
+      J->>C: Title + cleaned description
+      C-->>J: Kids? age? free/paid/unknown (JSON)
+      J->>J: Rules override: cost field, 21+, registration
+    end
+    Note over J,C: Failed call or spend cap: skip the event, retry tomorrow
+  end
+  J->>J: Dedupe, mark recurring
+  J->>G: Tonight's batch vs stored rows
+  alt Batch looks wrong (times shifted, count collapsed)
+    G-->>J: Refuse batch, keep yesterday's rows
+  else Batch trusted
+    G->>D: Strip invisible characters, upsert
+    G->>D: Purge cancelled upcoming events (capped)
+  end
+  J->>D: Record run: counts, AI calls, errors
+  S->>Q: After all source jobs
+  Q->>D: Checks against real stored data
+  alt Any job or check failed
+    Q->>A: Open or reuse GitHub issue, email owner
+  end
+```
+
+#### Sequence — a parent browsing, and Ask (branch only, flag off)
+
+```mermaid
+sequenceDiagram
+  actor P as Parent
+  participant A as App (Vercel)
+  participant K as Ask service
+  participant C as Claude
+  participant D as Supabase
+  P->>A: Open site, set filters
+  A->>D: Events through the shared visibility gate
+  D-->>A: Upcoming, kid-safe events only
+  A-->>P: Event cards (free, age, registration, drop-off)
+  Note over P,D: Ask below is built but behind a flag (off)
+  P->>A: "Free things for my 4-year-old Saturday in Plano"
+  A->>K: Question + city tab
+  K->>C: Call 1: question to filters (with today's date)
+  C-->>K: Date, city, free only, age, intent (JSON)
+  K->>K: Validate: no past dates, ages 0-17, typo rescue
+  K->>D: Same gated catalog as the list
+  D-->>K: Visible events
+  K->>K: Hard filters, keep up to 25
+  alt Nothing matched
+    K-->>A: "Nothing matched" + link to the closest list
+  else Candidates found
+    K->>C: Call 2: pick up to 5, frame why (no facts)
+    C-->>K: Short answer + cited event IDs
+    K->>K: Check: IDs retrieved? No fact words?
+    alt Check passes
+      K-->>A: Answer + cards
+    else Check fails
+      K-->>A: Cards only (answer dropped)
+    end
+  end
+  A-->>P: "Showing: Sat · Plano · free · age 4" + result
+```
+
+#### Pre-write guard vs data-quality gate
+
+| | Pre-write guard | Data-quality gate |
+|---|---|---|
+| When | Before the write | After every source job |
+| Looks at | Tonight's batch vs stored rows, one source | The real stored data, all sources |
+| Can stop bad data? | **Yes.** Drops events or refuses the batch; yesterday's rows stay | **No.** Turns the run red and opens an alert issue |
+
+The gate came first. When ingest moved to UTC runners, every library event was written 5–6 hours
+early, and the gate went red only after the site was already serving 5:00 AM story times. The
+guard was added in front so that class of error is refused before the write (`INGEST-DESIGN.md`
+§8.0, §8.1).
+
+#### Decision map — one nightly source job
+
+Teal = happy path, coral = stopped or failed safely, dashed = alternate flow. Letters refer to
+the notes below.
+
+```mermaid
+flowchart TD
+  S([Nightly schedule]) --> D1{Did the run start?}
+  D1 -- No --> X1[Silent: nothing runs]
+  X1 -.-> HB[Heartbeat next day: no write in 30h, fail and email]
+  D1 -- Yes --> D2{Fetch and parse OK?}
+  D2 -- No --> X2[Job errors, red run]
+  D2 -- "Yes, but 0 events" --> X3[Write nothing, purge nothing, job fails]
+  D2 -- Yes --> N[Normalize each event]
+  N --> D3{Time parseable?}
+  D3 -- No --> X4[Skip that event]
+  D3 -- Yes --> D4{Library source?}
+  D4 -- Yes --> R[Rules: structured age, free by institution]
+  D4 -- No --> D5{Already classified?}
+  D5 -- Yes --> CA["Reuse stored AI answer (a)"]
+  D5 -- No --> D6{Spend cap reached?}
+  D6 -- Yes --> X5[Skip event, retry tomorrow, logged]
+  D6 -- No --> AI[Claude: kids? age? price?]
+  AI --> D7{Valid answer?}
+  D7 -- No --> X5
+  D7 -- Yes --> OV[Rules override]
+  OV -.-> O1[Adults only or 21+: hidden]
+  OV -.-> O2["Cost field: locks the price (b)"]
+  OV -.-> O3[Fee word or registration: free becomes unknown]
+  OV --> D8{Kid confidence low?}
+  D8 -- Yes --> X6[Stored but hidden]
+  D8 -- No --> B[Batch]
+  CA -- "21+ and low confidence re-checked" --> D8
+  R --> B
+  B --> D9{"Batch looks systemically wrong? (c)"}
+  D9 -- Yes --> X7[Refuse batch, keep yesterday's rows]
+  D9 -- No --> D10{"Single event untrustworthy? (d)"}
+  D10 -- Yes --> X8[Drop that event]
+  D10 -- No --> W[Strip hidden text, write]
+  W --> P["Purge cancelled upcoming, capped (e, f)"]
+  P --> Q{Data-quality gate passes?}
+  X2 --> Q
+  X3 --> Q
+  X7 --> Q
+  Q -- Yes --> OK(["Fresh, correct data served (g)"])
+  Q -- No --> AL[GitHub issue, email owner]
+  classDef ok fill:#E1F5EE,stroke:#0F6E56,color:#04342C
+  classDef bad fill:#FAECE7,stroke:#993C1D,color:#4A1B0C
+  class OK,W,CA,R ok
+  class X1,X2,X3,X4,X5,X6,X7,X8,AL,HB bad
+```
+
+**Notes on the decision map** (thresholds from `DEFAULT_GUARD` in `src/lib/ingest-guard.ts`)
+
+- **(a) Why a cached event still goes into the batch.** The cache stores only the AI's judgment:
+  kid relevance, age, price. Everything else is read fresh from the source every night. A cached
+  event still joins the batch for three reasons:
+  1. The write must pick up a changed time, place or title.
+  2. The guard compares the whole batch with what's stored, so leaving cached events out would
+     make a healthy scrape look collapsed.
+  3. Being in the batch is how the purge knows the event still exists.
+
+  On a cache hit, the adults-only / 21+ override and the low-confidence hide **are** re-applied,
+  in the fail-closed pass that runs over every event.
+
+  **Fixed 2026-11-20:** a hit used to copy the stored price over tonight's reading, so a new or
+  changed `Cost:` field on a known event was ignored. Now a locked source price wins
+  (`src/lib/classify-cache.ts`).
+
+  **Still a known gap:** the cache is keyed by event ID only (`prior.kid_relevant !== null`), so
+  a rewritten description (for example a fee added) is not re-classified. Tracked in
+  `OPEN-ITEMS.md`.
+- **(b) Cost field locks the price.** Some Play Frisco pages have a structured `Cost:` field
+  (`itemprop="price"`: "Free", "$35", "Paid"). When present it's authoritative. It overrides the
+  model's price, the badge shows no ✦, and `price_decided_by = 'source-cost-field'`. Only
+  free/paid is kept, never the amount.
+- **(c) Systemically wrong batch.** The batch is refused and the stored rows are kept if any of
+  these is true:
+  - **Uniform shift:** at least 20 overlapping events, and 80% of them moved by the same offset
+    of 30+ minutes. This is the signature of a clock or timezone bug, as in the 5 AM story-time
+    incident (−300 minutes).
+  - **Implausible times:** more than 10% of events start 12:01–7:00 AM CT.
+  - **Shrink:** the batch is under 50% of the stored *upcoming* rows, which signals a partial
+    scrape.
+
+  `INGEST_ALLOW_TIME_SHIFT=1` is the deliberate escape hatch for an intended mass correction.
+- **(d) Untrustworthy single event.** Its start time is unparseable, or it falls between 12:01
+  and 7:00 AM CT. Exact midnight is allowed, because sources use it for all-day notices. That
+  event is dropped and the rest of the batch publishes.
+- **(e) Purge, capped.** Upcoming events stored for this source but absent from tonight's batch
+  are treated as cancelled and deleted. Exclusions:
+  - past events;
+  - events that already started today;
+  - events the guard dropped tonight for an unpublishable time.
+
+  If more than 25% of upcoming rows would go, nothing is deleted and the run reports it for a
+  person to check. A refused batch never purges.
+- **(f) What purging is.** Deleting our copy of events the source no longer lists. Without it,
+  cancelled events stay on the site. On 2026-10-20, three cancelled Frisco "Teen Anime Club"
+  sessions were still listed, one four days away.
+- **(g) Fresh, correct data served.** Tonight's data passed the pre-write guard and the
+  post-write data-quality gate, so the next visitor sees updated, checked events. "Correct" means
+  it passed every check we have; it can't make a wrong source right.
+
+#### Decision map — Ask Open Eventz (branch `ask-open-eventz`, flag off)
+
+Drawn from `src/lib/ask/ask.ts` and `src/app/api/ask/route.ts` on the branch.
+
+```mermaid
+flowchart TD
+  Q([Parent asks a question]) --> F1{Ask flag on?}
+  F1 -- No --> N0[No Ask box, plain list only]
+  F1 -- Yes --> F2{Under 100 questions today?}
+  F2 -- No --> N1[Unavailable: use the filters]
+  F2 -- Yes --> P[Claude call 1: question to filters]
+  P --> F3{Valid parse?}
+  F3 -- No --> N2[Plain list, no guessed filters]
+  F3 -- Yes --> F4{Off-topic?}
+  F4 -- Yes --> N3[One-line redirect]
+  F4 -- No --> F5{City outside Frisco and Plano?}
+  F5 -- "Looks like a typo" --> T[Use Frisco or Plano, show note]
+  F5 -- "Truly outside" --> N4[Nothing matched + events from your tab]
+  F5 -- No --> V[Validate in code]
+  T --> V
+  V -.-> A1[Past date or bad age: drop it, say so]
+  V -.-> A2[Cheap or under 10 dollars: only free vs paid note]
+  V --> R[Retrieve: shared gate, hard filters, up to 25]
+  R --> F6{Any events left?}
+  F6 -- No --> N5[Nothing matched + link to closest list]
+  F6 -- Yes --> S[Claude call 2: pick up to 5, frame why]
+  S --> F7{Valid reply?}
+  F7 -- No --> N5
+  F7 -- Yes --> F8{Picked any real retrieved event?}
+  F8 -- No --> N5
+  F8 -- Yes --> F9{Text free of fact words?}
+  F9 -- Yes --> OK([Answer + cards + Showing line])
+  F9 -- No --> C([Cards only, answer dropped])
+  classDef ok fill:#E1F5EE,stroke:#0F6E56,color:#04342C
+  classDef bad fill:#FAECE7,stroke:#993C1D,color:#4A1B0C
+  class OK ok
+  class N0,N1,N2,N3,N4,N5 bad
+```
+
+Two branches differ from the spec's first draft, and the code wins:
+- A failed second call goes to **"nothing matched"**, not cards only.
+- A cited ID that wasn't retrieved is simply **dropped**. Cards are built only from retrieved
+  events, so an invented event can't become a card.
+
+---
+
 ### a) What happens every morning (ingest)
 
 > **Updated 2026-08-12 — full detail now lives in [`INGEST-DESIGN.md`](./INGEST-DESIGN.md).** Ingest runs as a **nightly GitHub Actions workflow with one independent job per source** (`runFriscoIngest` / `runPlanoIngest` / `runPlayFriscoIngest` in `src/lib/ingest.ts`, invoked by `scripts/ingest.ts`). The old single Vercel cron was removed — it could never finish inside the 10s function limit. The `POST /api/ingest` route below still works for **manual/local** runs (it now just calls `runAllIngest()`).
