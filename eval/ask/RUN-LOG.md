@@ -243,3 +243,19 @@ says "code an ozobot city". "coding" does not match "code". A word-form gap, not
 runs. The planned three repeat runs did not happen: **runs 2 and 3 failed on "You have reached
 your specified API usage limits. You will regain access on 2026-12-01"** (Anthropic account
 spend limit). Their files were deleted, not scored. Repeat runs are owed once access returns.
+
+---
+
+## Labelling note — 2026-11-21 · S01–S05 are not blind; round 2 is
+
+Claude showed its S01–S05 answers to the owner and asked for agree/disagree. The owner pointed
+out that this breaks the blind rule. So S01–S05 are relabelled **development set, not blind**:
+they were used while building query expansion, and their scores show the feature works on the
+cases it was built for, nothing more.
+
+**Round 2** (`questions-heldout.json`, worksheet `LABELLING-2.md`): six new questions the owner
+labels blind, before Claude writes any answer. They are **held out**: never used for building or
+tuning. Three synonym questions (sports, bugs, money) and three typo questions, as this log asked
+on 2026-11-18 ("at least two typo questions and one look-alike word"): "Friso", "Plnao", and
+"piano lessons", which must not become Plano. The worksheet lists every event the strict rules
+allow for each question, one row per program, unranked, with nothing highlighted.

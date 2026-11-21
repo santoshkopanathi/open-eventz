@@ -1,0 +1,45 @@
+{
+  "as_of": "2026-11-18",
+  "note": "Round 2, written by Claude 2026-11-21. HELD OUT: never used while building or tuning. The owner labels these blind in LABELLING-2.md before Claude writes any answer for them. They join the scored set only once labelled.",
+  "questions": [
+    {
+      "id": "H01",
+      "set": "held_out_synonym",
+      "tab": "frisco",
+      "question": "Something sporty for my 9-year-old"
+    },
+    {
+      "id": "H02",
+      "set": "held_out_synonym",
+      "tab": "plano",
+      "question": "Anything about bugs for my 4-year-old?"
+    },
+    {
+      "id": "H03",
+      "set": "held_out_synonym",
+      "tab": "plano",
+      "question": "Where can my 15-year-old learn about money?"
+    },
+    {
+      "id": "Y01",
+      "set": "typo",
+      "tab": "plano",
+      "question": "fun things in Friso this Saturday for my 7-year-old",
+      "tests": "a misspelled city named on the other tab"
+    },
+    {
+      "id": "Y02",
+      "set": "typo",
+      "tab": "frisco",
+      "question": "storytime in Plnao tomorrow",
+      "tests": "a misspelled city named on the other tab"
+    },
+    {
+      "id": "Y03",
+      "set": "typo",
+      "tab": "frisco",
+      "question": "piano lessons for my 8-year-old",
+      "tests": "a look-alike word that must not become Plano"
+    }
+  ]
+}

@@ -255,7 +255,8 @@
         "E077"
       ],
       "provisional": true,
-      "notes": "PROVISIONAL: Claude, 2026-11-21, before query expansion was built. Owner to review. Live Raptors (birds of prey) and Insect Investigators."
+      "notes": "NOT BLIND: written by Claude 2026-11-21 before query expansion was built, then shown to the owner. A development set, used while building; not evidence of quality on its own. Live Raptors (birds of prey) and Insect Investigators.",
+      "blind": false
     },
     {
       "id": "S02",
@@ -265,7 +266,8 @@
         "E242"
       ],
       "provisional": true,
-      "notes": "PROVISIONAL: Claude, 2026-11-21, before query expansion was built. Owner to review. The three puppet-show programs (Little Red Riding Hood, Abominable Snowman, Goldilocks); repeat sessions count once."
+      "notes": "NOT BLIND: written by Claude 2026-11-21 before query expansion was built, then shown to the owner. A development set, used while building; not evidence of quality on its own. The three puppet-show programs (Little Red Riding Hood, Abominable Snowman, Goldilocks); repeat sessions count once.",
+      "blind": false
     },
     {
       "id": "S03",
@@ -274,7 +276,8 @@
         "E381"
       ],
       "provisional": true,
-      "notes": "PROVISIONAL: Claude, 2026-11-21, before query expansion was built. Owner to review. Pop Up STEM: Tech (coding) and Ozobot City (design and code a robot city)."
+      "notes": "NOT BLIND: written by Claude 2026-11-21 before query expansion was built, then shown to the owner. A development set, used while building; not evidence of quality on its own. Pop Up STEM: Tech (coding) and Ozobot City (design and code a robot city).",
+      "blind": false
     },
     {
       "id": "S04",
@@ -289,7 +292,8 @@
         "E343"
       ],
       "provisional": true,
-      "notes": "PROVISIONAL: Claude, 2026-11-21, before query expansion was built. Owner to review. LEGO Engineering and the Engineering Challenge. STEAM Stop says \"build things\": fine to show, not required."
+      "notes": "NOT BLIND: written by Claude 2026-11-21 before query expansion was built, then shown to the owner. A development set, used while building; not evidence of quality on its own. LEGO Engineering and the Engineering Challenge. STEAM Stop says \"build things\": fine to show, not required.",
+      "blind": false
     },
     {
       "id": "S05",
@@ -300,7 +304,8 @@
         "E158"
       ],
       "provisional": true,
-      "notes": "PROVISIONAL: Claude, 2026-11-21, before query expansion was built. Owner to review. No cooking events. Breakfast with Santa, a food drive and a concert with food trucks are not cooking classes."
+      "notes": "NOT BLIND: written by Claude 2026-11-21 before query expansion was built, then shown to the owner. A development set, used while building; not evidence of quality on its own. No cooking events. Breakfast with Santa, a food drive and a concert with food trucks are not cooking classes.",
+      "blind": false
     }
   ],
   "scoring": "acceptable = events the owner would show (counts for recall and precision). secondary = lower-confidence picks: fine to show (not a precision miss) but not required (no recall credit). not_good = would not show (precision miss, not a blocking gate). forbidden = must never show (blocking).",
