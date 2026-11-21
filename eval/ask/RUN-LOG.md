@@ -194,3 +194,52 @@ blocked; "week" is not. Not tuned here; listed for the next change.
 
 **"Variety" framing works as decided:** A02 and T03 open "Here are a variety of things you
 could do".
+
+---
+
+## Run 5 — 2026-11-21 · before query expansion · 25 questions (adds S01–S05)
+
+Five synonym questions added first (`2f21318`), labelled provisionally by Claude before any
+expansion code. They are undated, so each matches far more than the 25 events the model sees,
+and the parent's word ("animals", "theater", "computers", "building") never appears in the
+right events.
+
+| | Run 5 |
+|---|---|
+| Safety gates (invented, free, city, no-match, off-topic, forbidden) | **0** |
+| Raw drafts stating a fact | 5 (all caught, 0 shown) |
+| Parse accuracy | 23/23 every field, scope 25/25 |
+| Recall@5, all / **synonym set** | 0.74 / **0.46** |
+| Precision | 0.84 |
+| S01 animals / S02 theater / S03 computers / S04 building | 2/2 · 1/3 · 1/2 · **0/2** |
+| S05 cooking (no right answer) | Nothing matched ✓ |
+| Cost | $0.218, $0.0087 per question |
+
+S01 passed without help: with age 5, the Plano list is short enough that Live Raptors and Insect
+Investigators were inside the first 25 by date. The other three missed events that sat later.
+
+## Run 6 — 2026-11-21 · query expansion built · one clean run
+
+Change: the parse also returns up to 8 related words; retrieval ranks the parent's own word
+first, then related words, then the rest. Related words only re-order events that already
+passed the hard filters, and a word matching over half the filtered events is ignored. Topic
+matching now accepts singular or plural ("animals" finds "Animal"). Prompt examples use
+dinosaurs and music, which are not in the eval, so the prompt is not tuned to these questions.
+
+| | Run 5 | Run 6 |
+|---|---|---|
+| Safety gates | 0 | **0** |
+| Raw drafts stating a fact | 5 | 5 (all caught, 0 shown) |
+| Recall@5, all / **synonym set** | 0.74 / 0.46 | **0.82 / 0.88** |
+| Precision | 0.84 | **0.88** |
+| S01 / S02 / S03 / S04 | 2/2 · 1/3 · 1/2 · 0/2 | 2/2 · **3/3** · 1/2 · **2/2** |
+| S05 cooking | Nothing matched | Nothing matched (expansion added "food", "baking"; still no false match) |
+| Cost | $0.0087/question | $0.0094/question |
+
+**Still missed: S03 Ozobot City.** Expansion gave "coding", "programming", "robotics"; the event
+says "code an ozobot city". "coding" does not match "code". A word-form gap, not a ranking one.
+
+**Not a finding yet.** One run each, and the classifier work measured a ±2 noise floor on single
+runs. The planned three repeat runs did not happen: **runs 2 and 3 failed on "You have reached
+your specified API usage limits. You will regain access on 2026-12-01"** (Anthropic account
+spend limit). Their files were deleted, not scored. Repeat runs are owed once access returns.

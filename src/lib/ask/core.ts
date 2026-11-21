@@ -13,6 +13,9 @@ import { visibleText } from '../source-text'
 export type City = 'frisco' | 'plano'
 export const TZ = 'America/Chicago'
 export const MAX_RETRIEVED_PER_CITY = 25
+export const MAX_RELATED_WORDS = 8
+/** An expansion word matching more than this share of the filtered events is too broad to rank by. */
+export const BROAD_WORD_SHARE = 0.5
 export const MAX_CITED = 5
 export const MAX_DAYS_AHEAD = 183 // "can't be more than 6 months out"
 
@@ -37,6 +40,8 @@ export interface RawParse {
   age_min: number | null
   age_max: number | null
   intent: string | null
+  /** Query expansion: other words an event about the topic might use ("animals" → raptors, insects). */
+  related?: string[]
 }
 
 export interface Filters {
@@ -47,6 +52,7 @@ export interface Filters {
   free_only: boolean
   age: [number, number] | null
   intent: string | null
+  related: string[] // expansion words, already cleaned; never a filter, only a ranking hint
   notes: string[] // screen notes, e.g. the price note
 }
 
@@ -102,7 +108,11 @@ export function validateParse(raw: RawParse, tab: City, today: string): Filters 
   const free_only = raw.free_only === true && raw.price_word !== true
   if (raw.price_word === true) notes.push(COPY.priceNote)
 
-  return { date_from, date_to, cities, unsupported_city, free_only, age, intent: raw.intent ?? null, notes }
+  // Expansion words: same cleaning as topic words, at most 8, never repeating a topic word.
+  const topic = new Set(topicWords(raw.intent ?? null))
+  const related = [...new Set(topicWords((raw.related ?? []).join(' ')))].filter(w => !topic.has(w)).slice(0, MAX_RELATED_WORDS)
+
+  return { date_from, date_to, cities, unsupported_city, free_only, age, intent: raw.intent ?? null, related, notes }
 }
 
 // ── City typos ──────────────────────────────────────────────────────────────────────────────
@@ -166,7 +176,10 @@ export function topicWords(intent: string | null): string[] {
 export function mentionsTopic(e: Pick<Event, 'title' | 'description'>, words: string[]): boolean {
   if (!words.length) return false
   const text = `${e.title} ${visibleText(e.description)}`.toLowerCase()
-  return words.some(w => new RegExp(`\\b${w.replace(/[^a-z]/g, '')}(s|es)?\\b`).test(text))
+  // Singular or plural either way: "animals" finds "Animal Tales", "raptor" finds "Live Raptors".
+  // A trailing double s is kept ("chess" stays "chess", not "ches").
+  const stem = (w: string) => w.replace(/[^a-z]/g, '').replace(/([^s])s$/, '$1')
+  return words.some(w => new RegExp(`\\b${stem(w)}(s|es)?\\b`).test(text))
 }
 
 /**
@@ -177,11 +190,19 @@ export function mentionsTopic(e: Pick<Event, 'title' | 'description'>, words: st
  * hundreds of events, and the first 25 by start time are mostly storytimes, so a later chess
  * meet-up never reached the model. Events whose title or description mention the topic now go
  * first, then the rest, each in start-time order. Same cap, same cost; only the order changes.
+ *
+ * QUERY EXPANSION (2026-11-21). Exact topic words miss synonyms: "animals" never appears in
+ * "Live Raptors". The parse now also lists related words, and ranking has three tiers: events
+ * that mention the parent's own topic word, then events that mention a related word, then the
+ * rest. Related words only re-order events that already passed every hard filter; they can
+ * never add one. A related word that matches more than half of the filtered events is too broad
+ * to tell anything apart ("fun", "learning") and is ignored.
  */
 export function retrieve(catalog: Event[], f: Filters, today: string): Event[] {
   const from = f.date_from ?? today
   const to = f.date_to ?? addDays(today, MAX_DAYS_AHEAD)
   const words = topicWords(f.intent)
+  const related = f.related ?? []
   const base = catalog.filter(e =>
     isCatalogVisible(e) &&
     !isNonEvent(e) &&
@@ -189,8 +210,13 @@ export function retrieve(catalog: Event[], f: Filters, today: string): Event[] {
     (!f.free_only || isFree(e)) &&
     (!f.age || passesAgeFilter(e, [f.age])),
   ).sort((a, b) => a.start_datetime.localeCompare(b.start_datetime) || a.id.localeCompare(b.id))
-  const ranked = words.length ? [...base.filter(e => mentionsTopic(e, words)), ...base.filter(e => !mentionsTopic(e, words))] : base
-  return f.cities.flatMap(c => ranked.filter(e => cityOf(e) === c).slice(0, MAX_RETRIEVED_PER_CITY))
+  return f.cities.flatMap(c => {
+    const inCity = base.filter(e => cityOf(e) === c)
+    const useful = related.filter(w => inCity.filter(e => mentionsTopic(e, [w])).length <= inCity.length * BROAD_WORD_SHARE)
+    const tier = (e: Event) => (mentionsTopic(e, words) ? 0 : mentionsTopic(e, useful) ? 1 : 2)
+    // Array.prototype.sort is stable, so each tier keeps start-time order.
+    return [...inCity].sort((a, b) => tier(a) - tier(b)).slice(0, MAX_RETRIEVED_PER_CITY)
+  })
 }
 
 /**

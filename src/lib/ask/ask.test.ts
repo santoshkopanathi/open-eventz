@@ -149,6 +149,43 @@ describe('owner decisions, 2026-11-19', () => {
     expect(got).toHaveLength(25); expect(got[0].id).toBe('chess')
   })
 
+  describe('query expansion (2026-11-21)', () => {
+    const early = Array.from({ length: 30 }, (_, i) => ev({ id: `s${String(i).padStart(2, '0')}`, title: 'Storytime', start_datetime: `2026-11-${String(19 + (i % 9)).padStart(2, '0')}T16:00:00Z` }))
+    const raptors = ev({ id: 'raptors', title: 'Live Raptors', description: 'Meet birds of prey.', start_datetime: '2026-12-11T22:00:00Z' })
+
+    test('progression: a synonym reaches an event past the first 25 ("animals" → raptors)', () => {
+      const without = retrieve([...early, raptors], validateParse(raw({ intent: 'animals' }), 'plano', TODAY), TODAY)
+      expect(without.map(e => e.id)).not.toContain('raptors') // the gap: no event says "animals"
+      const f = validateParse(raw({ intent: 'animals', related: ['raptors', 'insects', 'zoo'] }), 'plano', TODAY)
+      const got = retrieve([...early, raptors], f, TODAY)
+      expect(got).toHaveLength(25); expect(got[0].id).toBe('raptors')
+    })
+
+    test("the parent's own word ranks above a related word", () => {
+      const animalShow = ev({ id: 'animal', title: 'Animal Tales', start_datetime: '2026-12-20T22:00:00Z' })
+      const f = validateParse(raw({ intent: 'animals', related: ['raptors'] }), 'plano', TODAY)
+      expect(retrieve([...early, raptors, animalShow], f, TODAY).slice(0, 2).map(e => e.id)).toEqual(['animal', 'raptors'])
+    })
+
+    test('a related word that matches most events is ignored as too broad', () => {
+      const f = validateParse(raw({ intent: 'reading', related: ['storytime', 'raptors'] }), 'plano', TODAY)
+      // "storytime" matches 30 of 31 events: it can't tell them apart, so raptors still goes first.
+      expect(retrieve([...early, raptors], f, TODAY)[0].id).toBe('raptors')
+    })
+
+    test('regression: related words never bring in an event that fails a hard filter', () => {
+      const frisco = ev({ id: 'frisco-raptors', source: 'frisco-library', title: 'Raptor Day', start_datetime: '2026-12-11T22:00:00Z' })
+      const f = validateParse(raw({ intent: 'animals', related: ['raptor'] }), 'plano', TODAY)
+      expect(retrieve([...early, frisco], f, TODAY).map(e => e.id)).not.toContain('frisco-raptors')
+    })
+
+    test('related words are cleaned: filler dropped, topic words not repeated, at most 8', () => {
+      const f = validateParse(raw({ intent: 'animals', related: ['Animals', 'fun', 'kids', 'owls', 'owls', 'a', 'b1', 'reptiles', 'zoo', 'farm', 'pets', 'birds', 'wildlife', 'insects'] }), 'plano', TODAY)
+      expect(f.related).toEqual(['owls', 'reptiles', 'farm', 'pets', 'birds', 'wildlife', 'insects'])
+      expect(validateParse(raw({}), 'plano', TODAY).related).toEqual([])
+    })
+  })
+
   test('topic words ignore filler ("robotics class" → robotics; "swimming lessons" → swimming)', () => {
     expect(topicWords('robotics class')).toEqual(['robotics'])
     expect(topicWords('swimming lessons')).toEqual(['swimming'])
