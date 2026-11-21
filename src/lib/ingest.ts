@@ -14,6 +14,7 @@ import { markRecurring } from './recurring'
 import { parseFriscoEventLink } from './frisco-parse'
 import { centralWallTimeToUtc, parseCentralWallTime } from './datetime'
 import { screenBatch, upcomingStored, purgeCandidates, type StoredTime } from './ingest-guard'
+import { isCacheHit, applyCachedClassification } from './classify-cache'
 import { parseEventJsonLd, parseLongDescription, parseCadence, parseListedDates, weeklyOccurrences, resolveOccurrenceCollisions, centralDateKey, parseThroughDate, programFamily } from './kaleidoscope-parse'
 import { startOfTodayCtIso } from './seo-indexable'
 import { createLlmBudget, type LlmBudget } from './llm-budget'
@@ -964,20 +965,11 @@ async function classifyEvents(db: ReturnType<typeof supabaseAdmin>, source: Even
     const priceLocked = e._priceLocked === true
     delete e._priceLocked
     const prior = priorMap.get(e.id)
-    if (prior && prior.kid_relevant !== null) {
-      // Cache hit — carry forward the stored inference + price (no repeat Claude call).
-      e.kid_relevant = prior.kid_relevant
-      e.kid_confidence = prior.kid_confidence
-      e.age_buckets = prior.age_buckets
-      e.age_basis = prior.age_basis
-      e.age_confidence = prior.age_confidence
-      e.age_reasoning = prior.age_reasoning
-      e.price_class = prior.price_class
-      e.price_confidence = prior.price_confidence
-      e.price_decided_by = prior.price_decided_by
-      e.price_reasoning = prior.price_reasoning
-      e.is_free = prior.is_free
-      e.price_text = prior.price_text
+    if (isCacheHit(prior)) {
+      // Cache hit — carry forward the stored inference (no repeat Claude call). A price the
+      // source locked tonight (Cost field / declared free) beats the stored one: see
+      // classify-cache.ts for the bug this used to be.
+      applyCachedClassification(e, prior, priceLocked)
       continue
     }
     // Hard spend ceiling. Refusing a call means the event stays unclassified. Losing coverage
