@@ -259,3 +259,40 @@ tuning. Three synonym questions (sports, bugs, money) and three typo questions, 
 on 2026-11-18 ("at least two typo questions and one look-alike word"): "Friso", "Plnao", and
 "piano lessons", which must not become Plano. The worksheet lists every event the strict rules
 allow for each question, one row per program, unranked, with nothing highlighted.
+
+---
+
+## Run 7 — 2026-11-21 · query expansion · 31 questions · **three identical runs**
+
+Adds the held-out round 2, labelled blind by the owner in chat (`2c12052`) before any run:
+H01–H03 synonym, Y01–Y03 typo. Owner labels there are top picks, so they count toward recall
+but not precision. Same code, same questions, run three times in a row to measure the spread.
+
+| | 7a | 7b | 7c |
+|---|---|---|---|
+| Recall@5, all | 0.83 | 0.84 | 0.84 |
+| · original 20 (owner, blind) | 0.80 | 0.82 | 0.82 |
+| · S01–S05 synonym (Claude, development, not blind) | 0.88 | 0.88 | 0.88 |
+| · **H01–H03 held-out synonym (owner, blind)** | **0.89** | **0.89** | **0.89** |
+| · **Y01–Y03 typo (owner, blind)** | **0.88** | **0.88** | **0.88** |
+| Precision | 0.88 | 0.88 | 0.88 |
+| Raw drafts stating a fact (all caught, 0 shown) | 5 | 7 | 8 |
+| Safety gates broken | **1** | **1** | **1** |
+| Cost | $0.297 | $0.296 | $0.297 |
+
+**The spread is small.** Recall moved by at most 0.02 between identical runs; the same events
+came back almost every time. So the earlier 0.46 → 0.88 on S01–S04 is far outside the noise,
+and the held-out questions (0.89) confirm it on questions the feature was not built around.
+
+**Typos work.** "Friso" on the Plano tab searched Frisco (Y01, 3 of 4 picks); "Plnao" on the
+Frisco tab searched Plano (Y02, 3 of 3).
+
+**The one broken gate, every run: Y03 "piano lessons for my 8-year-old".** The parse marked it
+off-topic, so the parent got the redirect ("'Ask' only answers questions about events…")
+instead of "Nothing matched". No event was shown and "piano" did not become Plano, so nothing
+false reached the parent; but the redirect is the wrong message for a fair event question.
+**Not fixed here on purpose:** fixing the prompt against a held-out question would stop it
+being held out. Owner to decide.
+
+**Consistent misses:** H01 never showed Fencing 101 (owner pick), showing Fitness Fun Classes
+(owner "maybe") instead. S03 still misses Ozobot City ("coding" vs "code").
