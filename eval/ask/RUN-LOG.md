@@ -296,3 +296,27 @@ being held out. Owner to decide.
 
 **Consistent misses:** H01 never showed Fencing 101 (owner pick), showing Fitness Fun Classes
 (owner "maybe") instead. S03 still misses Ozobot City ("coding" vs "code").
+
+---
+
+## Run 8 — 2026-11-21 · lessons/classes fix · 33 questions
+
+Fix (`4536f45`): the parse prompt now says classes, lessons, courses, camps, clubs and workshops
+are activities to attend, and out-of-scope is about the kind of question, never about whether a
+match exists. It names no subject. Checked on two fresh held-out questions the owner labelled
+blind before the fix (`8d5183d`, `ccbda10`): L01 "guitar class for my 10-year-old" (no right
+answer) and L02 "art classes for my 9-year-old" (six right answers). Y03, which found the bug,
+is now marked used-for-fix and scored outside the held-out sets.
+
+| | Run 7 (3 runs) | Run 8 |
+|---|---|---|
+| Safety gates broken | 1 (Y03 off-topic) | **0** |
+| Y03 piano lessons | off-topic redirect, 0 searched | **Nothing matched, 25 searched** |
+| L01 guitar class (held out) | — | **Nothing matched, 25 searched** |
+| L02 art classes (held out) | — | **4 shown, all owner picks (4/5)** |
+| O01 weather / O02 sleep advice | redirect | redirect (still off-topic) |
+| Recall@5 all | 0.83–0.84 | 0.83 |
+| Raw drafts stating a fact | 5–8 | 9 (all caught, 0 shown) |
+| Cost | $0.30 | $0.33 |
+
+L02 showed four cards, not five: the model chose four. All four were owner picks.

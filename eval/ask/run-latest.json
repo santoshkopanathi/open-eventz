@@ -1,6 +1,6 @@
 {
   "summary": {
-    "run_at": "2026-11-21T22:44:29.380Z",
+    "run_at": "2026-11-21T23:19:00.171Z",
     "model": "claude-sonnet-4-6",
     "catalog_as_of": "2026-11-18",
     "broken_prompt": false,
@@ -8,29 +8,30 @@
     "gates_pass": false,
     "gates": {
       "cited_not_retrieved": 0,
-      "raw_answer_fact_tokens": 8,
+      "raw_answer_fact_tokens": 9,
       "shown_answer_fact_tokens": 0,
       "free_only_non_free": 0,
       "no_match_returned_events": 0,
-      "off_topic_not_redirected": 1,
+      "off_topic_not_redirected": 0,
       "city_rule_broken": 0,
       "forbidden_shown": 0,
       "errors": 0
     },
     "parse_accuracy": {
-      "dates": "28/28",
-      "city": "28/28",
-      "free_only": "28/28",
-      "age": "28/28",
-      "scope": "30/31",
-      "price_note": "28/28"
+      "dates": "31/31",
+      "city": "31/31",
+      "free_only": "31/31",
+      "age": "31/31",
+      "scope": "33/33",
+      "price_note": "31/31"
     },
-    "recall_at_5": 0.84,
+    "recall_at_5": 0.83,
     "recall_at_5_by_set": {
-      "original": 0.82,
+      "original": 0.8,
       "synonym": 0.88,
       "held_out_synonym": 0.89,
-      "typo": 0.88
+      "typo": 0.88,
+      "held_out_lessons": 0.8
     },
     "recall_by_question": {
       "A01": "1/2",
@@ -43,7 +44,7 @@
       "A08": "3/5",
       "A09": "2/2",
       "A10": "1/2",
-      "N05": "4/4",
+      "N05": "3/4",
       "T01": "3/3",
       "T02": "2/4",
       "T03": "3/4",
@@ -55,19 +56,20 @@
       "H02": "1/1",
       "H03": "1/1",
       "Y01": "3/4",
-      "Y02": "3/3"
+      "Y02": "3/3",
+      "L02": "4/5"
     },
     "precision": 0.88,
     "duplicate_cards_shown": 2,
     "shown_with_answer": 15,
-    "cards_only_fallback": 7,
+    "cards_only_fallback": 8,
     "cost": {
-      "calls": 58,
-      "input_tokens": 73623,
-      "output_tokens": 5102,
+      "calls": 63,
+      "input_tokens": 84184,
+      "output_tokens": 5351,
       "cache_read": 0,
-      "usd": 0.2974,
-      "usd_per_question": 0.0096
+      "usd": 0.3328,
+      "usd_per_question": 0.0101
     }
   },
   "rows": [
@@ -75,12 +77,14 @@
       "id": "A01",
       "tab": "plano",
       "question": "Something free for my 4-year-old this Saturday",
-      "kind": "answer",
+      "kind": "cards",
       "showing": "Showing: Sat Nov 21 · Plano · free · age 4",
       "notes": [],
-      "answer_shown": "Family Storytime offers stories, songs, and movement activities perfect for little ones, while Harness the Wind & Waves brings hands-on science and creativity with a fun energy theme.",
-      "raw_answer": "Family Storytime offers stories, songs, and movement activities perfect for little ones, while Harness the Wind & Waves brings hands-on science and creativity with a fun energy theme.",
-      "raw_fact_tokens": [],
+      "answer_shown": null,
+      "raw_answer": "Family Storytime offers a fun mix of stories, songs, and movement, while Harness the Wind & Waves brings hands-on science and creativity to the afternoon.",
+      "raw_fact_tokens": [
+        "afternoon"
+      ],
       "cards": [
         "E039",
         "E046"
@@ -117,11 +121,11 @@
       },
       "usage": {
         "calls": 2,
-        "input": 1780,
-        "output": 141,
+        "input": 1837,
+        "output": 138,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.007455
+        "usd": 0.007581
       }
     },
     {
@@ -132,7 +136,7 @@
       "showing": "Showing: Sat Nov 21 · Frisco · any price · morning",
       "notes": [],
       "answer_shown": null,
-      "raw_answer": "There's a great mix of Saturday morning options! Fitness Fun Classes offers rotating workout sessions for all levels, SaturYay: Christmas Edition brings holiday-themed arts, crafts, and storytime to Kaleidoscope Park, Family Story Time at Frisco Public Library features songs, rhymes, and books, and the Saturday Music Series at Frisco Fresh Market showcases live local music on the patio.",
+      "raw_answer": "There's a great mix of Saturday morning options! Fitness Fun Classes offers rotating workout sessions for all levels, SaturYay: Christmas Edition brings holiday-themed arts, crafts, and storytime to the park, Family Story Time at the library features songs, rhymes, and books, and the Saturday Music Series at Frisco Fresh Market has live local music on the patio.",
       "raw_fact_tokens": [
         "saturday",
         "morning"
@@ -178,28 +182,30 @@
       },
       "usage": {
         "calls": 2,
-        "input": 2303,
-        "output": 197,
+        "input": 2360,
+        "output": 189,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.009864000000000001
+        "usd": 0.009915
       }
     },
     {
       "id": "A03",
       "tab": "frisco",
       "question": "Any Christmas events this week?",
-      "kind": "answer",
+      "kind": "cards",
       "showing": "Showing: Wed Nov 18 – Sun Nov 22 · Frisco · any price · christmas",
       "notes": [],
-      "answer_shown": "There are several Christmas events happening this week! The 4th Street Plaza Holiday Tree Lighting & Holiday and Kaleidoscope Christmas both feature festive tree lighting ceremonies, while SaturYay: Christmas Edition offers holiday-themed arts, crafts, and storytime, and Illuminate: Christmas Movie Classics wraps you in candlelight and beloved holiday film music.",
-      "raw_answer": "There are several Christmas events happening this week! The 4th Street Plaza Holiday Tree Lighting & Holiday and Kaleidoscope Christmas both feature festive tree lighting ceremonies, while SaturYay: Christmas Edition offers holiday-themed arts, crafts, and storytime, and Illuminate: Christmas Movie Classics wraps you in candlelight and beloved holiday film music.",
-      "raw_fact_tokens": [],
+      "answer_shown": null,
+      "raw_answer": "There are several Christmas events this week! The 4th Street Plaza Holiday Tree Lighting & Holiday and Kaleidoscope Christmas both feature festive tree lighting ceremonies, while Illuminate: Christmas Movie Classics offers a candlelit evening of beloved holiday film music, and SaturYay: Christmas Edition brings holiday-themed arts, crafts, and storytime to the park.",
+      "raw_fact_tokens": [
+        "evening"
+      ],
       "cards": [
         "E020",
         "E034",
-        "E037",
-        "E021"
+        "E021",
+        "E037"
       ],
       "fallback": [],
       "acceptable": [
@@ -250,19 +256,19 @@
           "reindeer",
           "elves",
           "ornament",
-          "tree",
-          "winter",
-          "festive"
+          "festive",
+          "xmas",
+          "winter"
         ],
         "notes": []
       },
       "usage": {
         "calls": 2,
-        "input": 3562,
-        "output": 215,
+        "input": 3619,
+        "output": 217,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.013911
+        "usd": 0.014112
       }
     },
     {
@@ -272,8 +278,8 @@
       "kind": "answer",
       "showing": "Showing: Thu Nov 19 · Plano · any price · ages 0–1 · storytime",
       "notes": [],
-      "answer_shown": "Yes! Babes in Arms at Schimelpfenig Library is a lap sit storytime designed to introduce language sounds and rhythms, and Rhyme Time at Parr Library offers repetitive rhymes, songs, and movement — both are wonderful options for your little one.",
-      "raw_answer": "Yes! Babes in Arms at Schimelpfenig Library is a lap sit storytime designed to introduce language sounds and rhythms, and Rhyme Time at Parr Library offers repetitive rhymes, songs, and movement — both are wonderful options for your little one.",
+      "answer_shown": "Yes! Babes in Arms at Schimelpfenig Library is a lap sit storytime designed to introduce language sounds and rhythms, and Rhyme Time at Parr Library offers repetitive rhymes, songs, and movement — both are great fits for little ones.",
+      "raw_answer": "Yes! Babes in Arms at Schimelpfenig Library is a lap sit storytime designed to introduce language sounds and rhythms, and Rhyme Time at Parr Library offers repetitive rhymes, songs, and movement — both are great fits for little ones.",
       "raw_fact_tokens": [],
       "cards": [
         "E016",
@@ -306,22 +312,22 @@
         "intent": "storytime",
         "related": [
           "story",
+          "stories",
           "read",
           "reading",
           "books",
-          "lapsit",
-          "rhymes",
-          "library"
+          "book",
+          "rhymes"
         ],
         "notes": []
       },
       "usage": {
         "calls": 2,
-        "input": 1721,
-        "output": 191,
+        "input": 1778,
+        "output": 188,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.008028
+        "usd": 0.008154000000000002
       }
     },
     {
@@ -332,10 +338,10 @@
       "showing": "Showing: Thu Nov 19 · Frisco · any price · age 10",
       "notes": [],
       "answer_shown": null,
-      "raw_answer": "Here are a variety of things you could do: the 4th Street Plaza Holiday Tree Lighting & Holiday kicks off the festive season with a Christmas tree lighting, Live After 5 Presented by New York Life North Dallas offers live music and lawn games for the whole family, Friendship Bracelets at Frisco Public Library is a fun hands-on craft activity perfect for this age group, and Illuminate: Christmas Movie Classics wraps the evening in candlelit holiday music from beloved films.",
+      "raw_answer": "Here are a variety of things you could do: the 4th Street Plaza Holiday Tree Lighting & Holiday kicks off the festive season with a fun community celebration, Live After 5 Presented by New York Life North Dallas offers live music and lawn games for a relaxed evening out, Friendship Bracelets at the library is a hands-on craft activity perfect for this age group, and Illuminate: Christmas Movie Classics wraps you in a magical candlelit concert of beloved holiday film music.",
       "raw_fact_tokens": [
-        "age",
-        "evening"
+        "evening",
+        "age"
       ],
       "cards": [
         "E020",
@@ -376,30 +382,28 @@
       },
       "usage": {
         "calls": 2,
-        "input": 1904,
+        "input": 1961,
         "output": 216,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.008952000000000002
+        "usd": 0.009123
       }
     },
     {
       "id": "A06",
       "tab": "plano",
       "question": "Anything for teens next week?",
-      "kind": "cards",
+      "kind": "answer",
       "showing": "Showing: Mon Nov 23 – Sun Nov 29 · Plano · any price · ages 13–17",
       "notes": [],
-      "answer_shown": null,
-      "raw_answer": "Here are a few options that could appeal to teens: Bank Accounts & Credit (Ages 13+) offers a practical look at personal finance and building credit history, STEAM Stop: Math Mania lets them experiment and play math-based games and puzzles, Paper Airplane Challenge is a fun engineering activity with an obstacle course, and Live Raptors brings birds of prey up close for a fascinating in-person encounter.",
-      "raw_fact_tokens": [
-        "teens"
-      ],
+      "answer_shown": "Bank Accounts & Credit (Ages 13+) is a great fit, covering real-world financial skills like credit building presented by UT Dallas's Comet Cents program, while Paper Airplane Challenge, STEAM Stop: Math Mania, and STEAM Stop: Sensational Senses offer hands-on building and problem-solving fun.",
+      "raw_answer": "Bank Accounts & Credit (Ages 13+) is a great fit, covering real-world financial skills like credit building presented by UT Dallas's Comet Cents program, while Paper Airplane Challenge, STEAM Stop: Math Mania, and STEAM Stop: Sensational Senses offer hands-on building and problem-solving fun.",
+      "raw_fact_tokens": [],
       "cards": [
         "E067",
-        "E056",
         "E092",
-        "E070"
+        "E056",
+        "E068"
       ],
       "fallback": [],
       "acceptable": [
@@ -439,23 +443,25 @@
       },
       "usage": {
         "calls": 2,
-        "input": 2104,
-        "output": 199,
+        "input": 2161,
+        "output": 185,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.009297
+        "usd": 0.009257999999999999
       }
     },
     {
       "id": "A07",
       "tab": "frisco",
       "question": "Is there anything in Plano on Tuesday for a 6-year-old?",
-      "kind": "answer",
+      "kind": "cards",
       "showing": "Showing: Tue Nov 24 · Plano · any price · age 6",
       "notes": [],
-      "answer_shown": "Here are a variety of things you could do — STEAM Stop: Sensational Senses offers hands-on experiments, building, and math games, Live Raptors lets kids meet real birds of prey up close, Adapted Glitter Jar (Families) combines a storytime with a calming mindfulness craft, and Family Storytime brings stories, songs, and movement all together.",
-      "raw_answer": "Here are a variety of things you could do — STEAM Stop: Sensational Senses offers hands-on experiments, building, and math games, Live Raptors lets kids meet real birds of prey up close, Adapted Glitter Jar (Families) combines a storytime with a calming mindfulness craft, and Family Storytime brings stories, songs, and movement all together.",
-      "raw_fact_tokens": [],
+      "answer_shown": null,
+      "raw_answer": "Here are a variety of things you could do in Plano on Tuesday — STEAM Stop: Sensational Senses offers hands-on experiments, building, and math games; Live Raptors lets kids meet real birds of prey up close; Adapted Glitter Jar (Families) combines a storytime with a calming craft activity; and Family Storytime features stories, songs, and movement for the whole family.",
+      "raw_fact_tokens": [
+        "tuesday"
+      ],
       "cards": [
         "E068",
         "E070",
@@ -495,11 +501,11 @@
       },
       "usage": {
         "calls": 2,
-        "input": 1835,
-        "output": 197,
+        "input": 1892,
+        "output": 204,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.00846
+        "usd": 0.008736
       }
     },
     {
@@ -510,16 +516,16 @@
       "showing": "Showing: Sat Nov 21 · Plano + Frisco · free",
       "notes": [],
       "answer_shown": null,
-      "raw_answer": "Here are a variety of things you could do — the Frisco Library Renaissance Faire is a wonderful immersive adventure with knights, minstrels, and magic for all ages, while SaturYAY: Christmas Edition offers festive crafts, lawn games, and holiday cheer at Kaleidoscope Park. Harness the Wind & Waves brings hands-on science and creativity to the whole family, the Saturday Music Series at Frisco Fresh Market features live local music in a fun outdoor setting, and the Renaissance Faire: D&D Workshop is a great way for the family to dive into a classic game together.",
+      "raw_answer": "Here are a variety of things you could do — the Frisco Library Renaissance Faire promises a full day of medieval-themed fun with knights, minstrels, and magic for all ages, while SaturYAY! Presented by Atmos Energy offers arts and crafts, lawn games, and movement activities at Kaleidoscope Park, Harness the Wind & Waves brings hands-on science and creativity to Davis Library, Family Storytime at Parr Library features stories, songs, and movement, and the Saturday Music Series at Frisco Fresh Market rounds out the day with live local music on the patio.",
       "raw_fact_tokens": [
         "ages"
       ],
       "cards": [
         "E046",
+        "E039",
         "E040",
         "E036",
-        "E042",
-        "E043"
+        "E042"
       ],
       "fallback": [],
       "acceptable": [
@@ -566,25 +572,23 @@
       },
       "usage": {
         "calls": 2,
-        "input": 2647,
-        "output": 246,
+        "input": 2704,
+        "output": 247,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.011630999999999999
+        "usd": 0.011817000000000001
       }
     },
     {
       "id": "A09",
       "tab": "frisco",
       "question": "Science or space stuff for my 7-year-old in the next two weeks",
-      "kind": "cards",
+      "kind": "answer",
       "showing": "Showing: Wed Nov 18 – Wed Dec 2 · Frisco · any price · age 7 · science or space",
       "notes": [],
-      "answer_shown": null,
-      "raw_answer": "What it's like to be an Astronaut? is a perfect fit, with a NASA Solar System Ambassador covering life in space, astronaut training, and EVAs, while Pop Up STEM: Tech offers hands-on coding exploration for elementary-age kids.",
-      "raw_fact_tokens": [
-        "age"
-      ],
+      "answer_shown": "What it's like to be an Astronaut? is a perfect fit, featuring a NASA Solar System Ambassador exploring life in space, EVAs, and what astronauts eat. Pop Up STEM: Tech offers hands-on coding exploration that's great for a curious young mind.",
+      "raw_answer": "What it's like to be an Astronaut? is a perfect fit, featuring a NASA Solar System Ambassador exploring life in space, EVAs, and what astronauts eat. Pop Up STEM: Tech offers hands-on coding exploration that's great for a curious young mind.",
+      "raw_fact_tokens": [],
       "cards": [
         "E055",
         "E124"
@@ -638,18 +642,18 @@
           "rockets",
           "experiment",
           "museum",
-          "discovery",
+          "planetarium",
           "exploration"
         ],
         "notes": []
       },
       "usage": {
         "calls": 2,
-        "input": 3499,
+        "input": 3556,
         "output": 187,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.013302000000000001
+        "usd": 0.013473
       }
     },
     {
@@ -659,8 +663,8 @@
       "kind": "answer",
       "showing": "Showing: All upcoming dates · Plano · any price · chess",
       "notes": [],
-      "answer_shown": "The Game On: Chess Meet-Up sessions at Davis Library are perfect for your kid, where they can sit down and play chess with another beginner, with chessboards available to borrow if needed.",
-      "raw_answer": "The Game On: Chess Meet-Up sessions at Davis Library are perfect for your kid, where they can sit down and play chess with another beginner, with chessboards available to borrow if needed.",
+      "answer_shown": "The Game On: Chess Meet-Up events at Davis Library are perfect for this — your kid can sit down and play chess with another beginner, and chessboards are available to borrow if needed.",
+      "raw_answer": "The Game On: Chess Meet-Up events at Davis Library are perfect for this — your kid can sit down and play chess with another beginner, and chessboards are available to borrow if needed.",
       "raw_fact_tokens": [],
       "cards": [
         "E010",
@@ -684,8 +688,14 @@
         "E260",
         "E281",
         "E046",
+        "E056",
+        "E068",
         "E125",
+        "E146",
         "E264",
+        "E303",
+        "E309",
+        "E343",
         "E001",
         "E002",
         "E005",
@@ -696,13 +706,7 @@
         "E014",
         "E015",
         "E016",
-        "E018",
-        "E023",
-        "E024",
-        "E026",
-        "E027",
-        "E028",
-        "E030"
+        "E018"
       ],
       "filters": {
         "date_from": null,
@@ -715,24 +719,24 @@
         "age": null,
         "intent": "chess",
         "related": [
-          "tournament",
           "club",
-          "board",
-          "strategy",
-          "pieces",
+          "tournament",
           "checkmate",
-          "competition",
-          "match"
+          "board",
+          "game",
+          "strategy",
+          "grandmaster",
+          "pieces"
         ],
         "notes": []
       },
       "usage": {
         "calls": 2,
-        "input": 3192,
-        "output": 159,
+        "input": 3206,
+        "output": 164,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.011961
+        "usd": 0.012078
       }
     },
     {
@@ -770,24 +774,24 @@
         ],
         "intent": "robotics class",
         "related": [
+          "robot",
           "robots",
           "coding",
           "stem",
           "engineering",
           "programming",
-          "lego",
-          "automation",
-          "electronics"
+          "technology",
+          "lego"
         ],
         "notes": []
       },
       "usage": {
         "calls": 2,
-        "input": 1789,
+        "input": 1846,
         "output": 122,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.007197
+        "usd": 0.007368000000000001
       }
     },
     {
@@ -830,21 +834,20 @@
           "swim",
           "aquatic",
           "pool",
+          "water",
           "stroke",
           "beginner",
-          "water",
-          "safety",
           "learn"
         ],
         "notes": []
       },
       "usage": {
         "calls": 2,
-        "input": 2383,
-        "output": 123,
+        "input": 2440,
+        "output": 122,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.008993999999999999
+        "usd": 0.009149999999999998
       }
     },
     {
@@ -876,22 +879,22 @@
         "related": [
           "turkey",
           "harvest",
-          "thankful",
           "gratitude",
-          "feast",
           "holiday",
+          "feast",
           "parade",
+          "pilgrims",
           "fall"
         ],
         "notes": []
       },
       "usage": {
         "calls": 1,
-        "input": 992,
-        "output": 107,
+        "input": 1049,
+        "output": 108,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.004581
+        "usd": 0.004767
       }
     },
     {
@@ -899,7 +902,7 @@
       "tab": "frisco",
       "question": "Something for a 16-year-old tonight",
       "kind": "nothing",
-      "showing": "Showing: Wed Nov 18 · Frisco · any price · age 16 · evening",
+      "showing": "Showing: Wed Nov 18 · Frisco · any price · age 16",
       "notes": [],
       "answer_shown": null,
       "raw_answer": "",
@@ -924,17 +927,17 @@
           16,
           16
         ],
-        "intent": "evening",
+        "intent": null,
         "related": [],
         "notes": []
       },
       "usage": {
         "calls": 2,
-        "input": 1621,
-        "output": 96,
+        "input": 1681,
+        "output": 95,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.006303
+        "usd": 0.006468
       }
     },
     {
@@ -945,21 +948,19 @@
       "showing": "Showing: Sat Nov 21 · outside Frisco and Plano · any price",
       "notes": [],
       "answer_shown": null,
-      "raw_answer": "We don't cover Dallas directly, but here are some fun kids' events happening nearby this Saturday — Family Storytime offers stories, songs, and movement, Harness the Wind & Waves brings hands-on science and creativity, Art Shop lets kids budget and build their own masterpiece, and Wind Chimes (Ages 16+) blends history with a hands-on craft project.",
+      "raw_answer": "We don't cover Dallas directly, but here are some fun kids' events happening nearby this Saturday — Family Storytime offers stories, songs, and movement, Harness the Wind & Waves brings hands-on science and creativity, and Art Shop lets kids design their own masterpiece with a fun budgeting twist.",
       "raw_fact_tokens": [
         "saturday"
       ],
       "cards": [
         "E039",
         "E046",
-        "E047",
-        "E045"
+        "E047"
       ],
       "fallback": [
         "E039",
         "E046",
-        "E047",
-        "E045"
+        "E047"
       ],
       "acceptable": [
         "E039",
@@ -967,7 +968,7 @@
         "E046",
         "E047"
       ],
-      "recall": "4/4",
+      "recall": "3/4",
       "retrieved": 5,
       "retrieved_refs": [
         "E039",
@@ -989,11 +990,11 @@
       },
       "usage": {
         "calls": 2,
-        "input": 1914,
-        "output": 193,
+        "input": 1971,
+        "output": 173,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.008637
+        "usd": 0.008508000000000002
       }
     },
     {
@@ -1003,8 +1004,8 @@
       "kind": "answer",
       "showing": "Showing: Thu Nov 19 · Frisco · free · evening",
       "notes": [],
-      "answer_shown": "Live After 5 Presented by New York Life North Dallas offers a lively outdoor music series with lawn games, while 4th Street Plaza Holiday Tree Lighting & Holiday kicks off the festive season with a cheerful community celebration, and Friendship Bracelets at the library is a fun hands-on craft activity.",
-      "raw_answer": "Live After 5 Presented by New York Life North Dallas offers a lively outdoor music series with lawn games, while 4th Street Plaza Holiday Tree Lighting & Holiday kicks off the festive season with a cheerful community celebration, and Friendship Bracelets at the library is a fun hands-on craft activity.",
+      "answer_shown": "Live After 5 Presented by New York Life North Dallas offers a fun community music series with live performances and lawn games, while 4th Street Plaza Holiday Tree Lighting & Holiday kicks off the festive season with a Christmas tree lighting in downtown Frisco, and Friendship Bracelets at the library is a great hands-on craft activity for older kids.",
+      "raw_answer": "Live After 5 Presented by New York Life North Dallas offers a fun community music series with live performances and lawn games, while 4th Street Plaza Holiday Tree Lighting & Holiday kicks off the festive season with a Christmas tree lighting in downtown Frisco, and Friendship Bracelets at the library is a great hands-on craft activity for older kids.",
       "raw_fact_tokens": [],
       "cards": [
         "E019",
@@ -1041,11 +1042,11 @@
       },
       "usage": {
         "calls": 2,
-        "input": 1955,
-        "output": 173,
+        "input": 2012,
+        "output": 182,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.00846
+        "usd": 0.008766
       }
     },
     {
@@ -1055,8 +1056,8 @@
       "kind": "answer",
       "showing": "Showing: Sat Nov 21 · Frisco · any price · ages 1–3",
       "notes": [],
-      "answer_shown": "SaturYay: Christmas Edition offers festive holiday crafts, story time, and family-friendly activities perfect for little ones, while Family Story Time features songs, rhymes, and books in a cozy library setting. SaturYAY! Presented by Atmos Energy is another great option with interactive arts, crafts, and movement activities to keep curious minds engaged.",
-      "raw_answer": "SaturYay: Christmas Edition offers festive holiday crafts, story time, and family-friendly activities perfect for little ones, while Family Story Time features songs, rhymes, and books in a cozy library setting. SaturYAY! Presented by Atmos Energy is another great option with interactive arts, crafts, and movement activities to keep curious minds engaged.",
+      "answer_shown": "SaturYay: Christmas Edition offers festive holiday crafts and activities perfect for little ones, Family Story Time features songs, rhymes, and books at the library, and SaturYAY! Presented by Atmos Energy brings interactive arts, crafts, and movement activities for the whole family.",
+      "raw_answer": "SaturYay: Christmas Edition offers festive holiday crafts and activities perfect for little ones, Family Story Time features songs, rhymes, and books at the library, and SaturYAY! Presented by Atmos Energy brings interactive arts, crafts, and movement activities for the whole family.",
       "raw_fact_tokens": [],
       "cards": [
         "E037",
@@ -1100,11 +1101,11 @@
       },
       "usage": {
         "calls": 2,
-        "input": 2202,
-        "output": 185,
+        "input": 2259,
+        "output": 170,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.009381
+        "usd": 0.009327
       }
     },
     {
@@ -1116,8 +1117,8 @@
       "notes": [
         "Open Eventz only shows whether an event is 'free' or 'paid'. It does not determine if something is cheap or pricey."
       ],
-      "answer_shown": "Here are a variety of things you could do — Family Storytime brings stories, songs, and movement to life, Harness the Wind & Waves offers hands-on science and creativity activities, and Art Shop lets kids unleash their imagination by budgeting play money to build their own unique artwork.",
-      "raw_answer": "Here are a variety of things you could do — Family Storytime brings stories, songs, and movement to life, Harness the Wind & Waves offers hands-on science and creativity activities, and Art Shop lets kids unleash their imagination by budgeting play money to build their own unique artwork.",
+      "answer_shown": "Here are a variety of things you could do: Family Storytime offers stories, songs, and movement activities, Harness the Wind & Waves brings hands-on science and creativity, and Art Shop lets kids design their own masterpiece with a fun budgeting twist.",
+      "raw_answer": "Here are a variety of things you could do: Family Storytime offers stories, songs, and movement activities, Harness the Wind & Waves brings hands-on science and creativity, and Art Shop lets kids design their own masterpiece with a fun budgeting twist.",
       "raw_fact_tokens": [],
       "cards": [
         "E039",
@@ -1158,11 +1159,11 @@
       },
       "usage": {
         "calls": 2,
-        "input": 1844,
-        "output": 167,
+        "input": 1901,
+        "output": 161,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.008036999999999999
+        "usd": 0.008118
       }
     },
     {
@@ -1184,11 +1185,11 @@
       "filters": null,
       "usage": {
         "calls": 1,
-        "input": 989,
+        "input": 1046,
         "output": 69,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.004002
+        "usd": 0.0041730000000000005
       }
     },
     {
@@ -1210,11 +1211,11 @@
       "filters": null,
       "usage": {
         "calls": 1,
-        "input": 997,
+        "input": 1054,
         "output": 69,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.004026
+        "usd": 0.004197
       }
     },
     {
@@ -1224,8 +1225,8 @@
       "kind": "answer",
       "showing": "Showing: All upcoming dates · Plano · any price · age 5 · animals",
       "notes": [],
-      "answer_shown": "Live Raptors is a wonderful fit — your child can learn about birds of prey and meet them in person, presented by the Blackland Prairie Raptor Center. Insect Investigators is another great animal-themed option, exploring the world of insects through STEAM and early literacy activities.",
-      "raw_answer": "Live Raptors is a wonderful fit — your child can learn about birds of prey and meet them in person, presented by the Blackland Prairie Raptor Center. Insect Investigators is another great animal-themed option, exploring the world of insects through STEAM and early literacy activities.",
+      "answer_shown": "Live Raptors is a wonderful fit — your child can learn about birds of prey in North Texas and meet them in person! Insect Investigators is another great animal-themed option, exploring the world of insects through STEAM and early literacy activities.",
+      "raw_answer": "Live Raptors is a wonderful fit — your child can learn about birds of prey in North Texas and meet them in person! Insect Investigators is another great animal-themed option, exploring the world of insects through STEAM and early literacy activities.",
       "raw_fact_tokens": [],
       "cards": [
         "E070",
@@ -1241,7 +1242,6 @@
       "retrieved_refs": [
         "E077",
         "E081",
-        "E293",
         "E005",
         "E006",
         "E009",
@@ -1263,7 +1263,8 @@
         "E070",
         "E072",
         "E073",
-        "E078"
+        "E078",
+        "E079"
       ],
       "filters": {
         "date_from": null,
@@ -1281,35 +1282,33 @@
         "related": [
           "wildlife",
           "nature",
-          "farm",
           "pets",
-          "insects",
+          "farm",
+          "creatures",
           "reptiles",
-          "habitat"
+          "insects"
         ],
         "notes": []
       },
       "usage": {
         "calls": 2,
-        "input": 3131,
-        "output": 177,
+        "input": 3218,
+        "output": 168,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.012048
+        "usd": 0.012174
       }
     },
     {
       "id": "S02",
       "tab": "plano",
       "question": "Any kids' theater for my 4-year-old?",
-      "kind": "cards",
+      "kind": "answer",
       "showing": "Showing: All upcoming dates · Plano · any price · age 4 · theater",
       "notes": [],
-      "answer_shown": null,
-      "raw_answer": "There are several puppet show performances that would be a wonderful fit, including Puppet Show: Little Red Riding Hood (0-5 years), Puppet Show: The Abominable Snowman (0-5 years), and Puppet Show: Goldilocks and the Three Bears (0-5 years) — each bringing a classic storybook tale to life on stage in an engaging, age-appropriate way.",
-      "raw_fact_tokens": [
-        "age"
-      ],
+      "answer_shown": "There are several puppet show performances that would be a great fit, including Puppet Show: Little Red Riding Hood (0-5 years), Puppet Show: The Abominable Snowman (0-5 years), and Puppet Show: Goldilocks and the Three Bears (0-5 years) — all classic storybook tales brought to life on stage for young audiences.",
+      "raw_answer": "There are several puppet show performances that would be a great fit, including Puppet Show: Little Red Riding Hood (0-5 years), Puppet Show: The Abominable Snowman (0-5 years), and Puppet Show: Goldilocks and the Three Bears (0-5 years) — all classic storybook tales brought to life on stage for young audiences.",
+      "raw_fact_tokens": [],
       "cards": [
         "E005",
         "E116",
@@ -1367,9 +1366,9 @@
           "theatre",
           "play",
           "performance",
+          "show",
           "musical",
           "puppet",
-          "show",
           "stage",
           "drama"
         ],
@@ -1377,11 +1376,11 @@
       },
       "usage": {
         "calls": 2,
-        "input": 3196,
-        "output": 209,
+        "input": 3253,
+        "output": 203,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.012723
+        "usd": 0.012804
       }
     },
     {
@@ -1391,8 +1390,8 @@
       "kind": "answer",
       "showing": "Showing: All upcoming dates · Frisco · any price · age 8 · computers",
       "notes": [],
-      "answer_shown": "Pop Up STEM: Tech sounds perfect for a computer lover, with hands-on coding exploration at the library.",
-      "raw_answer": "Pop Up STEM: Tech sounds perfect for a computer lover, with hands-on coding exploration at the library.",
+      "answer_shown": "Pop Up STEM: Tech sounds perfect for a kid who loves computers, as it features hands-on coding exploration.",
+      "raw_answer": "Pop Up STEM: Tech sounds perfect for a kid who loves computers, as it features hands-on coding exploration.",
       "raw_fact_tokens": [],
       "cards": [
         "E124"
@@ -1448,21 +1447,21 @@
           "coding",
           "programming",
           "technology",
-          "robotics",
+          "tech",
           "stem",
+          "robotics",
           "engineering",
-          "software",
-          "tech"
+          "software"
         ],
         "notes": []
       },
       "usage": {
         "calls": 2,
-        "input": 3814,
-        "output": 139,
+        "input": 3871,
+        "output": 135,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.013527
+        "usd": 0.013638
       }
     },
     {
@@ -1472,8 +1471,8 @@
       "kind": "answer",
       "showing": "Showing: All upcoming dates · Plano · any price · age 9 · building",
       "notes": [],
-      "answer_shown": "LEGO Engineering: Disaster Island (Grades K-5) and Adapted Engineering Challenge (Grades 3-5) are perfect hands-on building and engineering challenges, while Paper Airplane Challenge adds some aeronautical fun and STEAM Stop: Math Mania rounds things out with more building and experimenting.",
-      "raw_answer": "LEGO Engineering: Disaster Island (Grades K-5) and Adapted Engineering Challenge (Grades 3-5) are perfect hands-on building and engineering challenges, while Paper Airplane Challenge adds some aeronautical fun and STEAM Stop: Math Mania rounds things out with more building and experimenting.",
+      "answer_shown": "LEGO Engineering: Disaster Island (Grades K-5) is a perfect fit, letting your child use LEGO bricks to engineer their own island survival solutions, while Adapted Engineering Challenge (Grades 3-5) offers a creative STEAM building challenge. Paper Airplane Challenge is a fun hands-on design activity, and STEAM Stop: Math Mania also includes building activities alongside puzzles and experiments.",
+      "raw_answer": "LEGO Engineering: Disaster Island (Grades K-5) is a perfect fit, letting your child use LEGO bricks to engineer their own island survival solutions, while Adapted Engineering Challenge (Grades 3-5) offers a creative STEAM building challenge. Paper Airplane Challenge is a fun hands-on design activity, and STEAM Stop: Math Mania also includes building activities alongside puzzles and experiments.",
       "raw_fact_tokens": [],
       "cards": [
         "E223",
@@ -1533,20 +1532,20 @@
           "engineering",
           "construction",
           "robotics",
-          "stem",
           "maker",
-          "carpentry",
+          "stem",
+          "woodworking",
           "architecture"
         ],
         "notes": []
       },
       "usage": {
         "calls": 2,
-        "input": 2968,
-        "output": 198,
+        "input": 3025,
+        "output": 216,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.011874000000000001
+        "usd": 0.012315
       }
     },
     {
@@ -1616,11 +1615,11 @@
       },
       "usage": {
         "calls": 2,
-        "input": 3981,
-        "output": 112,
+        "input": 4038,
+        "output": 107,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.013623
+        "usd": 0.013719
       }
     },
     {
@@ -1630,8 +1629,8 @@
       "kind": "answer",
       "showing": "Showing: All upcoming dates · Frisco · any price · age 9 · sports",
       "notes": [],
-      "answer_shown": "The Frosty 5K is a festive fun run through Frisco Square that's perfect for an active kid who loves a challenge, and Scuba with Santa offers a unique underwater adventure in the pool. The Fitness Fun Classes at Kaleidoscope Park also offer rotating active sessions like boxing and strength training that would keep an energetic kid moving.",
-      "raw_answer": "The Frosty 5K is a festive fun run through Frisco Square that's perfect for an active kid who loves a challenge, and Scuba with Santa offers a unique underwater adventure in the pool. The Fitness Fun Classes at Kaleidoscope Park also offer rotating active sessions like boxing and strength training that would keep an energetic kid moving.",
+      "answer_shown": "The Frosty 5K is a festive fun run through Frisco Square that's perfect for an active, sports-loving kid, and Scuba with Santa offers an exciting underwater swimming adventure with SNUBA gear. The Fitness Fun Classes at Kaleidoscope Park round things out with rotating sessions like boxing and strength training suited for all levels.",
+      "raw_answer": "The Frosty 5K is a festive fun run through Frisco Square that's perfect for an active, sports-loving kid, and Scuba with Santa offers an exciting underwater swimming adventure with SNUBA gear. The Fitness Fun Classes at Kaleidoscope Park round things out with rotating sessions like boxing and strength training suited for all levels.",
       "raw_fact_tokens": [],
       "cards": [
         "E147",
@@ -1692,31 +1691,33 @@
           "basketball",
           "baseball",
           "gymnastics",
-          "swimming",
+          "swim",
           "tennis",
-          "volleyball"
+          "flag"
         ],
         "notes": []
       },
       "usage": {
         "calls": 2,
-        "input": 4003,
-        "output": 201,
+        "input": 4060,
+        "output": 197,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.015024
+        "usd": 0.015135
       }
     },
     {
       "id": "H02",
       "tab": "plano",
       "question": "Anything about bugs for my 4-year-old?",
-      "kind": "answer",
+      "kind": "cards",
       "showing": "Showing: All upcoming dates · Plano · any price · age 4 · bugs",
       "notes": [],
-      "answer_shown": "Insect Investigators is a perfect fit, using STEAM and early literacy activities to explore the world of insects in a fun, come-and-go format.",
-      "raw_answer": "Insect Investigators is a perfect fit, using STEAM and early literacy activities to explore the world of insects in a fun, come-and-go format.",
-      "raw_fact_tokens": [],
+      "answer_shown": null,
+      "raw_answer": "Insect Investigators is a perfect fit, diving into the world of insects through STEAM and early literacy activities designed just for that age group.",
+      "raw_fact_tokens": [
+        "age"
+      ],
       "cards": [
         "E077"
       ],
@@ -1780,11 +1781,11 @@
       },
       "usage": {
         "calls": 2,
-        "input": 3161,
-        "output": 158,
+        "input": 3218,
+        "output": 149,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.011853
+        "usd": 0.011889
       }
     },
     {
@@ -1794,8 +1795,8 @@
       "kind": "answer",
       "showing": "Showing: All upcoming dates · Plano · any price · age 15 · financial literacy",
       "notes": [],
-      "answer_shown": "Bank Accounts & Credit (Ages 13+) is a perfect fit, covering banking, credit scores, and how to start building a credit history — all presented by a university-backed financial literacy program.",
-      "raw_answer": "Bank Accounts & Credit (Ages 13+) is a perfect fit, covering banking, credit scores, and how to start building a credit history — all presented by a university-backed financial literacy program.",
+      "answer_shown": "Bank Accounts & Credit (Ages 13+) is a perfect fit, covering banking, credit scores, and how to start building a solid credit history, presented by a university-backed financial literacy program.",
+      "raw_answer": "Bank Accounts & Credit (Ages 13+) is a perfect fit, covering banking, credit scores, and how to start building a solid credit history, presented by a university-backed financial literacy program.",
       "raw_fact_tokens": [],
       "cards": [
         "E067"
@@ -1848,23 +1849,23 @@
         "intent": "financial literacy",
         "related": [
           "finance",
+          "money",
           "budgeting",
           "investing",
-          "money",
           "savings",
           "economics",
-          "banking",
-          "entrepreneurship"
+          "entrepreneurship",
+          "banking"
         ],
         "notes": []
       },
       "usage": {
         "calls": 2,
-        "input": 3043,
+        "input": 3100,
         "output": 156,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.011469
+        "usd": 0.01164
       }
     },
     {
@@ -1874,14 +1875,14 @@
       "kind": "answer",
       "showing": "Showing: Sat Nov 21 · Frisco · any price · age 7",
       "notes": [],
-      "answer_shown": "Here are a variety of things you could do — the Frisco Library Renaissance Faire offers a magical day of knights, minstrels, and medieval merriment that kids tend to love, SaturYay: Christmas Edition brings festive arts, crafts, and holiday cheer, Renaissance Faire: D&D Workshop is a great hands-on intro to Dungeons & Dragons for curious young minds, and SaturYAY! Presented by Atmos Energy rounds things out with interactive lawn games and movement activities.",
-      "raw_answer": "Here are a variety of things you could do — the Frisco Library Renaissance Faire offers a magical day of knights, minstrels, and medieval merriment that kids tend to love, SaturYay: Christmas Edition brings festive arts, crafts, and holiday cheer, Renaissance Faire: D&D Workshop is a great hands-on intro to Dungeons & Dragons for curious young minds, and SaturYAY! Presented by Atmos Energy rounds things out with interactive lawn games and movement activities.",
+      "answer_shown": "Here are a variety of things you could do — the Frisco Library Renaissance Faire promises knights, minstrels, and medieval magic, while SaturYay: Christmas Edition brings holiday-themed arts and crafts and festive fun. The Renaissance Faire: D&D Workshop is a great hands-on intro to tabletop adventure, and the Saturday Music Series at Frisco Fresh Market offers live local entertainment to round out the day.",
+      "raw_answer": "Here are a variety of things you could do — the Frisco Library Renaissance Faire promises knights, minstrels, and medieval magic, while SaturYay: Christmas Edition brings holiday-themed arts and crafts and festive fun. The Renaissance Faire: D&D Workshop is a great hands-on intro to tabletop adventure, and the Saturday Music Series at Frisco Fresh Market offers live local entertainment to round out the day.",
       "raw_fact_tokens": [],
       "cards": [
         "E040",
         "E037",
         "E043",
-        "E036"
+        "E042"
       ],
       "fallback": [],
       "acceptable": [
@@ -1918,11 +1919,11 @@
       },
       "usage": {
         "calls": 2,
-        "input": 2136,
-        "output": 223,
+        "input": 2193,
+        "output": 205,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.009753
+        "usd": 0.009654000000000001
       }
     },
     {
@@ -1933,7 +1934,7 @@
       "showing": "Showing: Thu Nov 19 · Plano · any price · storytime",
       "notes": [],
       "answer_shown": null,
-      "raw_answer": "Here are some storytime options in Plano: Babes in Arms at Schimelpfenig Library, Toddler Time and Preschool Storytime at Haggard Library, and Rhyme Time at Parr Library all offer songs, stories, and movement to spark a love of language and learning.",
+      "raw_answer": "Here are some storytime options in Plano: Babes in Arms at Schimelpfenig Library, Toddler Time and Preschool Storytime at Haggard Library, and Rhyme Time at Parr Library all offer wonderful storytelling, songs, and movement activities to spark a love of language and learning.",
       "raw_fact_tokens": [
         "toddler",
         "preschool"
@@ -1976,8 +1977,8 @@
           "stories",
           "read",
           "reading",
-          "books",
           "book",
+          "books",
           "library",
           "literacy"
         ],
@@ -1985,37 +1986,246 @@
       },
       "usage": {
         "calls": 2,
-        "input": 1964,
-        "output": 208,
+        "input": 2021,
+        "output": 211,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.009012
+        "usd": 0.009228
       }
     },
     {
       "id": "Y03",
       "tab": "frisco",
       "question": "piano lessons for my 8-year-old",
-      "kind": "off_topic",
-      "showing": null,
+      "kind": "nothing",
+      "showing": "Showing: All upcoming dates · Frisco · any price · age 8 · piano lessons",
       "notes": [],
       "answer_shown": null,
-      "raw_answer": null,
+      "raw_answer": "",
       "raw_fact_tokens": [],
       "cards": [],
       "fallback": [],
       "acceptable": [],
       "recall": null,
-      "retrieved": 0,
-      "retrieved_refs": [],
-      "filters": null,
+      "retrieved": 25,
+      "retrieved_refs": [
+        "E008",
+        "E019",
+        "E021",
+        "E034",
+        "E037",
+        "E040",
+        "E042",
+        "E087",
+        "E091",
+        "E151",
+        "E155",
+        "E217",
+        "E221",
+        "E225",
+        "E258",
+        "E272",
+        "E284",
+        "E288",
+        "E333",
+        "E380",
+        "E383",
+        "E386",
+        "E390",
+        "E393",
+        "E396"
+      ],
+      "filters": {
+        "date_from": null,
+        "date_to": null,
+        "cities": [
+          "frisco"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": [
+          8,
+          8
+        ],
+        "intent": "piano lessons",
+        "related": [
+          "keyboard",
+          "music",
+          "instrument",
+          "recital",
+          "practice",
+          "theory"
+        ],
+        "notes": []
+      },
       "usage": {
-        "calls": 1,
-        "input": 993,
-        "output": 69,
+        "calls": 2,
+        "input": 3835,
+        "output": 109,
         "cacheRead": 0,
         "cacheWrite": 0,
-        "usd": 0.004014
+        "usd": 0.013139999999999999
+      }
+    },
+    {
+      "id": "L01",
+      "tab": "plano",
+      "question": "guitar class for my 10-year-old",
+      "kind": "nothing",
+      "showing": "Showing: All upcoming dates · Plano · any price · age 10 · guitar",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "",
+      "raw_fact_tokens": [],
+      "cards": [],
+      "fallback": [],
+      "acceptable": [],
+      "recall": null,
+      "retrieved": 25,
+      "retrieved_refs": [
+        "E009",
+        "E010",
+        "E033",
+        "E039",
+        "E041",
+        "E046",
+        "E047",
+        "E056",
+        "E068",
+        "E069",
+        "E070",
+        "E072",
+        "E073",
+        "E089",
+        "E090",
+        "E092",
+        "E094",
+        "E115",
+        "E126",
+        "E137",
+        "E146",
+        "E153",
+        "E160",
+        "E161",
+        "E162"
+      ],
+      "filters": {
+        "date_from": null,
+        "date_to": null,
+        "cities": [
+          "plano"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": [
+          10,
+          10
+        ],
+        "intent": "guitar",
+        "related": [
+          "guitars",
+          "acoustic",
+          "electric",
+          "strings",
+          "instrument",
+          "music"
+        ],
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 3009,
+        "output": 107,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.010631999999999999
+      }
+    },
+    {
+      "id": "L02",
+      "tab": "plano",
+      "question": "art classes for my 9-year-old",
+      "kind": "answer",
+      "showing": "Showing: All upcoming dates · Plano · any price · age 9 · art classes",
+      "notes": [],
+      "answer_shown": "Fine Art for Families: Vicent Van Gogh, Kandinsky Math Art (Grades K-5), Adapted Art Social Hour (Grades 4-12), and Art Shop are all creative, hands-on art experiences that would suit your child well.",
+      "raw_answer": "Fine Art for Families: Vicent Van Gogh, Kandinsky Math Art (Grades K-5), Adapted Art Social Hour (Grades 4-12), and Art Shop are all creative, hands-on art experiences that would suit your child well.",
+      "raw_fact_tokens": [],
+      "cards": [
+        "E161",
+        "E162",
+        "E160",
+        "E047"
+      ],
+      "fallback": [],
+      "acceptable": [
+        "E047",
+        "E161",
+        "E160",
+        "E162",
+        "E289",
+        "E290"
+      ],
+      "recall": "4/5",
+      "retrieved": 25,
+      "retrieved_refs": [
+        "E009",
+        "E010",
+        "E033",
+        "E039",
+        "E041",
+        "E046",
+        "E047",
+        "E056",
+        "E068",
+        "E069",
+        "E070",
+        "E072",
+        "E073",
+        "E089",
+        "E090",
+        "E092",
+        "E094",
+        "E115",
+        "E126",
+        "E137",
+        "E146",
+        "E153",
+        "E160",
+        "E161",
+        "E162"
+      ],
+      "filters": {
+        "date_from": null,
+        "date_to": null,
+        "cities": [
+          "plano"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": [
+          9,
+          9
+        ],
+        "intent": "art classes",
+        "related": [
+          "painting",
+          "drawing",
+          "craft",
+          "crafts",
+          "sculpture",
+          "pottery",
+          "studio"
+        ],
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 3010,
+        "output": 182,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.01176
       }
     }
   ]
