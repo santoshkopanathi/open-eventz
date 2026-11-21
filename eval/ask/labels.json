@@ -527,6 +527,43 @@
       },
       "acceptable": [],
       "notes": "Parse expectation only; picks are the owner's (labels-owner.json)."
+    },
+    {
+      "id": "L01",
+      "expect": {
+        "date_from": null,
+        "date_to": null,
+        "city": "plano",
+        "free_only": false,
+        "age": [
+          10,
+          10
+        ]
+      },
+      "acceptable": [],
+      "notes": "Parse expectation only; picks are the owner's."
+    },
+    {
+      "id": "L02",
+      "expect": {
+        "date_from": null,
+        "date_to": null,
+        "city": "plano",
+        "free_only": false,
+        "age": [
+          9,
+          9
+        ]
+      },
+      "acceptable": [
+        "E047",
+        "E161",
+        "E160",
+        "E162",
+        "E289",
+        "E290"
+      ],
+      "notes": "Parse expectation only; picks are the owner's."
     }
   ]
 }

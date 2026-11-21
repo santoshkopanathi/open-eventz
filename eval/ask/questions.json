@@ -209,10 +209,26 @@
     {
       "id": "Y03",
       "category": "no_match",
-      "set": "typo",
+      "set": "used_for_fix",
       "tab": "frisco",
       "question": "piano lessons for my 8-year-old",
-      "tests": "a look-alike word that must not become Plano"
+      "tests": "a look-alike word that must not become Plano. Used on 2026-11-21 to find and fix the lessons/classes off-topic bug, so no longer held out; L01 and L02 replace it."
+    },
+    {
+      "id": "L01",
+      "category": "no_match",
+      "set": "held_out_lessons",
+      "tab": "plano",
+      "question": "guitar class for my 10-year-old",
+      "tests": "replaces Y03 as the held-out check for lesson/class questions after Y03 was used to find and fix a bug"
+    },
+    {
+      "id": "L02",
+      "category": "answerable",
+      "set": "held_out_lessons",
+      "tab": "plano",
+      "question": "art classes for my 9-year-old",
+      "tests": "a class question where real classes exist: Ask must search and show them, not call it off-topic"
     }
   ]
 }

@@ -378,6 +378,30 @@
       "notes": "Owner: nothing to show.",
       "blind": true,
       "top_picks_only": true
+    },
+    {
+      "id": "L01",
+      "acceptable": [],
+      "notes": "Owner: nothing to show.",
+      "blind": true,
+      "top_picks_only": true
+    },
+    {
+      "id": "L02",
+      "acceptable": [
+        "E047",
+        "E161",
+        "E160",
+        "E162",
+        "E289",
+        "E290"
+      ],
+      "secondary": [
+        "E069"
+      ],
+      "notes": "Owner: Art Shop, Fine Art for Families (Van Gogh), Adapted Art Social Hour, Kandinsky Math Art, Watercolor Works, Adapted Art Adventurers. Maybe: Adapted Glitter Jar. Six picks; any five shown = full recall.",
+      "blind": true,
+      "top_picks_only": true
     }
   ],
   "scoring": "acceptable = events the owner would show (counts for recall and precision). secondary = lower-confidence picks: fine to show (not a precision miss) but not required (no recall credit). not_good = would not show (precision miss, not a blocking gate). forbidden = must never show (blocking).",

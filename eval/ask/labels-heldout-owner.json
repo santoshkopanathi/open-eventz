@@ -66,6 +66,21 @@
       "id": "L01",
       "acceptable": [],
       "notes": "Owner: nothing to show."
+    },
+    {
+      "id": "L02",
+      "acceptable": [
+        "E047",
+        "E161",
+        "E160",
+        "E162",
+        "E289",
+        "E290"
+      ],
+      "secondary": [
+        "E069"
+      ],
+      "notes": "Owner: Art Shop, Fine Art for Families (Van Gogh), Adapted Art Social Hour, Kandinsky Math Art, Watercolor Works, Adapted Art Adventurers. Maybe: Adapted Glitter Jar. Six picks; any five shown = full recall."
     }
   ]
 }
