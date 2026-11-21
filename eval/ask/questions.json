@@ -1,6 +1,6 @@
 {
   "as_of": "2026-11-18",
-  "note": "Questions drafted by Claude 2026-11-18. Labels (expected filters + cited refs) are the owner's, written blind in LABELLING.md before any Ask prompt exists. Do not edit a question once it has a label. S01–S05 (synonym set) added 2026-11-21 by Claude before query expansion was built.",
+  "note": "Questions drafted by Claude 2026-11-18. Labels (expected filters + cited refs) are the owner's, written blind in LABELLING.md before any Ask prompt exists. Do not edit a question once it has a label. S01–S05 (synonym set) added 2026-11-21 by Claude before query expansion was built. H01-H03 and Y01-Y03 (held out) added 2026-11-21 after the owner labelled them blind in chat.",
   "questions": [
     {
       "id": "A01",
@@ -168,6 +168,51 @@
       "tab": "frisco",
       "question": "A cooking class for my 10-year-old",
       "tests": "nothing matches; related words like \"food\" or \"breakfast\" must not drag in a food drive or Breakfast with Santa"
+    },
+    {
+      "id": "H01",
+      "category": "answerable",
+      "set": "held_out_synonym",
+      "tab": "frisco",
+      "question": "Something sporty for my 9-year-old"
+    },
+    {
+      "id": "H02",
+      "category": "answerable",
+      "set": "held_out_synonym",
+      "tab": "plano",
+      "question": "Anything about bugs for my 4-year-old?"
+    },
+    {
+      "id": "H03",
+      "category": "answerable",
+      "set": "held_out_synonym",
+      "tab": "plano",
+      "question": "Where can my 15-year-old learn about money?"
+    },
+    {
+      "id": "Y01",
+      "category": "answerable",
+      "set": "typo",
+      "tab": "plano",
+      "question": "fun things in Friso this Saturday for my 7-year-old",
+      "tests": "a misspelled city named on the other tab"
+    },
+    {
+      "id": "Y02",
+      "category": "answerable",
+      "set": "typo",
+      "tab": "frisco",
+      "question": "storytime in Plnao tomorrow",
+      "tests": "a misspelled city named on the other tab"
+    },
+    {
+      "id": "Y03",
+      "category": "no_match",
+      "set": "typo",
+      "tab": "frisco",
+      "question": "piano lessons for my 8-year-old",
+      "tests": "a look-alike word that must not become Plano"
     }
   ]
 }

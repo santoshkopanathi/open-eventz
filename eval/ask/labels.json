@@ -423,6 +423,110 @@
         ]
       },
       "acceptable": []
+    },
+    {
+      "id": "H01",
+      "expect": {
+        "date_from": null,
+        "date_to": null,
+        "city": "frisco",
+        "free_only": false,
+        "age": [
+          9,
+          9
+        ]
+      },
+      "acceptable": [
+        "E147",
+        "E222",
+        "E323"
+      ],
+      "notes": "Parse expectation only; picks are the owner's (labels-owner.json)."
+    },
+    {
+      "id": "H02",
+      "expect": {
+        "date_from": null,
+        "date_to": null,
+        "city": "plano",
+        "free_only": false,
+        "age": [
+          4,
+          4
+        ]
+      },
+      "acceptable": [
+        "E077"
+      ],
+      "notes": "Parse expectation only; picks are the owner's (labels-owner.json)."
+    },
+    {
+      "id": "H03",
+      "expect": {
+        "date_from": null,
+        "date_to": null,
+        "city": "plano",
+        "free_only": false,
+        "age": [
+          15,
+          15
+        ]
+      },
+      "acceptable": [
+        "E067"
+      ],
+      "notes": "Parse expectation only; picks are the owner's (labels-owner.json)."
+    },
+    {
+      "id": "Y01",
+      "expect": {
+        "date_from": "2026-11-21",
+        "date_to": "2026-11-21",
+        "city": "frisco",
+        "free_only": false,
+        "age": [
+          7,
+          7
+        ]
+      },
+      "acceptable": [
+        "E036",
+        "E037",
+        "E040",
+        "E042"
+      ],
+      "notes": "Parse expectation only; picks are the owner's (labels-owner.json)."
+    },
+    {
+      "id": "Y02",
+      "expect": {
+        "date_from": "2026-11-19",
+        "date_to": "2026-11-19",
+        "city": "plano",
+        "free_only": false,
+        "age": null
+      },
+      "acceptable": [
+        "E015",
+        "E016",
+        "E018"
+      ],
+      "notes": "Parse expectation only; picks are the owner's (labels-owner.json)."
+    },
+    {
+      "id": "Y03",
+      "expect": {
+        "date_from": null,
+        "date_to": null,
+        "city": "frisco",
+        "free_only": false,
+        "age": [
+          8,
+          8
+        ]
+      },
+      "acceptable": [],
+      "notes": "Parse expectation only; picks are the owner's (labels-owner.json)."
     }
   ]
 }

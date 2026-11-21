@@ -306,6 +306,78 @@
       "provisional": true,
       "notes": "NOT BLIND: written by Claude 2026-11-21 before query expansion was built, then shown to the owner. A development set, used while building; not evidence of quality on its own. No cooking events. Breakfast with Santa, a food drive and a concert with food trucks are not cooking classes.",
       "blind": false
+    },
+    {
+      "id": "H01",
+      "acceptable": [
+        "E147",
+        "E222",
+        "E323"
+      ],
+      "secondary": [
+        "E035"
+      ],
+      "notes": "Owner: Frosty 5K, Scuba with Santa 2026, Fencing 101. Maybe: Fitness Fun Classes.",
+      "blind": true,
+      "top_picks_only": true
+    },
+    {
+      "id": "H02",
+      "acceptable": [
+        "E077"
+      ],
+      "notes": "Owner: Insect Investigators.",
+      "blind": true,
+      "top_picks_only": true
+    },
+    {
+      "id": "H03",
+      "acceptable": [
+        "E067"
+      ],
+      "notes": "Owner: Bank Accounts & Credit. Read Teen Study Zone (E114) in full; left it out (no opinion).",
+      "blind": true,
+      "top_picks_only": true
+    },
+    {
+      "id": "Y01",
+      "acceptable": [
+        "E036",
+        "E037",
+        "E040",
+        "E042"
+      ],
+      "secondary": [
+        "E043",
+        "E035"
+      ],
+      "first_city": "frisco",
+      "notes": "Owner: SaturYAY!, SaturYay Christmas Edition, Renaissance Faire, Saturday Music Series. Maybe: D&D Workshop, Fitness Fun Classes.",
+      "blind": true,
+      "top_picks_only": true
+    },
+    {
+      "id": "Y02",
+      "acceptable": [
+        "E015",
+        "E016",
+        "E018"
+      ],
+      "secondary": [
+        "E011",
+        "E014"
+      ],
+      "first_city": "plano",
+      "notes": "Owner: Toddler Time, Babes in Arms, Preschool Storytime. Maybe: Rhyme Time, Parachute Party.",
+      "blind": true,
+      "top_picks_only": true
+    },
+    {
+      "id": "Y03",
+      "acceptable": [],
+      "notes": "Owner: nothing to show.",
+      "blind": true,
+      "top_picks_only": true
     }
   ],
   "scoring": "acceptable = events the owner would show (counts for recall and precision). secondary = lower-confidence picks: fine to show (not a precision miss) but not required (no recall credit). not_good = would not show (precision miss, not a blocking gate). forbidden = must never show (blocking).",
