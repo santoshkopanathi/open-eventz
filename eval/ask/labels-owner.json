@@ -247,6 +247,60 @@
       "acceptable": [],
       "expect_redirect": true,
       "notes": "Redirect line only."
+    },
+    {
+      "id": "S01",
+      "acceptable": [
+        "E070",
+        "E077"
+      ],
+      "provisional": true,
+      "notes": "PROVISIONAL: Claude, 2026-11-21, before query expansion was built. Owner to review. Live Raptors (birds of prey) and Insect Investigators."
+    },
+    {
+      "id": "S02",
+      "acceptable": [
+        "E005",
+        "E116",
+        "E242"
+      ],
+      "provisional": true,
+      "notes": "PROVISIONAL: Claude, 2026-11-21, before query expansion was built. Owner to review. The three puppet-show programs (Little Red Riding Hood, Abominable Snowman, Goldilocks); repeat sessions count once."
+    },
+    {
+      "id": "S03",
+      "acceptable": [
+        "E124",
+        "E381"
+      ],
+      "provisional": true,
+      "notes": "PROVISIONAL: Claude, 2026-11-21, before query expansion was built. Owner to review. Pop Up STEM: Tech (coding) and Ozobot City (design and code a robot city)."
+    },
+    {
+      "id": "S04",
+      "acceptable": [
+        "E223",
+        "E302"
+      ],
+      "secondary": [
+        "E056",
+        "E068",
+        "E303",
+        "E343"
+      ],
+      "provisional": true,
+      "notes": "PROVISIONAL: Claude, 2026-11-21, before query expansion was built. Owner to review. LEGO Engineering and the Engineering Challenge. STEAM Stop says \"build things\": fine to show, not required."
+    },
+    {
+      "id": "S05",
+      "acceptable": [],
+      "not_good": [
+        "E148",
+        "E150",
+        "E158"
+      ],
+      "provisional": true,
+      "notes": "PROVISIONAL: Claude, 2026-11-21, before query expansion was built. Owner to review. No cooking events. Breakfast with Santa, a food drive and a concert with food trucks are not cooking classes."
     }
   ],
   "scoring": "acceptable = events the owner would show (counts for recall and precision). secondary = lower-confidence picks: fine to show (not a precision miss) but not required (no recall credit). not_good = would not show (precision miss, not a blocking gate). forbidden = must never show (blocking).",

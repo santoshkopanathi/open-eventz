@@ -1,5 +1,5 @@
 /*
- * ASK EVAL — run the 20 questions through the real Ask pipeline on the frozen catalog.
+ * ASK EVAL — run the 25 questions (20 + the S01–S05 synonym set) through the real Ask pipeline on the frozen catalog.
  *
  *   npm run eval:ask                       normal run, scored against the OWNER's labels
  *   npm run eval:ask -- --broken           the deliberately broken prompt: must FAIL
@@ -20,7 +20,7 @@ import { parseQuestion, selectEvents, emptyUsage, ASK_MODEL, type Usage } from '
 import { factTokens, isFree, type City } from '../src/lib/ask/core'
 import { cityOf } from '../src/lib/catalog'
 
-interface Q { id: string; category: 'answerable' | 'no_match' | 'tricky' | 'off_topic'; tab: City; question: string }
+interface Q { id: string; category: 'answerable' | 'no_match' | 'tricky' | 'off_topic'; set?: string; tab: City; question: string }
 interface ClaudeL { id: string; expect: Record<string, unknown>; acceptable: string[]; forbidden?: string[]; first_city?: City }
 interface OwnerL {
   id: string; acceptable: string[]; secondary?: string[]; not_good?: string[]; forbidden?: string[]
@@ -68,7 +68,7 @@ async function main() {
   const gate = { cited_not_retrieved: 0, raw_answer_fact_tokens: 0, shown_answer_fact_tokens: 0, free_only_non_free: 0,
     no_match_returned_events: 0, off_topic_not_redirected: 0, city_rule_broken: 0, forbidden_shown: 0, errors: 0 }
   const parseField = { dates: [0, 0], city: [0, 0], free_only: [0, 0], age: [0, 0], scope: [0, 0], price_note: [0, 0] }
-  let recallSum = 0, recallN = 0, precHit = 0, precN = 0, cardsOnly = 0, answered = 0, dupCardsShown = 0
+  let synRecallSum = 0, synRecallN = 0, recallSum = 0, recallN = 0, precHit = 0, precN = 0, cardsOnly = 0, answered = 0, dupCardsShown = 0
   const recallBy: Record<string, string> = {}
 
   for (const q of questions) {
@@ -139,6 +139,7 @@ async function main() {
       const groups = new Set(accIds.map(id => groupKey(l, id)))
       const hit = new Set(cardIds.filter(id => accIds.includes(id)).map(id => groupKey(l, id)))
       recallSum += hit.size / Math.min(5, groups.size); recallN++
+      if (q.set === 'synonym') { synRecallSum += hit.size / Math.min(5, groups.size); synRecallN++ }
       recallBy[q.id] = `${hit.size}/${Math.min(5, groups.size)}`
       const okIds = new Set([...accIds, ...(l.secondary ?? []).map(ref => refToId.get(ref)!)])
       precHit += cardIds.filter(id => okIds.has(id)).length; precN += cardIds.length
@@ -162,7 +163,8 @@ async function main() {
     labels: useClaude ? 'Claude, provisional (labels.json)' : 'Owner, blind (labels-owner.json)',
     gates_pass: blocking === 0, gates: gate,
     parse_accuracy: Object.fromEntries(Object.entries(parseField).map(([k, v]) => [k, pct(v)])),
-    recall_at_5: recallN ? +(recallSum / recallN).toFixed(2) : null, recall_by_question: recallBy,
+    recall_at_5: recallN ? +(recallSum / recallN).toFixed(2) : null,
+    recall_at_5_synonym_set: synRecallN ? +(synRecallSum / synRecallN).toFixed(2) : null, recall_by_question: recallBy,
     precision: precN ? +(precHit / precN).toFixed(2) : null,
     duplicate_cards_shown: dupCardsShown, shown_with_answer: answered, cards_only_fallback: cardsOnly,
     cost: { calls: total.calls, input_tokens: total.input, output_tokens: total.output, cache_read: total.cacheRead,
