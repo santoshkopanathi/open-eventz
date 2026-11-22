@@ -1008,21 +1008,40 @@ floor on single runs of the classifier. The next measurement is 3–4 repeats of
 and an unknown-price event for "free", then corrected both. A careful human misses exactly what
 the code rules catch.
 
-### The metrics in one sheet (2026-11-20)
+## Update 2026-11-21 → 22 — query expansion, a held-out set, repeat runs, launch
+
+Detail in `eval/ask/RUN-LOG.md` (runs 5–8 and Launch).
+
+- **Query expansion (runs 5 → 6).** Undated synonym questions ("animals", "theater") missed
+  events that sat past the 25-event cap and never used the parent's word. The parse now returns
+  up to 8 related words that re-rank events already past the hard filters. Synonym recall went
+  **0.46 → 0.88**. Caveat: S01–S05 were labelled by Claude and used while building, so they are
+  a **development set, not proof**.
+- **Held-out set, labelled blind by the owner before any run.** Three synonym and three typo
+  questions ("Friso", "Plnao", "piano lessons"), never used for tuning. The later held-out pair
+  (guitar class, art classes) followed the same rule.
+- **Three identical runs (run 7).** Recall moved by **at most 0.02**, so the 0.46 → 0.88 is far
+  outside the noise. Held-out synonym **0.89**, typo **0.88**. One gate broke every run: "piano
+  lessons" was read as off-topic. Nothing false was shown, but the message was wrong.
+- **Run 8, lessons fix.** Classes and lessons are in scope even when nothing matches. All gates
+  **0**. On the fresh held-out pair, guitar class gave "Nothing matched" and art classes showed 4
+  of the owner's picks. Recall@5 0.83 on 33 questions; 9 raw drafts stated facts, all caught.
+- **Launch, 2026-11-22.** Switched on in production behind the flag, with a shared ceiling
+  (migration 010) and GA4 events. The first live question exposed a gap no eval covered: on a
+  Sunday, "this weekend" was read as next weekend.
+
+### The metrics in one sheet (2026-11-20, refreshed through run 8)
 
 `08-portfolio/ai-pm-sprint/ask-rag-metrics-table.html` is the printable view: nine RAG areas
 (finding, answering, understanding, saying no, safety, cost and speed, stability, user value,
-operations), who owns each (code, model, or both), how Ask handles it, the run 4 result, and
+operations), who owns each (code, model, or both), how Ask handles it, the latest result, and
 whether it is good, with plain-language Q&A underneath. Where it stands:
 
-- **Proven:** safety and groundedness. Every blocking gate is 0, and no fact the model drafted
-  has ever been shown.
-- **Promising, not proven:** recall@5 0.80 and precision 0.89, from one run of 14 scored questions.
-- **Not measured yet:**
-  - **Speed:** log time per question and per call; report median and p95.
-  - **Stability:** about 5 repeats of the 20 questions on the frozen catalog, with the same
-    model. Report the spread of recall, precision and facts drafted, and how often the same
-    cards come back. Cost is under $1; re-run on any model change.
-  - **User value:** not live, so nothing to measure.
-- **Model drafting facts (5 of 13):** safe, because the check drops them. To waste fewer drafts,
-  offer fixed openings instead of free text if the rate stays above about 1 in 5.
+- **Proven:** safety and groundedness. Every blocking gate is 0 in run 8, and no fact the model
+  drafted has ever been shown.
+- **Measured, small:** recall@5 0.83 overall, held-out 0.89 synonym and 0.88 typo; spread
+  0.02 across three identical runs (stability, first measurement).
+- **Not measured yet:** speed (log time per call; report median and p95), and **user value**.
+  Ask is live from 2026-11-22; read GA4 from about 2026-12-06.
+- **Model drafting facts (5–9 per run):** safe, because the check drops them. To waste fewer
+  drafts, offer fixed openings instead of free text.

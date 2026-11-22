@@ -924,8 +924,8 @@ Not in production. Spec: `../02-product/Ask Open Eventz Grounded Q&A Spec v2.md`
 | Wrong parse (dates, age, city) | Validated in code; dropped constraints are said on screen; the parsed filters are always shown; a city typo is rescued in code with a note | Visible to the parent |
 | A city we don't cover silently becomes the tab's city | An `unsupported` city searches nothing and says so | "Nothing matched" |
 | Prompt injection in event text | Event text and the question passed as delimited data through `visibleText()`; JSON-only output; both checks above | Cards only |
-| Runaway cost | Max 2 model calls a question, output-token caps (300 / 400), daily ceiling of 100 questions | **Decided 2026-11-20:** after the 100th question, Ask is hidden for the rest of that Central day and the list works as normal. Today the box stays and says "unavailable" (to build, OPEN-ITEMS 2b) |
-| Feature reaches parents unmeasured | `ASK_ENABLED` and `NEXT_PUBLIC_ASK_ENABLED` both off by default; `/api/ask` returns 404 | List unchanged |
+| Runaway cost | Max 2 model calls a question, output-token caps (300 / 400), daily ceiling of 100 questions, **shared in the database since 2026-11-21** (migration 010, `ask_take_slot()`, an atomic count that refuses past the cap). Ask also has its own API key and spend limit | Over the cap, or if the count can't be read: "unavailable", nothing spent. **Decided 2026-11-20, not built:** hide Ask for the rest of that Central day instead (OPEN-ITEMS 2b) |
+| Feature reaches parents unmeasured | `ASK_ENABLED` and `NEXT_PUBLIC_ASK_ENABLED` off by default; `/api/ask` returns 404. **Switched on in production 2026-11-22** after the held-out set and repeat runs; GA4 `ask_submitted`, `ask_result`, `ask_card_click` (question text never sent) | List unchanged |
 
 **Measured, not assumed (eval run 2):** the model's text broke the no-facts rule in 8 of 13
 drafts; the check caught 8 of 8. A prompt fix did not change that. A deliberately broken prompt
@@ -933,8 +933,14 @@ broke it 17 of 17; 0 shown. Details: `06-app-ask/eval/ask/RUN-LOG.md`.
 
 **Known gaps, accepted for the MVP:** the word check blocks fact words, not meaning ("great for
 little ones" passes; the card shows the real age). "May" is not blocked as a month because it is
-mostly a verb. The daily ceiling is in server memory (per instance, resets on restart) and must
-move to a shared store before production. Questions are not logged.
+mostly a verb. ~~The daily ceiling is in server memory~~ (moved to the database 2026-11-21,
+migration 010). Questions are not logged. **Found on launch day (2026-11-22):** "this weekend"
+asked on a Sunday is read as the following weekend; no eval question was asked on a Sunday.
+
+**Added 2026-11-21 (runs 6–8):** query expansion (the parse returns up to 8 related words; they
+only re-order events that already passed the hard filters, and a word matching over half of them
+is ignored). Classes, lessons, camps and workshops are in scope even when nothing matches, so
+"piano lessons" gets "Nothing matched", not the off-topic redirect.
 
 **Added 2026-11-19, from the owner's labelling (built in `e140c84`):**
 
