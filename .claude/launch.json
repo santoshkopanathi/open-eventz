@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000
+    },
+    {
+      "name": "ask-branch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "../06-app-ask", "run", "dev", "--", "-p", "3001"],
+      "port": 3001
     }
   ]
 }

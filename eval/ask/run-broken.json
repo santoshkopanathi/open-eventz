@@ -1,0 +1,1184 @@
+{
+  "summary": {
+    "run_at": "2026-11-18T15:59:47.808Z",
+    "model": "claude-sonnet-4-6",
+    "catalog_as_of": "2026-11-18",
+    "broken_prompt": true,
+    "labels": "PROVISIONAL — Claude-labelled 2026-11-18, not blind human labels",
+    "gates_pass": false,
+    "gates": {
+      "cited_not_retrieved": 0,
+      "raw_answer_fact_tokens": 17,
+      "shown_answer_fact_tokens": 0,
+      "free_only_non_free": 0,
+      "no_match_returned_events": 2,
+      "off_topic_not_redirected": 0,
+      "city_rule_broken": 0,
+      "forbidden_shown": 1,
+      "errors": 0
+    },
+    "parse_accuracy": {
+      "dates": "18/18",
+      "city": "18/18",
+      "free_only": "18/18",
+      "age": "18/18",
+      "scope": "20/20",
+      "price_note": "18/18"
+    },
+    "recall_at_5": 0.88,
+    "precision": 0.93,
+    "shown_with_answer": 0,
+    "cards_only_fallback": 15,
+    "cost": {
+      "calls": 37,
+      "input_tokens": 31557,
+      "output_tokens": 3577,
+      "cache_read": 0,
+      "usd": 0.1483,
+      "usd_per_question": 0.0074
+    }
+  },
+  "rows": [
+    {
+      "id": "A01",
+      "tab": "plano",
+      "question": "Something free for my 4-year-old this Saturday",
+      "kind": "cards",
+      "showing": "Showing: Sat Nov 21 · Plano · free · age 4",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "Great free options for your 4-year-old this Saturday (Nov 21) include Family Storytime at Parr Library at 10:30 AM (free), Family Storytime at Davis Library at 11:00 AM (free), and Harness the Wind & Waves at Davis Library at 3:00 PM (free), which features hands-on activities perfect for curious kids.",
+      "raw_fact_tokens": [
+        "4",
+        "2",
+        "1",
+        "1",
+        "0",
+        "3",
+        "0",
+        "1",
+        "1",
+        "0",
+        "0",
+        "3",
+        "0",
+        "0",
+        "free",
+        "saturday",
+        "free",
+        "free",
+        "free"
+      ],
+      "cards": [
+        "E039",
+        "E041",
+        "E046"
+      ],
+      "acceptable": [
+        "E039",
+        "E041",
+        "E046",
+        "E047"
+      ],
+      "retrieved": 4,
+      "filters": {
+        "date_from": "2026-11-21",
+        "date_to": "2026-11-21",
+        "cities": [
+          "plano"
+        ],
+        "unsupported_city": false,
+        "free_only": true,
+        "age": [
+          4,
+          4
+        ],
+        "intent": null,
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 1234,
+        "output": 189,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.006537
+      }
+    },
+    {
+      "id": "A02",
+      "tab": "frisco",
+      "question": "What can we do this Saturday morning?",
+      "kind": "cards",
+      "showing": "Showing: Sat Nov 21 · Frisco · any price · morning",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "On Saturday, November 21, you can start the morning with free Fitness Fun Classes at 9:00 AM at Kaleidoscope Park, then head to SaturYAY (or its Christmas Edition) at 10:00 AM also at Kaleidoscope Park (both free), followed by free Family Story Time at the Frisco Public Library at 10:30 AM, the free Frisco Library Renaissance Faire at 11:00 AM, and free live music at Frisco Fresh Market starting at 11:00 AM.",
+      "raw_fact_tokens": [
+        "2",
+        "1",
+        "9",
+        "0",
+        "0",
+        "1",
+        "0",
+        "0",
+        "0",
+        "1",
+        "0",
+        "3",
+        "0",
+        "1",
+        "1",
+        "0",
+        "0",
+        "1",
+        "1",
+        "0",
+        "0",
+        "saturday",
+        "november",
+        "morning",
+        "free",
+        "free",
+        "free",
+        "free",
+        "free"
+      ],
+      "cards": [
+        "E035",
+        "E036",
+        "E037",
+        "E038",
+        "E040"
+      ],
+      "acceptable": [
+        "E035",
+        "E036",
+        "E037",
+        "E038",
+        "E040",
+        "E042"
+      ],
+      "retrieved": 8,
+      "filters": {
+        "date_from": "2026-11-21",
+        "date_to": "2026-11-21",
+        "cities": [
+          "frisco"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": null,
+        "intent": "morning",
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 1757,
+        "output": 240,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.008871
+      }
+    },
+    {
+      "id": "A03",
+      "tab": "frisco",
+      "question": "Any Christmas events this week?",
+      "kind": "cards",
+      "showing": "Showing: Wed Nov 18 – Sun Nov 22 · Frisco · any price · christmas",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "There are several Christmas events this week: the 4th Street Plaza Holiday Tree Lighting is on Thursday, Nov 19 at 5:30 PM and is free; Illuminate: Christmas Movie Classics is also Thursday, Nov 19 at 6:30 PM (ticketed); Kaleidoscope Christmas tree lighting is Friday, Nov 20 at 6:00 PM (free); and SaturYay: Christmas Edition is Saturday, Nov 21 at 10:00 AM and is free.",
+      "raw_fact_tokens": [
+        "4",
+        "1",
+        "9",
+        "5",
+        "3",
+        "0",
+        "1",
+        "9",
+        "6",
+        "3",
+        "0",
+        "2",
+        "0",
+        "6",
+        "0",
+        "0",
+        "2",
+        "1",
+        "1",
+        "0",
+        "0",
+        "0",
+        "thursday",
+        "free",
+        "thursday",
+        "friday",
+        "free",
+        "saturday",
+        "free"
+      ],
+      "cards": [
+        "E020",
+        "E021",
+        "E034",
+        "E037"
+      ],
+      "acceptable": [
+        "E020",
+        "E021",
+        "E034",
+        "E037"
+      ],
+      "retrieved": 22,
+      "filters": {
+        "date_from": "2026-11-18",
+        "date_to": "2026-11-22",
+        "cities": [
+          "frisco"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": null,
+        "intent": "christmas",
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 3016,
+        "output": 218,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.012317999999999999
+      }
+    },
+    {
+      "id": "A04",
+      "tab": "plano",
+      "question": "Is there a storytime for my baby tomorrow?",
+      "kind": "cards",
+      "showing": "Showing: Thu Nov 19 · Plano · any price · ages 0–1 · storytime",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "Yes! Tomorrow (Thursday, Nov 19) there are two storytimes perfect for babies: Rhyme Time (0–24 months) at Parr Library starting at 9:30 AM, and Babes in Arms (0–9 months) at Schimelpfenig Library starting at 10:00 AM — both appear to be free library programs.",
+      "raw_fact_tokens": [
+        "1",
+        "9",
+        "0",
+        "2",
+        "4",
+        "9",
+        "3",
+        "0",
+        "0",
+        "9",
+        "1",
+        "0",
+        "0",
+        "0",
+        "tomorrow",
+        "thursday",
+        "babies",
+        "free"
+      ],
+      "cards": [
+        "E011",
+        "E016"
+      ],
+      "acceptable": [
+        "E011",
+        "E016"
+      ],
+      "retrieved": 3,
+      "filters": {
+        "date_from": "2026-11-19",
+        "date_to": "2026-11-19",
+        "cities": [
+          "plano"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": [
+          0,
+          1
+        ],
+        "intent": "storytime",
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 1175,
+        "output": 182,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.006255
+      }
+    },
+    {
+      "id": "A05",
+      "tab": "frisco",
+      "question": "Things to do with a 10-year-old on Thursday",
+      "kind": "cards",
+      "showing": "Showing: Thu Nov 19 · Frisco · any price · age 10",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "On Thursday, Nov 19, you can enjoy the free Live After 5 music series at Kaleidoscope Park starting at 5:30 PM, or head to the free Holiday Tree Lighting at 4th Street Plaza also at 5:30 PM for some festive fun. The Frisco Public Library also hosts a free Friendship Bracelets craft event at 7:00 PM, perfect for 4th–8th graders.",
+      "raw_fact_tokens": [
+        "1",
+        "9",
+        "5",
+        "5",
+        "3",
+        "0",
+        "4",
+        "5",
+        "3",
+        "0",
+        "7",
+        "0",
+        "0",
+        "4",
+        "8",
+        "thursday",
+        "free",
+        "free",
+        "free"
+      ],
+      "cards": [
+        "E019",
+        "E020",
+        "E022"
+      ],
+      "acceptable": [
+        "E022",
+        "E019",
+        "E020",
+        "E021"
+      ],
+      "retrieved": 4,
+      "filters": {
+        "date_from": "2026-11-19",
+        "date_to": "2026-11-19",
+        "cities": [
+          "frisco"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": [
+          10,
+          10
+        ],
+        "intent": null,
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 1358,
+        "output": 202,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.007104
+      }
+    },
+    {
+      "id": "A06",
+      "tab": "plano",
+      "question": "Anything for teens next week?",
+      "kind": "cards",
+      "showing": "Showing: Mon Nov 23 – Sun Nov 29 · Plano · any price · ages 13–17",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "There are a few great options for teens next week: STEAM Stop: Math Mania is on Monday, Nov 23 at 3:00 PM at Schimelpfenig Library (free, come & go), Bank Accounts & Credit (Ages 13+) is on Tuesday, Nov 24 at 2:00 PM at Haggard Library (free), and STEAM Stop: Sensational Senses is also on Tuesday, Nov 24 at 3:00 PM at Parr Library (free, come & go).",
+      "raw_fact_tokens": [
+        "2",
+        "3",
+        "3",
+        "0",
+        "0",
+        "2",
+        "4",
+        "2",
+        "0",
+        "0",
+        "2",
+        "4",
+        "3",
+        "0",
+        "0",
+        "teens",
+        "monday",
+        "free",
+        "tuesday",
+        "free",
+        "tuesday",
+        "free"
+      ],
+      "cards": [
+        "E056",
+        "E067",
+        "E068"
+      ],
+      "acceptable": [
+        "E067"
+      ],
+      "retrieved": 10,
+      "filters": {
+        "date_from": "2026-11-23",
+        "date_to": "2026-11-29",
+        "cities": [
+          "plano"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": [
+          13,
+          17
+        ],
+        "intent": null,
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 1558,
+        "output": 225,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.008048999999999999
+      }
+    },
+    {
+      "id": "A07",
+      "tab": "frisco",
+      "question": "Is there anything in Plano on Tuesday for a 6-year-old?",
+      "kind": "cards",
+      "showing": "Showing: Tue Nov 24 · Plano · any price · age 6",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "There are several options in Plano on Tuesday, November 24 for a 6-year-old: STEAM Stop at Parr Library (3:00 PM, free, drop-in), Adapted Glitter Jar at Schimelpfenig Library (3:00 PM, free, registration required), Live Raptors at Davis Library (3:00 PM, free but tickets required), and Family Storytime at both Harrington and Davis Libraries (6:30 PM, free).",
+      "raw_fact_tokens": [
+        "2",
+        "4",
+        "6",
+        "3",
+        "0",
+        "0",
+        "3",
+        "0",
+        "0",
+        "3",
+        "0",
+        "0",
+        "6",
+        "3",
+        "0",
+        "tuesday",
+        "november",
+        "free",
+        "drop",
+        "free",
+        "free",
+        "tickets",
+        "free"
+      ],
+      "cards": [
+        "E068",
+        "E069",
+        "E070",
+        "E072",
+        "E073"
+      ],
+      "acceptable": [
+        "E068",
+        "E069",
+        "E070",
+        "E072",
+        "E073"
+      ],
+      "retrieved": 5,
+      "filters": {
+        "date_from": "2026-11-24",
+        "date_to": "2026-11-24",
+        "cities": [
+          "plano"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": [
+          6,
+          6
+        ],
+        "intent": null,
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 1289,
+        "output": 226,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.007257
+      }
+    },
+    {
+      "id": "A08",
+      "tab": "plano",
+      "question": "Free things to do in Frisco or Plano this Saturday for the whole family",
+      "kind": "cards",
+      "showing": "Showing: Sat Nov 21 · Plano + Frisco · free",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "For free family fun in Frisco and Plano this Saturday (Nov 21), highlights include SaturYAY! at Kaleidoscope Park starting at 10:00 AM (free, with arts, crafts, and lawn games), the Frisco Library Renaissance Faire starting at 11:00 AM (free, with knights, minstrels, and magic for all ages), a free D&D Workshop at Frisco Public Library at 1:00 PM, and free live music at Frisco Fresh Market starting at 11:00 AM. The Christmas Edition of SaturYAY also kicks off at 10:00 AM at Kaleidoscope Park with holiday-themed activities at no cost.",
+      "raw_fact_tokens": [
+        "2",
+        "1",
+        "1",
+        "0",
+        "0",
+        "0",
+        "1",
+        "1",
+        "0",
+        "0",
+        "1",
+        "0",
+        "0",
+        "1",
+        "1",
+        "0",
+        "0",
+        "1",
+        "0",
+        "0",
+        "0",
+        "free",
+        "saturday",
+        "free",
+        "free",
+        "ages",
+        "free",
+        "free",
+        "cost"
+      ],
+      "cards": [
+        "E036",
+        "E037",
+        "E040",
+        "E042",
+        "E043"
+      ],
+      "acceptable": [
+        "E039",
+        "E041",
+        "E046",
+        "E047",
+        "E035",
+        "E036",
+        "E037",
+        "E040",
+        "E042",
+        "E043"
+      ],
+      "retrieved": 13,
+      "filters": {
+        "date_from": "2026-11-21",
+        "date_to": "2026-11-21",
+        "cities": [
+          "plano",
+          "frisco"
+        ],
+        "unsupported_city": false,
+        "free_only": true,
+        "age": null,
+        "intent": null,
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 2101,
+        "output": 269,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.010338
+      }
+    },
+    {
+      "id": "A09",
+      "tab": "frisco",
+      "question": "Science or space stuff for my 7-year-old in the next two weeks",
+      "kind": "cards",
+      "showing": "Showing: Wed Nov 18 – Wed Dec 2 · Frisco · any price · age 7 · science or space",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "On Monday, Nov 23 at 3:00 PM, a NASA Solar System Ambassador hosts 'What it's like to be an Astronaut?' at Frisco Public Library — the listing does not indicate a fee, so it appears free. On Wednesday, Dec 2 at 4:00 PM, the Pop Up STEM: Tech event focuses on coding for K-5 students at Frisco Public Library and also appears to be free.",
+      "raw_fact_tokens": [
+        "2",
+        "3",
+        "3",
+        "0",
+        "0",
+        "2",
+        "4",
+        "0",
+        "0",
+        "5",
+        "monday",
+        "free",
+        "wednesday",
+        "free"
+      ],
+      "cards": [
+        "E055",
+        "E124"
+      ],
+      "acceptable": [
+        "E055",
+        "E124"
+      ],
+      "retrieved": 24,
+      "filters": {
+        "date_from": "2026-11-18",
+        "date_to": "2026-12-02",
+        "cities": [
+          "frisco"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": [
+          7,
+          7
+        ],
+        "intent": "science or space",
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 3331,
+        "output": 199,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.012978
+      }
+    },
+    {
+      "id": "A10",
+      "tab": "plano",
+      "question": "Where can my kid play chess?",
+      "kind": "cards",
+      "showing": "Showing: All upcoming dates · Plano · any price · chess",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "Your kid can play chess at the **Game On: Chess Meet-Up (Ages 5+)** at Davis Library on Wednesday, Nov 18 at 6:30 PM (free, but a caregiver must be present if supervision is needed), and also at **Game On: Open Play (Ages 5+)** at Davis Library on Friday, Nov 20 at 4:00 PM (free), where kids can bring a chess set or other games.",
+      "raw_fact_tokens": [
+        "1",
+        "8",
+        "6",
+        "3",
+        "0",
+        "2",
+        "0",
+        "4",
+        "0",
+        "0",
+        "wednesday",
+        "free",
+        "friday",
+        "free"
+      ],
+      "cards": [
+        "E010",
+        "E033"
+      ],
+      "acceptable": [
+        "E010",
+        "E215",
+        "E260"
+      ],
+      "retrieved": 25,
+      "filters": {
+        "date_from": null,
+        "date_to": null,
+        "cities": [
+          "plano"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": null,
+        "intent": "chess",
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 2601,
+        "output": 186,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.010593
+      }
+    },
+    {
+      "id": "N01",
+      "tab": "plano",
+      "question": "Is there a robotics class for my 6-year-old on Saturday?",
+      "kind": "nothing",
+      "showing": "Showing: Sat Nov 21 · Plano · any price · age 6 · robotics class",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "Unfortunately, none of the Saturday events on the list is a robotics class. The closest hands-on STEM option is 'Harness the Wind & Waves' at Davis Library on Saturday, Nov 21 at 3:00 PM, but it focuses on wind and ocean energy rather than robotics.",
+      "raw_fact_tokens": [
+        "2",
+        "1",
+        "3",
+        "0",
+        "0",
+        "saturday",
+        "saturday"
+      ],
+      "cards": [],
+      "acceptable": [],
+      "retrieved": 4,
+      "filters": {
+        "date_from": "2026-11-21",
+        "date_to": "2026-11-21",
+        "cities": [
+          "plano"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": [
+          6,
+          6
+        ],
+        "intent": "robotics class",
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 1243,
+        "output": 160,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.006129
+      }
+    },
+    {
+      "id": "N02",
+      "tab": "frisco",
+      "question": "Swimming lessons this weekend",
+      "kind": "nothing",
+      "showing": "Showing: Sat Nov 21 – Sun Nov 22 · Frisco · any price · swimming lessons",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "None of the listed events this weekend (Saturday, Nov 21 or Sunday, Nov 22) involve swimming lessons. You may want to check directly with local pools or recreation centers in the area for swimming lesson schedules.",
+      "raw_fact_tokens": [
+        "2",
+        "1",
+        "2",
+        "2",
+        "weekend",
+        "saturday",
+        "sunday"
+      ],
+      "cards": [],
+      "acceptable": [],
+      "retrieved": 9,
+      "filters": {
+        "date_from": "2026-11-21",
+        "date_to": "2026-11-22",
+        "cities": [
+          "frisco"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": null,
+        "intent": "swimming lessons",
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 1837,
+        "output": 136,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.007551
+      }
+    },
+    {
+      "id": "N03",
+      "tab": "frisco",
+      "question": "Anything to do on Thanksgiving Day?",
+      "kind": "cards",
+      "showing": "Showing: Thu Nov 26 · Frisco · any price · thanksgiving",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "On Thanksgiving Day (Thursday, November 26), the Frisco Public Library will be closed all day, so unfortunately there are no in-person library events available. You may want to check other local sources for Thanksgiving Day activities, as no open events appeared in this list.",
+      "raw_fact_tokens": [
+        "2",
+        "6",
+        "thursday",
+        "november"
+      ],
+      "cards": [
+        "E083"
+      ],
+      "acceptable": [],
+      "retrieved": 1,
+      "filters": {
+        "date_from": "2026-11-26",
+        "date_to": "2026-11-26",
+        "cities": [
+          "frisco"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": null,
+        "intent": "thanksgiving",
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 1072,
+        "output": 150,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.005466
+      }
+    },
+    {
+      "id": "N04",
+      "tab": "frisco",
+      "question": "Something for a 16-year-old tonight",
+      "kind": "cards",
+      "showing": "Showing: Wed Nov 18 · Frisco · any price · age 16",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "Walnut Wednesday: Walnut's Friendsgiving is on Wednesday, Nov 18, starting at 10:00 AM at the Frisco Heritage Center. No admission cost is listed, suggesting it may be free, and it's a family-friendly event a 16-year-old could enjoy.",
+      "raw_fact_tokens": [
+        "1",
+        "8",
+        "1",
+        "0",
+        "0",
+        "0",
+        "1",
+        "6",
+        "wednesday",
+        "wednesday",
+        "cost",
+        "free"
+      ],
+      "cards": [
+        "E004"
+      ],
+      "acceptable": [],
+      "retrieved": 1,
+      "filters": {
+        "date_from": "2026-11-18",
+        "date_to": "2026-11-18",
+        "cities": [
+          "frisco"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": [
+          16,
+          16
+        ],
+        "intent": null,
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 1078,
+        "output": 160,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.005634
+      }
+    },
+    {
+      "id": "N05",
+      "tab": "plano",
+      "question": "Kids' events in Dallas this Saturday",
+      "kind": "nothing",
+      "showing": "Showing: Sat Nov 21 · outside Frisco and Plano · any price",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": null,
+      "raw_fact_tokens": [],
+      "cards": [],
+      "acceptable": [],
+      "retrieved": 0,
+      "filters": {
+        "date_from": "2026-11-21",
+        "date_to": "2026-11-21",
+        "cities": [],
+        "unsupported_city": true,
+        "free_only": false,
+        "age": null,
+        "intent": null,
+        "notes": []
+      },
+      "usage": {
+        "calls": 1,
+        "input": 846,
+        "output": 79,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.0037229999999999997
+      }
+    },
+    {
+      "id": "T01",
+      "tab": "frisco",
+      "question": "Free things to do Thursday evening",
+      "kind": "cards",
+      "showing": "Showing: Thu Nov 19 · Frisco · free · evening",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "On Thursday, Nov 19, there are three free evening options: Live After 5 at Kaleidoscope Park starts at 5:30 PM (free community music with lawn games), the 4th Street Plaza Holiday Tree Lighting also starts at 5:30 PM (free holiday celebration in downtown Frisco), and Friendship Bracelets at Frisco Public Library starts at 7:00 PM (free bracelet-making for grades 4–8).",
+      "raw_fact_tokens": [
+        "1",
+        "9",
+        "5",
+        "5",
+        "3",
+        "0",
+        "4",
+        "5",
+        "3",
+        "0",
+        "7",
+        "0",
+        "0",
+        "4",
+        "8",
+        "thursday",
+        "free",
+        "evening",
+        "free",
+        "free",
+        "free"
+      ],
+      "cards": [
+        "E019",
+        "E020",
+        "E022"
+      ],
+      "acceptable": [
+        "E019",
+        "E020",
+        "E022"
+      ],
+      "retrieved": 5,
+      "filters": {
+        "date_from": "2026-11-19",
+        "date_to": "2026-11-19",
+        "cities": [
+          "frisco"
+        ],
+        "unsupported_city": false,
+        "free_only": true,
+        "age": null,
+        "intent": "evening",
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 1409,
+        "output": 205,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.0073019999999999995
+      }
+    },
+    {
+      "id": "T02",
+      "tab": "frisco",
+      "question": "Something for my toddler this Saturday",
+      "kind": "cards",
+      "showing": "Showing: Sat Nov 21 · Frisco · any price · ages 1–3",
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": "For your toddler this Saturday (Nov 21), SaturYAY! and SaturYay: Christmas Edition both start at 10:00 AM at Kaleidoscope Park and appear to be free family-friendly events with crafts and activities perfect for little ones. Family Story Time at Frisco Public Library starts at 10:30 AM, is intended for walkers–5 years old, and is free (though tickets are picked up at the desk one hour before).",
+      "raw_fact_tokens": [
+        "2",
+        "1",
+        "1",
+        "0",
+        "0",
+        "0",
+        "1",
+        "0",
+        "3",
+        "0",
+        "5",
+        "toddler",
+        "saturday",
+        "free",
+        "free",
+        "tickets"
+      ],
+      "cards": [
+        "E036",
+        "E037",
+        "E038"
+      ],
+      "acceptable": [
+        "E038",
+        "E035",
+        "E036",
+        "E037",
+        "E040",
+        "E042"
+      ],
+      "retrieved": 7,
+      "filters": {
+        "date_from": "2026-11-21",
+        "date_to": "2026-11-21",
+        "cities": [
+          "frisco"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": [
+          1,
+          3
+        ],
+        "intent": null,
+        "notes": []
+      },
+      "usage": {
+        "calls": 2,
+        "input": 1656,
+        "output": 207,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.008073
+      }
+    },
+    {
+      "id": "T03",
+      "tab": "plano",
+      "question": "Cheap stuff for kids this weekend",
+      "kind": "cards",
+      "showing": "Showing: Sat Nov 21 – Sun Nov 22 · Plano · any price",
+      "notes": [
+        "Open Eventz only knows whether an event is 'free' or 'paid'. Please look at the details view."
+      ],
+      "answer_shown": null,
+      "raw_answer": "For free kids' events this weekend, there's Family Storytime on Saturday, Nov 21 at 10:30 AM at Parr Library and another at 11:00 AM at Davis Library, plus the free Harness the Wind & Waves hands-on activity at Davis Library at 3:00 PM. Art Shop at Harrington Library on Saturday at 3:00 PM requires tickets but lets kids create art with just $5 in play money, making it a very low-cost option.",
+      "raw_fact_tokens": [
+        "2",
+        "1",
+        "1",
+        "0",
+        "3",
+        "0",
+        "1",
+        "1",
+        "0",
+        "0",
+        "3",
+        "0",
+        "0",
+        "3",
+        "0",
+        "0",
+        "$",
+        "5",
+        "free",
+        "weekend",
+        "saturday",
+        "free",
+        "saturday",
+        "tickets",
+        "cost"
+      ],
+      "cards": [
+        "E039",
+        "E041",
+        "E046",
+        "E047"
+      ],
+      "acceptable": [
+        "E039",
+        "E041",
+        "E046",
+        "E047"
+      ],
+      "retrieved": 5,
+      "filters": {
+        "date_from": "2026-11-21",
+        "date_to": "2026-11-22",
+        "cities": [
+          "plano"
+        ],
+        "unsupported_city": false,
+        "free_only": false,
+        "age": null,
+        "intent": null,
+        "notes": [
+          "Open Eventz only knows whether an event is 'free' or 'paid'. Please look at the details view."
+        ]
+      },
+      "usage": {
+        "calls": 2,
+        "input": 1298,
+        "output": 216,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.007134
+      }
+    },
+    {
+      "id": "O01",
+      "tab": "frisco",
+      "question": "Will it rain on Saturday?",
+      "kind": "off_topic",
+      "showing": null,
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": null,
+      "raw_fact_tokens": [],
+      "cards": [],
+      "acceptable": [],
+      "retrieved": 0,
+      "filters": null,
+      "usage": {
+        "calls": 1,
+        "input": 845,
+        "output": 64,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.003495
+      }
+    },
+    {
+      "id": "O02",
+      "tab": "plano",
+      "question": "How do I get my toddler to sleep through the night?",
+      "kind": "off_topic",
+      "showing": null,
+      "notes": [],
+      "answer_shown": null,
+      "raw_answer": null,
+      "raw_fact_tokens": [],
+      "cards": [],
+      "acceptable": [],
+      "retrieved": 0,
+      "filters": null,
+      "usage": {
+        "calls": 1,
+        "input": 853,
+        "output": 64,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "usd": 0.003519
+      }
+    }
+  ]
+}

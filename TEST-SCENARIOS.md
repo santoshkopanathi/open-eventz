@@ -1,6 +1,6 @@
 # Open Eventz — Functional Test Scenarios
 Version: consolidated (base + v1.1 + v1.2 + 2026-08 data-quality + 2026-08 ingest guard)
-Last updated: 2026-08-15
+Last updated: 2026-11-20 (added §1.5B.14–15, §1.5D purge, §1.5E classification cache)
 
 > This file is the **coverage record** — what behaviour is verified, scenario by scenario.
 > For *what stops bad data reaching a user and where each control sits*, see
@@ -102,6 +102,32 @@ The layer that would have caught the Frisco age break: it asserts against the **
 | 1.5B.11 | No write path bypasses the guard | Exactly **one** `events.upsert` exists in `ingest.ts` | [A] [R] · no-ambient-timezone.test.ts |
 | 1.5B.12 | Bare `new Date(<arg>)` in ingest | Fails unless allowlisted with a reason — verified by reintroducing the original bug | [A] [R] · no-ambient-timezone.test.ts |
 | 1.5B.13 | Unit suite runs in both timezones | CI runs Jest at `TZ=UTC` (runner) **and** `TZ=America/Chicago`; a one-timezone suite can't catch a timezone bug | [R] |
+| 1.5B.14 | Batch compared only with stored **upcoming** rows *(2026-10-17 outage)* | Past rows never count toward the shrink rule, so a healthy forward-window scrape isn't refused | [A] [R] · ingest-guard.test.ts |
+| 1.5B.15 | Unparseable stored rows | Kept, not counted as evidence of shrinkage | [A] [R] · ingest-guard.test.ts |
+
+### 1.5D Purge of cancelled events *(documented 2026-11-20 — `purgeCandidates`, shipped 2026-10-20)*
+**Purging** = deleting our copy of upcoming events the source no longer lists. Runs only after a batch the guard trusted. Thresholds: `maxPurgeShare = 0.25`. See BUILD-LOG "Decision map" notes (e) and (f).
+| # | Scenario | Expected result | Tag |
+|---|---|---|---|
+| 1.5D.1 | Batch still lists every stored upcoming event | Nothing purged | [A] [R] · ingest-guard.test.ts |
+| 1.5D.2 | **The incident** — the source stopped listing events (3 cancelled "Teen Anime Club" sessions, 2026-10-20) | Those upcoming rows are deleted | [A] [R] · ingest-guard.test.ts |
+| 1.5D.3 | More than 25% of upcoming rows missing at once | **Nothing deleted**; reported as a likely scrape fault for a human | [A] [R] · ingest-guard.test.ts |
+| 1.5D.4 | Exactly at the 25% cap vs one more | At the cap purges; one more skips | [A] [R] · ingest-guard.test.ts |
+| 1.5D.5 | Event dropped tonight for an unpublishable time | **Not** purged — it still exists at the source | [A] [R] · ingest-guard.test.ts |
+| 1.5D.6 | Event that already started today | **Not** purged — listings drop events once they begin | [A] [R] · ingest-guard.test.ts |
+| 1.5D.7 | Nothing stored for the source | Nothing to purge | [A] [R] · ingest-guard.test.ts |
+| 1.5D.8 | Batch refused by the guard (§1.5B) | Purge and cleanup skipped entirely | [R] [M] |
+
+### 1.5E Classification cache *(documented 2026-11-20 — see BUILD-LOG "Decision map" note (a))*
+The cache stores only the AI's judgment; every other field is re-read from the source nightly, and cached events still go through the batch, the guard and the purge.
+| # | Scenario | Expected result | Tag |
+|---|---|---|---|
+| 1.5E.1 | Known event (`kid_relevant` not null) re-ingested | Stored kid/age/price judgment carried forward; **no Claude call**; fresh title, time and place written | [A] [R] · classify-cache.test.ts (carry-forward); no-call verified by run logs (a clean re-run makes ~0 LLM calls) |
+| 1.5E.2 | Cached event is still in tonight's batch | Not purged; counts toward the guard's shrink comparison | [M] |
+| 1.5E.3 | Failed model call or spend cap | Event excluded from the write (`_skipWrite`), never stored as `kid_relevant = false`, so the cache is not poisoned | [A] [R] · classify-skip.test.ts |
+| 1.5E.4 | Cached event whose text now says "adults only" or "21+" | Hidden — the override runs over cached events too | [M] — no dedicated unit test yet |
+| 1.5E.5 | **Known gap** — the source rewrites a cached event's description (e.g. adds a fee) | Today: old judgment reused, **not** re-classified. Expected: re-classify on content change. **Open**, no test | [M] — gap, tracked in OPEN-ITEMS.md |
+| 1.5E.6 | **Fixed 2026-11-20** — a cached event gains or changes a structured `Cost:` field (or Kaleidoscope declares it free) | The locked source price wins over the stored price; kid/age judgment still comes from the cache | [A] [R] · classify-cache.test.ts |
 
 ### 1.7 User-facing failure states *(new 2026-08-17 — see the fallback table in GUARDRAILS.md)*
 A failed request and a genuine zero-result query were **one state** until now: a 500 fell through

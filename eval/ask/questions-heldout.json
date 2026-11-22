@@ -1,0 +1,59 @@
+{
+  "as_of": "2026-11-18",
+  "note": "Round 2, written by Claude 2026-11-21. HELD OUT: never used while building or tuning. The owner labels these blind in LABELLING-2.md before Claude writes any answer for them. They join the scored set only once labelled. L01 added 2026-11-21 before the lessons/classes fix was written; owner labels it blind. L02 added 2026-11-21 at the owner's request (a class question with real answers), before the fix.",
+  "questions": [
+    {
+      "id": "H01",
+      "set": "held_out_synonym",
+      "tab": "frisco",
+      "question": "Something sporty for my 9-year-old"
+    },
+    {
+      "id": "H02",
+      "set": "held_out_synonym",
+      "tab": "plano",
+      "question": "Anything about bugs for my 4-year-old?"
+    },
+    {
+      "id": "H03",
+      "set": "held_out_synonym",
+      "tab": "plano",
+      "question": "Where can my 15-year-old learn about money?"
+    },
+    {
+      "id": "Y01",
+      "set": "typo",
+      "tab": "plano",
+      "question": "fun things in Friso this Saturday for my 7-year-old",
+      "tests": "a misspelled city named on the other tab"
+    },
+    {
+      "id": "Y02",
+      "set": "typo",
+      "tab": "frisco",
+      "question": "storytime in Plnao tomorrow",
+      "tests": "a misspelled city named on the other tab"
+    },
+    {
+      "id": "Y03",
+      "set": "typo",
+      "tab": "frisco",
+      "question": "piano lessons for my 8-year-old",
+      "tests": "a look-alike word that must not become Plano"
+    },
+    {
+      "id": "L01",
+      "set": "held_out_lessons",
+      "tab": "plano",
+      "question": "guitar class for my 10-year-old",
+      "tests": "replaces Y03 as the held-out check for lesson/class questions after Y03 was used to find and fix a bug"
+    },
+    {
+      "id": "L02",
+      "set": "held_out_lessons",
+      "tab": "plano",
+      "question": "art classes for my 9-year-old",
+      "tests": "a class question where real classes exist: Ask must search and show them, not call it off-topic"
+    }
+  ]
+}

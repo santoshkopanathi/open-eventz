@@ -1,0 +1,407 @@
+<title>Ask Open Eventz Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: reviewer strip on top, then the real app's masthead + city bar + one list column (the mobile / left-panel view).
+   Tokens are copied from 06-app/src/app/globals.css ("Weekend Paper"). The app is light-only, so this page is too, by choice. */
+:root {
+  --paper: #FBF7F1;
+  --paper-raised: #F8F3EA;
+  --paper-sunken: #F6F1E8;
+  --fill-subtle: #F3EDE3;
+  --fill-track: #F0E9DD;
+  --ink: #1F1B16;
+  --ink-70: #5F594F;
+  --ink-body: #443F38;
+  --ink-50: #6E675C;
+  --ink-35: #8A8378;
+  --ink-25: #A79C8B;
+  --rule: #EDE5D8;
+  --border: #E4DACA;
+  --border-strong: #DCD1BF;
+  --card-border: #E1D9CC;
+  --accent: #B4623B;
+  --accent-text: #8F4A2B;
+  --accent-tint: #F6E7DD;
+  --accent-tint-border: #E9CDB9;
+  --accent-warm: #E8A87C;
+  --free-tint: #E6EFE7;
+  --free-text: #3F6248;
+  --review-bg: #2A2620;
+  --review-fg: #EDE5D8;
+  --review-dim: #A79C8B;
+  --font-display: "Instrument Serif", Georgia, serif;
+  --font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --radius-chip: 6px;
+  --radius-input: 10px;
+  --radius-button: 12px;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-sans); font-size: 14px; }
+button { font: inherit; cursor: pointer; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.gutter { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* ── Reviewer strip (not part of the product) ── */
+.review { background: var(--review-bg); color: var(--review-fg); }
+.review-inner { max-width: 1040px; margin: 0 auto; padding-block: 14px; display: flex; flex-direction: column; gap: 10px; }
+.review-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+.review-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--review-dim); }
+.review-label b { color: var(--accent-warm); font-weight: 500; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tab { border: 1px solid #4A443B; background: transparent; color: var(--review-fg); padding: 6px 11px; border-radius: 8px; font-size: 13px; display: inline-flex; gap: 7px; align-items: baseline; }
+.tab .n { font-family: var(--font-mono); font-size: 11px; color: var(--review-dim); }
+.tab[aria-selected="true"] { background: var(--paper); color: var(--ink); border-color: var(--paper); font-weight: 600; }
+.tab[aria-selected="true"] .n { color: var(--accent); }
+.cardmode { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--review-dim); }
+.seg { display: inline-flex; padding: 2px; background: #3A352D; border-radius: 8px; }
+.seg button { border: 0; background: transparent; color: var(--review-dim); padding: 4px 10px; border-radius: 6px; font-size: 12px; }
+.seg button[aria-pressed="true"] { background: var(--review-fg); color: var(--ink); font-weight: 600; }
+
+/* ── App chrome, copied from EventsApp / FilterBar ── */
+.masthead { background: #1F1B16; border-bottom: 3px solid #B4623B; }
+.masthead-inner { padding-block: 22px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; }
+.wordmark { font-family: var(--font-display); font-size: 34px; line-height: 1; letter-spacing: -0.015em; white-space: nowrap; }
+.wordmark .o { color: #FBF7F1; } .wordmark .e { color: #E8A87C; }
+.tagline { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #A79C8B; }
+.citybar { border-bottom: 1px solid var(--rule); background: var(--paper); }
+.citybar-inner { padding-block: 12px; }
+.citytabs { display: inline-flex; padding: 3px; background: var(--fill-track); border-radius: 10px; }
+.citytabs button { border: 0; background: transparent; padding: 6px 20px; border-radius: 8px; font-size: 14px; color: var(--ink-50); font-weight: 500; }
+.citytabs button[aria-selected="true"] { background: var(--ink); color: var(--paper); font-weight: 600; }
+
+.stage { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 32px; max-width: 1040px; margin: 0 auto; padding-block: 20px 48px; align-items: start; }
+.col { min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+
+/* ── Ask box ── */
+.ask { display: flex; flex-direction: column; gap: 10px; }
+.ask-label { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-35); }
+.ask-row { display: flex; gap: 8px; }
+.ask-row input { flex: 1; min-width: 0; font: inherit; font-size: 15px; color: var(--ink); background: var(--paper); border: 1px solid var(--border-strong); border-radius: var(--radius-input); padding: 11px 13px; }
+.ask-row input::placeholder { color: var(--ink-35); }
+.ask-row input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-tint); }
+.btn-primary { border: 0; background: var(--ink); color: var(--paper); font-weight: 600; font-size: 14px; padding: 0 18px; border-radius: var(--radius-button); }
+.examples { display: flex; flex-direction: column; gap: 6px; }
+.examples-label { font-size: 12px; color: var(--ink-50); }
+.example { text-align: left; border: 1px solid var(--border); background: var(--paper-raised); color: var(--ink-body); padding: 8px 12px; border-radius: var(--radius-input); font-size: 14px; }
+.example:hover { border-color: var(--border-strong); background: var(--paper-sunken); }
+
+/* ── Result framing ── */
+.result { display: flex; flex-direction: column; gap: 12px; }
+.showing { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 13px; color: var(--ink-70); }
+.showing .k { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-35); }
+.showing .v { color: var(--ink); font-weight: 600; }
+.showing .clear { margin-left: auto; font-size: 12px; color: var(--ink-50); background: none; border: 0; text-decoration: underline; padding: 0; }
+.answer { font-size: 15px; line-height: 1.55; color: var(--ink-body); max-width: 62ch; }
+.answer b { color: var(--ink); font-weight: 600; }
+.note { display: flex; gap: 10px; border: 1px solid var(--border); background: var(--fill-subtle); border-radius: var(--radius-input); padding: 9px 12px; font-size: 13px; color: var(--ink); }
+.note .bar { width: 3px; border-radius: 2px; background: var(--border-strong); flex-shrink: 0; }
+.oneline { font-size: 15px; line-height: 1.55; color: var(--ink-body); padding: 14px 0 4px; }
+.oneline a { color: var(--accent-text); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.disclosure { font-size: 12px; color: var(--ink-50); border-top: 1px solid var(--rule); padding-top: 10px; }
+.listcount { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-35); }
+
+/* ── Event card, copied from EventCard.tsx ── */
+.cards { display: flex; flex-direction: column; gap: 12px; }
+.card { display: block; text-decoration: none; padding: 16px; border-radius: var(--radius-input); background: var(--paper); border: 1px solid var(--card-border); }
+.card:hover { background: var(--paper-sunken); }
+.card-row { display: flex; align-items: flex-start; gap: 14px; }
+.stamp { flex-shrink: 0; width: 48px; min-height: 56px; padding: 10px 0; border-radius: var(--radius-chip); background: var(--fill-subtle); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.stamp .m { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-35); line-height: 1; }
+.stamp .d { font-size: 18px; font-weight: 700; color: var(--ink); line-height: 1.25; }
+.card-body { flex: 1; min-width: 0; }
+.card h3 { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.375; color: var(--ink); }
+.meta { margin-top: 6px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.time { font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-70); white-space: nowrap; flex-shrink: 0; }
+.badges { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; }
+.chip { font-size: 12px; padding: 4px 10px; border-radius: var(--radius-chip); font-weight: 500; white-space: nowrap; display: inline-flex; align-items: center; }
+.chip.free { background: var(--free-tint); color: var(--free-text); }
+.chip.paid, .chip.age { background: var(--fill-subtle); color: var(--ink-50); }
+.chip.inferred { background: var(--accent-tint); color: var(--accent-text); }
+.chip.reg { background: var(--accent-tint); color: var(--accent-text); }
+.chip .icon { display: none; }
+.loc { margin-top: 4px; font-size: 13px; color: var(--ink-70); }
+.dropoff { margin-top: 10px; display: flex; gap: 10px; border: 1px solid var(--border); background: var(--fill-subtle); border-radius: var(--radius-input); padding: 7px 10px; }
+.dropoff .bar { width: 3px; border-radius: 2px; background: var(--border-strong); flex-shrink: 0; }
+.dropoff .l { font-size: 12px; font-weight: 600; color: var(--ink); }
+body.today-card .spec-only { display: none !important; }
+
+/* ── Reviewer notes beside the app ── */
+.notes { min-width: 0; display: flex; flex-direction: column; gap: 14px; position: sticky; top: 16px; }
+.notes-box { border: 1px dashed var(--border-strong); border-radius: var(--radius-input); padding: 16px; background: var(--paper-raised); display: flex; flex-direction: column; gap: 10px; }
+.notes h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 26px; line-height: 1.1; text-wrap: balance; }
+.notes .eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-text); }
+.notes p, .notes li { margin: 0; font-size: 14px; line-height: 1.55; color: var(--ink-body); max-width: 60ch; }
+.notes ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.blocked { font-family: var(--font-mono); font-size: 12px; line-height: 1.6; background: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--ink-70); }
+.blocked mark { background: var(--accent-tint); color: var(--accent-text); padding: 0 2px; border-radius: 3px; }
+
+@media (min-width: 640px) {
+  .chip.reg .icon { display: none; }
+}
+@media (max-width: 639px) {
+  .chip.reg .txt { display: none; }
+  .chip.reg .icon { display: inline; }
+  .wordmark { font-size: 30px; }
+}
+@media (max-width: 430px) {
+  .tagline { font-size: 9.5px; letter-spacing: 0.07em; }
+  .citytabs button { padding: 6px 14px; }
+}
+@media (max-width: 900px) {
+  .stage { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .notes { position: static; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .result, .ask { animation: in 160ms ease-out; }
+  @keyframes in { from { opacity: .4; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+}
+</style>
+
+<div class="review gutter">
+  <div class="review-inner">
+    <div class="review-top">
+      <span class="review-label"><b>Prototype</b> · sample data, no model calls · pick a state</span>
+    </div>
+    <div class="tabs" role="tablist" id="tabs"></div>
+  </div>
+</div>
+
+<header class="masthead gutter">
+  <div class="masthead-inner">
+    <span class="wordmark"><span class="o">Open </span><span class="e">Eventz</span></span>
+    <span class="tagline">Free things to do with kids · Frisco &amp; Plano</span>
+  </div>
+</header>
+<div class="citybar gutter">
+  <div class="citybar-inner">
+    <div class="citytabs" role="tablist" aria-label="City">
+      <button type="button" role="tab" id="city-frisco" aria-selected="true">Frisco City</button>
+      <button type="button" role="tab" id="city-plano" aria-selected="false">Plano City</button>
+    </div>
+  </div>
+</div>
+
+<main class="stage gutter">
+  <div class="col">
+    <form class="ask" id="ask-form" autocomplete="off">
+      <label class="ask-label" for="ask-input">Ask about events</label>
+      <div class="ask-row">
+        <input id="ask-input" type="text" placeholder="e.g. something for my 4-year-old this Saturday">
+        <button class="btn-primary" type="submit">Ask</button>
+      </div>
+    </form>
+    <div id="out"></div>
+  </div>
+  <aside class="notes" id="notes" aria-label="Reviewer notes"></aside>
+</main>
+
+<script>
+const DISCLOSURE = 'Answers come only from events listed on Open Eventz. Check details with the venue.';
+
+/* Drop-off labels: exact strings from src/lib/supervision.ts */
+const DROP = {
+  plano: 'Can kids be dropped off? Plan to stay',
+  venue: 'Can kids be dropped off? Check with venue',
+  friscoLib: 'Can kids be dropped off? Check with Frisco Library',
+  friscoNo: 'Can kids be dropped off? No — adult must stay with child',
+};
+
+/* price: 'free' | 'free-inferred' | 'paid' | 'paid-inferred' | 'unknown'  → labels from cardPriceBadge
+   age: list card shows only Family / Family ✦; specific ranges (detail-style) are shown only in "With age + drop-off" mode */
+const EV = {
+  storytime: { m: 'Nov', d: 21, title: 'Storytime Sing-Along', time: '10:30 AM', loc: 'Davis Library, Plano', price: 'free', age: { t: 'Ages 0–5', spec: true }, reg: false, drop: DROP.plano },
+  lego:      { m: 'Nov', d: 21, title: 'Lego Build Club', time: '11:00 AM', loc: 'Haggard Library, Plano', price: 'free', age: { t: 'Ages 4–8', spec: true }, reg: true, drop: DROP.plano },
+  music:     { m: 'Nov', d: 21, title: 'Music & Movement', time: '2:00 PM', loc: 'Parr Library, Plano', price: 'free', age: { t: 'Ages 0–5', spec: true }, reg: false, drop: DROP.plano },
+  craft:     { m: 'Nov', d: 21, title: 'Family Craft Afternoon', time: '3:30 PM', loc: 'Harrington Library, Plano', price: 'free', age: { t: 'Family' }, reg: false, drop: DROP.plano },
+  lights:    { m: 'Nov', d: 21, title: 'Holiday Lights Walk', time: '6:00 PM', loc: 'Frisco Commons Park, Frisco', price: 'free-inferred', age: { t: 'Family ✦', inferred: true }, reg: false, drop: DROP.venue },
+  movie:     { m: 'Nov', d: 21, title: 'Kaleidoscope Park Movie Night', time: '6:30 PM', loc: 'Kaleidoscope Park, Frisco', price: 'free', age: { t: 'Family' }, reg: false, drop: DROP.venue },
+  market:    { m: 'Nov', d: 22, title: 'Winter Market Kids’ Zone', time: '11:00 AM', loc: 'Frisco Square, Frisco', price: 'unknown', age: { t: 'Family ✦', inferred: true }, reg: false, drop: DROP.venue },
+  pottery:   { m: 'Nov', d: 22, title: 'Pottery Painting Session', time: '1:00 PM', loc: 'Frisco Athletic Center, Frisco', price: 'paid-inferred', age: { t: 'Ages 6–12 ✦', inferred: true }, reg: true, drop: DROP.venue },
+  games:     { m: 'Nov', d: 22, title: 'Family Board Game Hour', time: '2:00 PM', loc: 'Frisco Public Library, Frisco', price: 'free', age: { t: 'Family' }, reg: false, drop: DROP.friscoLib },
+  bugs:      { m: 'Nov', d: 19, title: 'Little Explorers: Backyard Bugs', time: '10:00 AM', loc: 'Frisco Public Library, Frisco', price: 'free', age: { t: 'Ages 0–5', spec: true }, reg: true, drop: DROP.friscoNo },
+};
+
+const PRICE = {
+  'free': { t: 'Free', c: 'free' },
+  'free-inferred': { t: 'Free ✦', c: 'free', tip: 'Estimated from description' },
+  'paid': { t: 'Paid', c: 'paid' },
+  'paid-inferred': { t: 'Paid ✦', c: 'inferred', tip: 'Estimated from description' },
+  'unknown': null,
+};
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function card(e) {
+  const p = PRICE[e.price];
+  const priceChip = p ? `<span class="chip ${p.c}"${p.tip ? ` title="${p.tip}"` : ''}>${p.t}</span>` : '';
+  let ageChip = '';
+  // Proposed: the list card shows the same age label the detail view does (detailAgeBadge), ✦ when estimated.
+  if (e.age) {
+    const cls = e.age.inferred ? 'inferred' : 'age';
+    ageChip = `<span class="chip ${cls}"${e.age.inferred ? ' title="Estimated from description"' : ''}>${esc(e.age.t)}</span>`;
+  }
+  const reg = e.reg ? `<span class="chip reg" title="Registration required" aria-label="Registration required"><svg class="icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 14 2 2 4-4"/></svg><span class="txt">Registration</span></span>` : '';
+  return `<a class="card" href="#" onclick="return false">
+    <div class="card-row">
+      <div class="stamp"><span class="m">${e.m}</span><span class="d">${e.d}</span></div>
+      <div class="card-body">
+        <h3>${esc(e.title)}</h3>
+        <div class="meta"><span class="time">${e.time}</span><div class="badges">${ageChip}${priceChip}${reg}</div></div>
+        <div class="loc">${esc(e.loc)}</div>
+      </div>
+    </div>
+  </a>`;
+}
+
+const cards = list => `<div class="cards">${list.map(k => card(EV[k])).join('')}</div>`;
+const showing = parts => `<div class="showing"><span class="k">Showing:</span><span class="v">${parts.join(' · ')}</span><button type="button" class="clear" data-go="empty">Clear</button></div>`;
+const disclosure = `<div class="disclosure">${DISCLOSURE}</div>`;
+
+const EXAMPLES = [
+  { q: 'Something free for my 4-year-old this Saturday in Plano', go: 'answer' },
+  { q: 'Anything fun to do in Frisco this weekend?', go: 'price' },
+  { q: 'Is there a robotics class for my 6-year-old in Plano on Saturday?', go: 'nomatch' },
+];
+
+const STATES = {
+  empty: {
+    tab: 'Empty', city: 'frisco', q: '',
+    render: () => `<div class="result"><div class="listcount">Sample list · upcoming events</div>${cards(['bugs', 'lights', 'movie', 'market', 'games'])}</div>`,
+    notes: {
+      title: 'The box sits above the list it searches',
+      body: `<p>Nothing changes until the parent asks. The list below is the normal browse view, so Ask is an extra path, not a replacement.</p>
+      <ul><li>The only example is the greyed text inside the box. No list of example questions underneath.</li>
+      <li>Type a question and press Ask to jump to a matching state. With no city named, Ask searches the city tab you’re on.</li></ul>`,
+    },
+  },
+  answer: {
+    tab: 'Answer passed', city: 'plano', q: 'Something free for my 4-year-old this Saturday in Plano',
+    render: () => `<div class="result">
+      ${showing(['Sat Nov 21', 'Plano', 'free', 'age 4'])}
+      <p class="answer"><b>Storytime Sing-Along</b> at Davis Library and <b>Lego Build Club</b> at Haggard Library both match your question. <b>Music &amp; Movement</b> at Parr Library is another good pick if your child likes to dance.</p>
+      ${cards(['storytime', 'lego', 'music', 'craft'])}
+      ${disclosure}</div>`,
+    notes: {
+      title: 'The cards tell, the text frames',
+      body: `<p>The answer names events and says why they fit. It states no date, time, age, price or drop-off rule. Every fact the parent decides on is on a card, drawn from the stored record.</p>
+      <ul><li>The “Showing” line is the parse. If the model read “Saturday” as the wrong day, the parent sees it here.</li>
+      <li>“Free” here means stored as free. Events with an unknown price never count as free.</li>
+      <li>Each card shows the event’s age range, so the parent can check “age 4” against the card itself. Drop-off rules are on the detail page, one tap away.</li></ul>`,
+    },
+  },
+  failed: {
+    tab: 'Check failed', city: 'plano', q: 'Something free for my 4-year-old this Saturday in Plano',
+    render: () => `<div class="result">
+      ${showing(['Sat Nov 21', 'Plano', 'free', 'age 4'])}
+      ${cards(['storytime', 'lego', 'music', 'craft'])}
+      ${disclosure}</div>`,
+    notes: {
+      title: 'If the answer breaks a rule, the parent sees cards only',
+      body: `<p>Same question, same cards. The model’s sentence was dropped because it stated facts. The parent sees no error message, just the events.</p>
+      <p class="eyebrow">What the model wrote (hidden from parents)</p>
+      <div class="blocked">Storytime Sing-Along starts at <mark>10</mark>:<mark>30</mark> and is <mark>free</mark>, perfect for <mark>toddlers</mark>.</div>
+      <ul><li>Blocked words: digits, price words, day and month names, time-of-day words, “drop”, “age” and age words like “toddler”.</li>
+      <li>The same fallback applies if the model cites an event that wasn’t in the retrieved list.</li></ul>`,
+    },
+  },
+  nomatch: {
+    tab: 'Nothing matched', city: 'plano', q: 'Is there a robotics class for my 6-year-old in Plano on Saturday?',
+    render: () => `<div class="result">
+      ${showing(['Sat Nov 21', 'Plano', 'age 6', 'robotics'])}
+      <p class="oneline">Nothing matched. <a href="#" onclick="return false">See all Saturday events in Plano</a></p></div>`,
+    notes: {
+      title: 'No match means one line and a way out',
+      body: `<p>When the filters find nothing, the model is never asked to write anything. The link opens the normal list, filtered to that day and city, so the parent can browse instead.</p>
+      <ul><li>The constraint is never quietly widened. We don’t swap in Frisco or Sunday events without saying so.</li></ul>`,
+    },
+  },
+  offtopic: {
+    tab: 'Off-topic', city: 'frisco', q: 'Will it rain on Saturday?',
+    render: () => `<div class="result"><p class="oneline">'Ask' only answers questions about events listed on Open Eventz. Try something like “things to do in Plano this Saturday”.</p></div>`,
+    notes: {
+      title: 'Off-topic gets a redirect, nothing else',
+      body: `<p>Weather, directions and parenting advice are out of scope. No “Showing” line, because nothing was searched, and no events.</p>`,
+    },
+  },
+  price: {
+    tab: 'Price note', city: 'frisco', q: 'Cheap things to do in Frisco this weekend',
+    render: () => `<div class="result">
+      ${showing(['Sat Nov 21 – Sun Nov 22', 'Frisco', 'any price'])}
+      <div class="note"><div class="bar"></div><div>Open Eventz only knows whether an event is 'free' or 'paid'. Please look at the details view.</div></div>
+      <p class="answer"><b>Holiday Lights Walk</b> and <b>Kaleidoscope Park Movie Night</b> look like relaxed outings. <b>Family Board Game Hour</b> at Frisco Public Library is another option.</p>
+      ${cards(['lights', 'movie', 'market', 'pottery', 'games'])}
+      ${disclosure}</div>`,
+    notes: {
+      title: '“Cheap” can’t be answered, so we say so',
+      body: `<p>The catalog only knows free, paid or unknown, never an amount. So “cheap” doesn’t turn into a free-only filter. The note says why, and the parent sees every price class.</p>
+      <ul><li><b>Free ✦</b>: free is estimated from the description (hover it for the tooltip).</li>
+      <li><b>Paid ✦</b>: paid is estimated. Winter Market has no price badge because its price is unknown.</li>
+      <li><b>Family ✦</b> and <b>Ages 6–12 ✦</b>: the age is estimated from the description. Plain labels come straight from the source.</li></ul>`,
+    },
+  },
+};
+const ORDER = ['empty', 'answer', 'failed', 'nomatch', 'offtopic', 'price'];
+
+const cardNote = `<div class="notes-box"><p class="eyebrow">About the cards</p>
+  <p>Ask reuses the list card. Decided and built: the card shows the real age range (“Ages 0–5”, “Ages 4–8”, “Ages 6–12 ✦”) in the list view too, the same label the detail page shows. Drop-off stays on the detail page only.</p></div>`;
+
+let current = 'empty';
+
+function setCity(c) {
+  document.getElementById('city-frisco').setAttribute('aria-selected', c === 'frisco');
+  document.getElementById('city-plano').setAttribute('aria-selected', c === 'plano');
+}
+
+function show(key, { push = true } = {}) {
+  if (!STATES[key]) key = 'empty';
+  current = key;
+  const s = STATES[key];
+  document.getElementById('ask-input').value = s.q;
+  document.getElementById('out').innerHTML = s.render();
+  document.getElementById('notes').innerHTML =
+    `<div class="notes-box"><p class="eyebrow">State ${ORDER.indexOf(key) + 1} of 6 · ${s.tab}</p><h2>${s.notes.title}</h2>${s.notes.body}</div>${cardNote}`;
+  setCity(s.city);
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.key === key));
+  if (push && location.hash !== '#' + key) { try { history.replaceState(null, '', '#' + key); } catch (e) { location.hash = key; } }
+}
+
+/* Very rough keyword router so typed questions land somewhere sensible. Not the real parser. */
+function route(q) {
+  const s = q.toLowerCase();
+  if (!s.trim()) return 'empty';
+  if (/weather|rain|direction|traffic|recipe|sleep|tantrum/.test(s)) return 'offtopic';
+  if (/cheap|\$|under|budget|afford|inexpensive/.test(s)) return 'price';
+  if (/robot|coding|swim|karate|chess/.test(s)) return 'nomatch';
+  if (/frisco/.test(s)) return 'price';
+  return 'answer';
+}
+
+document.getElementById('tabs').innerHTML = ORDER.map((k, i) =>
+  `<button type="button" role="tab" class="tab" data-key="${k}"><span class="n">${i + 1}</span>${STATES[k].tab}</button>`).join('');
+
+document.addEventListener('click', ev => {
+  const t = ev.target.closest('[data-key],[data-go]');
+  if (!t) return;
+  show(t.dataset.key || t.dataset.go);
+});
+document.getElementById('ask-form').addEventListener('submit', ev => {
+  ev.preventDefault();
+  const q = document.getElementById('ask-input').value;
+  const key = route(q);
+  show(key);
+  if (key !== 'empty') document.getElementById('ask-input').value = q;
+});
+document.getElementById('city-frisco').addEventListener('click', () => setCity('frisco'));
+document.getElementById('city-plano').addEventListener('click', () => setCity('plano'));
+
+
+const ALIAS = { 'check-failed': 'failed', 'no-match': 'nomatch', 'off-topic': 'offtopic', 'price-note': 'price' };
+function fromHash() { const h = location.hash.slice(1); show(ALIAS[h] || h || 'empty', { push: false }); }
+window.addEventListener('hashchange', fromHash);
+fromHash();
+</script>
