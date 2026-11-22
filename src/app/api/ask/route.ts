@@ -5,18 +5,17 @@ import { KID_VISIBILITY_GATE, NOT_ADULTS_ONLY } from '@/lib/catalog'
 import { ask } from '@/lib/ask/ask'
 import { parseQuestion, selectEvents, emptyUsage } from '@/lib/ask/llm'
 import { TZ, addDays, MAX_DAYS_AHEAD } from '@/lib/ask/core'
+import { takeAskSlot } from '@/lib/ask/ceiling'
 
 /**
  * POST /api/ask — Ask Open Eventz. Behind a flag: with ASK_ENABLED unset this route refuses
  * every request, and the list view is unchanged (spec "Feature flag").
  *
  * Daily ceiling (spec "Runaway cost", owner-approved 2026-11-18): 100 questions a day, about
- * $2. Kept in memory, so it is per server instance and resets on restart: enough for the local
- * demo, NOT enough for production, where it must move to a shared store before the flag is on.
+ * $2, counted in the database so every server instance shares one count (migration 010,
+ * src/lib/ask/ceiling.ts). If the count can't be checked, Ask shows "unavailable": fail closed.
  * Logs nothing about the question (spec "Personal data in questions").
  */
-const DAILY_QUESTION_CEILING = 100
-let ceiling = { day: '', count: 0 }
 
 async function loadCatalog(today: string): Promise<Event[]> {
   // A deliberately loose window (a day either side, in UTC): retrieve() then applies the exact
@@ -43,10 +42,9 @@ export async function POST(request: Request) {
   if (!question) return NextResponse.json({ error: 'Ask a question about events.' }, { status: 400 })
 
   const today = new Date().toLocaleDateString('en-CA', { timeZone: TZ })
-  if (ceiling.day !== today) ceiling = { day: today, count: 0 }
-  // Over the ceiling, the parent is sent to the normal filter view instead (spec: "Fails to: Filter view").
-  if (ceiling.count >= DAILY_QUESTION_CEILING) return NextResponse.json({ kind: 'unavailable' })
-  ceiling.count += 1
+  // Over the ceiling, or if the shared count can't be checked, the parent keeps the normal list
+  // (spec: "Fails to: Filter view").
+  if (!(await takeAskSlot((fn, args) => supabase.rpc(fn, args), today))) return NextResponse.json({ kind: 'unavailable' })
 
   try {
     const result = await ask(question, tab, today, await loadCatalog(today), { parse: parseQuestion, select: selectEvents }, emptyUsage())

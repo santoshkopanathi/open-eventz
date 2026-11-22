@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { Event } from '@/lib/types'
 import type { City } from '@/components/FilterBar'
 import EventCard from '@/components/EventCard'
+import { trackEvent } from '@/lib/analytics'
 
 /**
  * The "Ask about events" box above the list (spec "Screen copy", approved 2026-11-18). Only
@@ -33,12 +34,17 @@ export default function AskBox({ city, selectedId, onSelect, onFilterView }: {
     e.preventDefault()
     if (!q.trim() || busy) return
     setBusy(true)
+    trackEvent('ask_submitted', { tab: city }) // never the question text
+    let r: Result = { kind: 'unavailable' }
     try {
       const res = await fetch('/api/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: q, tab: city }) })
-      setResult(res.ok ? await res.json() : { kind: 'unavailable' })
+      if (res.ok) r = await res.json()
     } catch {
-      setResult({ kind: 'unavailable' })
+      // r stays 'unavailable'
     } finally {
+      setResult(r)
+      const shown = 'cards' in r ? r.cards.length : 'fallback' in r && r.fallback ? r.fallback.cards.length : 0
+      trackEvent('ask_result', { kind: r.kind, cards: shown })
       setBusy(false)
     }
   }
@@ -78,7 +84,7 @@ export default function AskBox({ city, selectedId, onSelect, onFilterView }: {
             <>
               {result.answer && <p style={{ fontSize: '15px', lineHeight: 1.55, color: 'var(--color-ink-body)' }}>{result.answer}</p>}
               <div className="flex flex-col gap-3">
-                {result.cards.map(ev => <EventCard key={ev.id} event={ev} selected={selectedId === ev.id} onClick={() => onSelect(ev)} />)}
+                {result.cards.map((ev, i) => <EventCard key={ev.id} event={ev} selected={selectedId === ev.id} onClick={() => { trackEvent('ask_card_click', { position: i + 1, fallback: false }); onSelect(ev) }} />)}
               </div>
               <p className="pt-2.5" style={{ fontSize: '12px', color: 'var(--color-ink-50)', borderTop: '1px solid var(--color-rule)' }}>{result.disclosure}</p>
             </>
@@ -96,7 +102,7 @@ export default function AskBox({ city, selectedId, onSelect, onFilterView }: {
             <>
               <p style={{ fontSize: '15px', color: 'var(--color-ink-body)' }}>{result.fallback.heading}</p>
               <div className="flex flex-col gap-3">
-                {result.fallback.cards.map(ev => <EventCard key={ev.id} event={ev} selected={selectedId === ev.id} onClick={() => onSelect(ev)} />)}
+                {result.fallback.cards.map((ev, i) => <EventCard key={ev.id} event={ev} selected={selectedId === ev.id} onClick={() => { trackEvent('ask_card_click', { position: i + 1, fallback: true }); onSelect(ev) }} />)}
               </div>
             </>
           )}
