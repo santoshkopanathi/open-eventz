@@ -95,7 +95,7 @@ describe('getAgeBadge — kinds', () => {
   })
 })
 
-describe('cardAgeBadge — what the LIST CARD renders (spec §2)', () => {
+describe('cardAgeBadge — what the LIST CARD renders (spec §2, revised 2026-11-17: ranges on the card)', () => {
   test('confirmed-family → "Family"', () => {
     expect(cardAgeBadge(ev({ source: 'plano-library', age_min: 0, age_max: 17, age_buckets: ['family'] })))
       .toMatchObject({ content: 'Family', bg: GOLD_BG })
@@ -106,15 +106,38 @@ describe('cardAgeBadge — what the LIST CARD renders (spec §2)', () => {
       .toMatchObject({ content: 'Family ✦', tooltip: ESTIMATED_TOOLTIP, bg: INDIGO_BG })
   })
 
-  test('inferred-specific → NOTHING on the card (v1.3)', () => {
-    // Was a bare "✦" with no text, which communicated nothing to a parent scanning a list.
-    // Net effect: a card shows an age chip only when the answer is "Family".
-    expect(cardAgeBadge(ev({ source: 'play-frisco', kid_relevant: true, age_basis: 'stated', age_confidence: 'high', age_buckets: ['teen'] }))).toBeNull()
+  test('inferred specific → "Ages 13–17 ✦" with the tooltip — a range with text, never a bare star', () => {
+    expect(cardAgeBadge(ev({ source: 'play-frisco', kid_relevant: true, age_confidence: 'high', age_buckets: ['teen'] })))
+      .toMatchObject({ content: 'Ages 13–17 ✦', tooltip: ESTIMATED_TOOLTIP, bg: INDIGO_BG })
   })
 
-  test('structured specific and multi-group → NOT shown on cards', () => {
-    expect(cardAgeBadge(ev({ source: 'frisco-library', age_min: 0, age_max: 5 }))).toBeNull()
-    expect(cardAgeBadge(ev({ source: 'plano-library', age_min: 6, age_max: 17 }))).toBeNull()
+  test('stated specific (age_basis = stated) → plain "Ages 13–17", no ✦, no tooltip', () => {
+    const b = cardAgeBadge(ev({ source: 'play-frisco', kid_relevant: true, age_basis: 'stated', age_confidence: 'high', age_buckets: ['teen'] }))
+    expect(b).toMatchObject({ content: 'Ages 13–17', bg: GOLD_BG })
+    expect(b?.tooltip).toBeUndefined()
+  })
+
+  test('structured specific and multi-group → shown on cards', () => {
+    expect(cardAgeBadge(ev({ source: 'frisco-library', age_min: 0, age_max: 5 }))).toMatchObject({ content: 'Ages 0–5', bg: GOLD_BG })
+    expect(cardAgeBadge(ev({ source: 'frisco-library', age_min: 13, age_max: 17 }))).toMatchObject({ content: 'Teens' })
+    expect(cardAgeBadge(ev({ source: 'plano-library', age_min: 6, age_max: 17 }))).toMatchObject({ content: 'Ages 6–17' })
+  })
+
+  test('no age data / adult-only → still no chip on the card', () => {
+    expect(cardAgeBadge(ev({ source: 'frisco-library' }))).toBeNull()
+    expect(cardAgeBadge(ev({ source: 'plano-library', age_min: 18, age_max: 99 }))).toBeNull()
+  })
+
+  test('regression guard: the card label always equals the detail label (one rule, two surfaces)', () => {
+    const cases: Partial<Event>[] = [
+      { source: 'frisco-library', age_min: 0, age_max: 5 },
+      { source: 'plano-library', age_min: 6, age_max: 17 },
+      { source: 'plano-library', age_min: 0, age_max: 17, age_buckets: ['family'] },
+      { source: 'play-frisco', kid_relevant: true, age_confidence: 'high', age_buckets: ['family'] },
+      { source: 'play-frisco', kid_relevant: true, age_confidence: 'high', age_buckets: ['teen'] },
+      { source: 'play-frisco', kid_relevant: true, age_confidence: 'low', age_buckets: ['teen'] },
+    ]
+    for (const c of cases) expect(cardAgeBadge(ev(c))?.content).toBe(detailAgeBadge(ev(c))?.content)
   })
 })
 

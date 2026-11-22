@@ -1,0 +1,436 @@
+{
+  "labelled_by": "Owner, 2026-11-19, in chat, blind: the owner had not seen Claude's labels or the model's answers to these questions. For each question the owner saw every event for that city and window with the exact text the model sees (title, day/time, venue, first 300 characters of the description) plus the card labels. Owner's judgment: fully blind.",
+  "as_of": "2026-11-18",
+  "labels": [
+    {
+      "id": "A01",
+      "acceptable": [
+        "E039",
+        "E041",
+        "E047"
+      ],
+      "not_good": [
+        "E046"
+      ],
+      "notes": "E046 (clean-energy talk) may be too mature for a 4-year-old."
+    },
+    {
+      "id": "A02",
+      "acceptable": [
+        "E035",
+        "E036",
+        "E038",
+        "E040",
+        "E042"
+      ],
+      "not_good": [
+        "E037",
+        "E043",
+        "E044"
+      ],
+      "notes": "Morning = before noon; E043/E044 are afternoon. E037 skipped: same time and place as E036 (SaturYAY) on Nov 21 — looks like a duplicate or conflicting listing."
+    },
+    {
+      "id": "A03",
+      "acceptable": [
+        "E020",
+        "E021",
+        "E034",
+        "E037"
+      ],
+      "secondary": [
+        "E040",
+        "E043",
+        "E044"
+      ],
+      "notes": "Renaissance Faire events are only loosely tied to Christmas; show them only if there are not enough real Christmas events. Owner had not seen this result before labelling."
+    },
+    {
+      "id": "A04",
+      "acceptable": [
+        "E016",
+        "E011"
+      ],
+      "not_good": [
+        "E015"
+      ],
+      "medium_confidence": [
+        "E011"
+      ],
+      "notes": "E016 is the baby lap-sit storytime. E011 (Rhyme Time 0-24 months) included with medium confidence because there is only one other fit. Owner agrees with every event code dropped (3-5 years, 13+)."
+    },
+    {
+      "id": "A05",
+      "acceptable": [
+        "E020",
+        "E021",
+        "E022",
+        "E019"
+      ],
+      "notes": "Owner order: tree lighting, Christmas music, friendship bracelets, Live After 5."
+    },
+    {
+      "id": "A06",
+      "acceptable": [
+        "E056",
+        "E067",
+        "E092"
+      ],
+      "not_good": [
+        "E068",
+        "E069",
+        "E070",
+        "E072",
+        "E073",
+        "E089",
+        "E090"
+      ],
+      "notes": "Teen-suitable: Math Mania, the 13+ banking talk, Paper Airplane Challenge. Family storytimes, glitter jar, raptors and Sensational Senses not picked for teens."
+    },
+    {
+      "id": "A07",
+      "acceptable": [
+        "E068",
+        "E069",
+        "E070"
+      ],
+      "not_good": [
+        "E072",
+        "E073"
+      ],
+      "notes": "Family Storytimes excluded: aimed at younger kids than 6."
+    },
+    {
+      "id": "A08",
+      "acceptable": [
+        "E047",
+        "E039",
+        "E041",
+        "E036",
+        "E037",
+        "E040",
+        "E043",
+        "E044",
+        "E035"
+      ],
+      "not_good": [
+        "E045",
+        "E046",
+        "E038",
+        "E042"
+      ],
+      "first_city": "plano",
+      "notes": "Both cities, Plano first. Plano: Art Shop, both Family Storytimes. Frisco: SaturYAY, Christmas Edition, Renaissance Faire + D&D + Tudor cottage, Fitness Fun."
+    },
+    {
+      "id": "A09",
+      "acceptable": [
+        "E055",
+        "E124"
+      ],
+      "notes": "Astronaut talk and Pop Up STEM: Tech (coding). Owner did not mark LIBRARY CLOSED as forbidden here; decided in N03."
+    },
+    {
+      "id": "A10",
+      "acceptable": [
+        "E010",
+        "E033",
+        "E215",
+        "E260",
+        "E281"
+      ],
+      "not_good": [
+        "E146"
+      ],
+      "notes": "Chess meet-ups and open play (chess sets welcome). E010 is tonight and still useful. E215/E260/E281 lie beyond the 25-per-city retrieval cap for an undated question, so the model cannot reach them: this question measures that limit."
+    },
+    {
+      "id": "N01",
+      "acceptable": [],
+      "notes": "Nothing matches robotics."
+    },
+    {
+      "id": "N02",
+      "acceptable": [],
+      "notes": "Nothing matches swimming lessons. Show Nothing matched."
+    },
+    {
+      "id": "N03",
+      "acceptable": [],
+      "notes": "Only entry is a LIBRARY CLOSED notice; show nothing.",
+      "forbidden": [
+        "E083"
+      ]
+    },
+    {
+      "id": "N04",
+      "acceptable": [],
+      "not_good": [
+        "E004"
+      ],
+      "notes": "Owner first picked E004, then corrected: it is at 10 AM, so nothing matches tonight. Show Nothing matched."
+    },
+    {
+      "id": "N05",
+      "acceptable": [
+        "E039",
+        "E045",
+        "E046",
+        "E047"
+      ],
+      "not_good": [
+        "E041"
+      ],
+      "expected_behaviour": "unsupported_city_fallback_to_tab",
+      "notes": "NEW BEHAVIOUR (owner, 2026-11-19): say \"Nothing matched. Open Eventz covers Frisco and Plano only.\" then \"Here are a few events in Plano this Saturday:\" with up to 5 cards from the tab city on the parsed dates. Pick a varied mix, not near-duplicates (one Family Storytime, not both). Not yet built."
+    },
+    {
+      "id": "T01",
+      "acceptable": [
+        "E019",
+        "E020",
+        "E022"
+      ],
+      "forbidden": [
+        "E021"
+      ],
+      "not_good": [
+        "E013",
+        "E017"
+      ],
+      "notes": "Owner first included E021, then kept the rule: its price is unknown, so it never counts as free. Morning storytimes not picked for evening."
+    },
+    {
+      "id": "T02",
+      "acceptable": [
+        "E036",
+        "E037",
+        "E038",
+        "E040",
+        "E042"
+      ],
+      "not_good": [
+        "E035",
+        "E043",
+        "E044"
+      ],
+      "duplicate_group": [
+        "E036",
+        "E037"
+      ],
+      "notes": "E036 and E037 clash (same time and place) and may be a duplicate listing: treated as one group."
+    },
+    {
+      "id": "T03",
+      "acceptable": [
+        "E039",
+        "E041",
+        "E045",
+        "E046",
+        "E047"
+      ],
+      "duplicate_group": [
+        "E039",
+        "E041"
+      ],
+      "expect_price_note": true,
+      "notes": "One of the two Family Storytimes. Price note per the approved screen copy (owner did not change it)."
+    },
+    {
+      "id": "O01",
+      "acceptable": [],
+      "expect_redirect": true,
+      "notes": "Redirect line only."
+    },
+    {
+      "id": "O02",
+      "acceptable": [],
+      "expect_redirect": true,
+      "notes": "Redirect line only."
+    },
+    {
+      "id": "S01",
+      "acceptable": [
+        "E070",
+        "E077"
+      ],
+      "provisional": true,
+      "notes": "NOT BLIND: written by Claude 2026-11-21 before query expansion was built, then shown to the owner. A development set, used while building; not evidence of quality on its own. Live Raptors (birds of prey) and Insect Investigators.",
+      "blind": false
+    },
+    {
+      "id": "S02",
+      "acceptable": [
+        "E005",
+        "E116",
+        "E242"
+      ],
+      "provisional": true,
+      "notes": "NOT BLIND: written by Claude 2026-11-21 before query expansion was built, then shown to the owner. A development set, used while building; not evidence of quality on its own. The three puppet-show programs (Little Red Riding Hood, Abominable Snowman, Goldilocks); repeat sessions count once.",
+      "blind": false
+    },
+    {
+      "id": "S03",
+      "acceptable": [
+        "E124",
+        "E381"
+      ],
+      "provisional": true,
+      "notes": "NOT BLIND: written by Claude 2026-11-21 before query expansion was built, then shown to the owner. A development set, used while building; not evidence of quality on its own. Pop Up STEM: Tech (coding) and Ozobot City (design and code a robot city).",
+      "blind": false
+    },
+    {
+      "id": "S04",
+      "acceptable": [
+        "E223",
+        "E302"
+      ],
+      "secondary": [
+        "E056",
+        "E068",
+        "E303",
+        "E343"
+      ],
+      "provisional": true,
+      "notes": "NOT BLIND: written by Claude 2026-11-21 before query expansion was built, then shown to the owner. A development set, used while building; not evidence of quality on its own. LEGO Engineering and the Engineering Challenge. STEAM Stop says \"build things\": fine to show, not required.",
+      "blind": false
+    },
+    {
+      "id": "S05",
+      "acceptable": [],
+      "not_good": [
+        "E148",
+        "E150",
+        "E158"
+      ],
+      "provisional": true,
+      "notes": "NOT BLIND: written by Claude 2026-11-21 before query expansion was built, then shown to the owner. A development set, used while building; not evidence of quality on its own. No cooking events. Breakfast with Santa, a food drive and a concert with food trucks are not cooking classes.",
+      "blind": false
+    },
+    {
+      "id": "H01",
+      "acceptable": [
+        "E147",
+        "E222",
+        "E323"
+      ],
+      "secondary": [
+        "E035"
+      ],
+      "notes": "Owner: Frosty 5K, Scuba with Santa 2026, Fencing 101. Maybe: Fitness Fun Classes.",
+      "blind": true,
+      "top_picks_only": true
+    },
+    {
+      "id": "H02",
+      "acceptable": [
+        "E077"
+      ],
+      "notes": "Owner: Insect Investigators.",
+      "blind": true,
+      "top_picks_only": true
+    },
+    {
+      "id": "H03",
+      "acceptable": [
+        "E067"
+      ],
+      "notes": "Owner: Bank Accounts & Credit. Read Teen Study Zone (E114) in full; left it out (no opinion).",
+      "blind": true,
+      "top_picks_only": true
+    },
+    {
+      "id": "Y01",
+      "acceptable": [
+        "E036",
+        "E037",
+        "E040",
+        "E042"
+      ],
+      "secondary": [
+        "E043",
+        "E035"
+      ],
+      "first_city": "frisco",
+      "notes": "Owner: SaturYAY!, SaturYay Christmas Edition, Renaissance Faire, Saturday Music Series. Maybe: D&D Workshop, Fitness Fun Classes.",
+      "blind": true,
+      "top_picks_only": true
+    },
+    {
+      "id": "Y02",
+      "acceptable": [
+        "E015",
+        "E016",
+        "E018"
+      ],
+      "secondary": [
+        "E011",
+        "E014"
+      ],
+      "first_city": "plano",
+      "notes": "Owner: Toddler Time, Babes in Arms, Preschool Storytime. Maybe: Rhyme Time, Parachute Party.",
+      "blind": true,
+      "top_picks_only": true
+    },
+    {
+      "id": "Y03",
+      "acceptable": [],
+      "notes": "Owner: nothing to show.",
+      "blind": true,
+      "top_picks_only": true
+    },
+    {
+      "id": "L01",
+      "acceptable": [],
+      "notes": "Owner: nothing to show.",
+      "blind": true,
+      "top_picks_only": true
+    },
+    {
+      "id": "L02",
+      "acceptable": [
+        "E047",
+        "E161",
+        "E160",
+        "E162",
+        "E289",
+        "E290"
+      ],
+      "secondary": [
+        "E069"
+      ],
+      "notes": "Owner: Art Shop, Fine Art for Families (Van Gogh), Adapted Art Social Hour, Kandinsky Math Art, Watercolor Works, Adapted Art Adventurers. Maybe: Adapted Glitter Jar. Six picks; any five shown = full recall.",
+      "blind": true,
+      "top_picks_only": true
+    }
+  ],
+  "scoring": "acceptable = events the owner would show (counts for recall and precision). secondary = lower-confidence picks: fine to show (not a precision miss) but not required (no recall credit). not_good = would not show (precision miss, not a blocking gate). forbidden = must never show (blocking).",
+  "forbidden_everywhere": {
+    "titles": [
+      "LIBRARY CLOSED"
+    ],
+    "refs": [
+      "E083",
+      "E084",
+      "E085",
+      "E093"
+    ],
+    "notes": "Owner, 2026-11-19: closure notices are not events. Showing one for any question is a blocking failure; the screen should say Nothing matched instead."
+  },
+  "duplicate_groups": {
+    "rule": "Owner, 2026-11-19: show one card per program. In scoring, events with the same title in the same question count as one group: citing either copy earns full credit, and citing two copies of one program is not required.",
+    "applies_to": [
+      "A01",
+      "A08",
+      "all"
+    ]
+  },
+  "design_decisions": [
+    "One card per program (avoid near-duplicates) unless the parent asked for that specific program.",
+    "A general question with no category (e.g. something for my 4-year-old) gets a varied mix, framed like: Here are a variety of things you could do...",
+    "Unsupported city: say Nothing matched. Open Eventz covers Frisco and Plano only, then offer up to 5 varied events from the tab city on those dates.",
+    "LIBRARY CLOSED notices must never be shown; show Nothing matched instead.",
+    "Price note copy (owner, 2026-11-19): Open Eventz only shows whether an event is 'free' or 'paid'. It does not determine if something is cheap or pricey."
+  ],
+  "parse_expectations": "Dates, city, free and age are read from the question wording; the owner accepted Claude's reading (labels.json expect fields) and did not change any. The owner's picks are consistent with them (e.g. Q9 includes Dec 2)."
+}

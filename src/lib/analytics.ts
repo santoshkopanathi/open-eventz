@@ -20,6 +20,12 @@ export type AnalyticsEvent =
   // Params: { surface: 'events' | 'venues' | 'likes' }. Keep it low-cardinality — never send
   // the error message itself.
   | 'error_shown'      // Health   — a user-visible failure state was rendered
+  // Ask Open Eventz, added 2026-11-21 for the launch read: do parents who ask reach events at a
+  // different rate than parents who browse? NEVER send the question text (spec "Personal data
+  // in questions"). Params are low-cardinality only: tab, result kind, card count, position.
+  | 'ask_submitted'    // Ask      — a question was sent. Params: { tab }
+  | 'ask_result'       // Ask      — what the parent saw. Params: { kind, cards }
+  | 'ask_card_click'   // Ask      — a card from an Ask result was opened. Params: { position, fallback }
 
 type GtagFn = (command: 'event' | 'config' | 'js' | 'consent', ...args: unknown[]) => void
 

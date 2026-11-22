@@ -7,11 +7,15 @@ import EventCard from '@/components/EventCard'
 import EventDetail from '@/components/EventDetail'
 import FilterBar, { type City } from '@/components/FilterBar'
 import SourceSubFilter, { type SubFilterPatch } from '@/components/SourceSubFilter'
+import AskBox from '@/components/AskBox'
 import { trackEvent } from '@/lib/analytics'
 
 const MapView = dynamic(() => import('@/components/MapView'), { ssr: false })
 
 const PAGE_SIZE = 20
+
+// Ask Open Eventz is behind a flag, off by default: with it off, the list view is unchanged.
+const ASK_ENABLED = process.env.NEXT_PUBLIC_ASK_ENABLED === 'true'
 
 type FriscoState = { sources: string[]; ages: string[]; date_from: string; date_to: string }
 type PlanoState = { branches: string[]; ages: string[]; date_from: string; date_to: string }
@@ -207,6 +211,24 @@ export default function EventsApp({ initialCity }: { initialCity?: City } = {}) 
             flex: !selected && !mapOn ? 'none' : 1,
           }}
         >
+          {ASK_ENABLED && (
+            <AskBox
+              city={city}
+              selectedId={selected?.id ?? null}
+              onSelect={event => {
+                trackEvent('event_card_click', { source: event.source, event_id: event.id })
+                setSelected(event)
+              }}
+              onFilterView={({ city: c, date_from, date_to }) => {
+                // "Nothing matched. See all Saturday events in Plano" → that city and those dates.
+                setCity(c)
+                const dates = date_from && date_to ? { date_from, date_to } : {}
+                if (c === 'frisco') setFrisco(f => ({ ...f, ...dates }))
+                else setPlano(p => ({ ...p, ...dates }))
+              }}
+            />
+          )}
+
           <SourceSubFilter
             city={city}
             sources={city === 'frisco' ? frisco.sources : []}
