@@ -1,6 +1,6 @@
 # Open items
 
-A running checklist of what is pending and who owns it. **Last reviewed 2026-11-18.**
+A running checklist of what is pending and who owns it. **Last reviewed 2026-11-22.**
 
 This is not a replacement for `../02-product/BACKLOG.md`, which holds the reasoning for each
 product item. This file holds the *state*: what is blocked, what is time-bound, and what is
@@ -147,7 +147,7 @@ page and the detail fetch. Worth confirming it degrades gracefully rather than f
 
 ## 2. Time-bound
 
-### ⚠️ Anthropic spend limit reached · OWNER · **found 2026-11-21, urgent**
+### ~~Anthropic spend limit reached~~ · OWNER · **found 2026-11-21 · RESOLVED 2026-11-21** (owner raised the limit; API verified working)
 During the Ask eval on 2026-11-21 the API began refusing every call: *"You have reached your
 specified API usage limits. You will regain access on 2026-12-01 at 00:00 UTC."* This is a
 limit set on the account, not a lack of credit. If the nightly ingest uses the same account,
@@ -199,7 +199,23 @@ nothing records the verdict. `BACKLOG.md:474`.
 ### #26 LLM-as-judge · BUILD · ~2-3 hours
 Can a model screen prompt changes? `BACKLOG.md:819`.
 
-### Ask Open Eventz — built on a branch, not live · BUILD + OWNER · updated 2026-11-19
+### Ask Open Eventz — LIVE behind a flag since 2026-11-22 · BUILD + OWNER
+**Launched 2026-11-22** (master `a62f43e`, rebuild `c0c74c0`): migration 010 run, Vercel flag on
+with Ask's own API key and spend limit, verified with a live question. Done before launch: repeat
+runs, held-out set, shared fail-closed daily ceiling, GA4 launch events. **Open now:**
+- **Read the value** (BUILD, from ~2026-12-06): do askers reach events (detail view, calendar,
+  directions) at a different rate than browsers? GA4: `ask_submitted`, `ask_result`,
+  `ask_card_click`.
+- **"This weekend" asked on a Sunday reads as NEXT weekend** (BUILD, found 2026-11-22). Decide the
+  rule (probably: on a Sunday, include today), fix in the parse prompt or validation, and add an
+  eval question asked "on a Sunday".
+- **Hide Ask after the 100th question** (2b below, still not built; today it says "unavailable").
+- **Word check misses "week"**; **"code" vs "coding"** in query expansion.
+- **Run the Ask eval in CI** on prompt, model or retrieval changes, like the classifier eval.
+- **Alert on provider errors and spend limits** (11-21 showed they are real).
+- **Measure speed** (2c below).
+
+*Pre-launch record, kept for history:*
 Branch `ask-open-eventz` (folder `06-app-ask/`), flag off. Not merged, not pushed. **Owner labels
 done 2026-11-19 (blind)**; the owner's five labelling decisions and retrieval fix A are built.
 Open before it could go live, in order:

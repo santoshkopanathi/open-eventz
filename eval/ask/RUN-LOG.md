@@ -320,3 +320,15 @@ is now marked used-for-fix and scored outside the held-out sets.
 | Cost | $0.30 | $0.33 |
 
 L02 showed four cards, not five: the model chose four. All four were owner picks.
+
+---
+
+## Launch — 2026-11-22 · live behind a flag
+
+Merged to master with the cache-cost fix (`a62f43e`) after the full suite and a production build
+passed; switched on in Vercel by the owner. One live question confirmed the whole path (shared
+ceiling, API key, catalog, fact check): "something for my 5-year-old this weekend" on the Plano tab
+returned two real events, cards only, because the fact check dropped the model's sentence.
+**Gap found on launch day, not covered by any eval question:** asked on a Sunday, "this weekend"
+was read as the following weekend. Next eval round: a question asked "on a Sunday" (freeze a
+catalog on a Sunday, or let the eval set "today").

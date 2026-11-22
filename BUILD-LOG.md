@@ -56,7 +56,7 @@ required, adds venue and coordinates, assigns a category and gives each event a 
 ```mermaid
 flowchart TD
   D[(Supabase)] --> L[Event list<br/>browse with filters, live]
-  D --> K[Ask Open Eventz<br/>built, flag off]
+  D --> K[Ask Open Eventz<br/>live behind a flag, since 2026-11-22]
   L --> P[Parent sees event cards<br/>free, age, registration, drop-off]
   K --> P
   H[Daily heartbeat<br/>did data arrive? is the site current?] -. watches .- D
@@ -266,7 +266,7 @@ flowchart TD
   post-write data-quality gate, so the next visitor sees updated, checked events. "Correct" means
   it passed every check we have; it can't make a wrong source right.
 
-#### Decision map — Ask Open Eventz (branch `ask-open-eventz`, flag off)
+#### Decision map — Ask Open Eventz (live behind a flag since 2026-11-22)
 
 Drawn from `src/lib/ask/ask.ts` and `src/app/api/ask/route.ts` on the branch.
 
@@ -2960,3 +2960,50 @@ fallback now works; facts in raw drafts 5 of 13, all caught.
 **Writing the answer key was product design.** Five of today's changes came from the owner
 deciding what a right answer looks like, and one from seeing what the model was never given.
 None would have come from staring at a score.
+
+---
+
+## 2026-11-21 → 2026-11-22 — Ask Open Eventz: query expansion, a held-out set, and launch
+
+**Query expansion (11-21).** Topic words only match exact words, so "building things" never found
+"LEGO Engineering". Five synonym questions, labelled before the fix, scored recall 0.46. The parse
+now also returns related words; retrieval ranks the parent's own word first, then related words,
+then the rest, inside the hard filters. Recall 0.46 → 0.88. Same model, no vector index.
+
+**Noise measured.** The same 31 questions on the same code, three runs: recall 0.83 / 0.84 / 0.84.
+
+**Held-out set, labelled blind by the owner** and never used for tuning: synonym 0.89, typo 0.88.
+One held-out question ("piano lessons for my 8-year-old") was read as off-topic. Fixed with a
+general rule (classes and lessons are activities), the question retired, and the fix checked on
+two fresh blind questions written before the fix. Run 8: every safety gate 0.
+
+**Spend limit (11-21).** Mid-eval, the Anthropic account hit its monthly limit and every call
+failed until the owner raised it. Provider limits are now a real failure mode, not a theory.
+
+**Launch prep (11-21).** Two things the eval couldn't see:
+1. The 100-a-day ceiling lived in server memory. On Vercel every instance keeps its own count, so
+   the real ceiling would have been 100 × instances. Moved to the database (migration 010,
+   `ask_take_slot()`, an atomic increment). If the count can't be checked, including a migration
+   nobody ran, Ask shows "unavailable" and spends nothing. The 009 lesson, applied by design.
+2. Launch analytics: `ask_submitted`, `ask_result`, `ask_card_click`. Never the question text.
+
+**Launch (11-22).** Master assembled in a separate worktree, because the shared `06-app` folder
+was on another session's branch: `ask-open-eventz` plus the cache-cost fix (`a62f43e`). 602 unit
+tests, 14 browser tests and a production build green before the push. The owner ran migration
+010 and set `ANTHROPIC_API_KEY` (Ask's own workspace and spend limit), `ASK_ENABLED` and
+`NEXT_PUBLIC_ASK_ENABLED` in Vercel. The dashboard Redeploy didn't start a build; an empty commit
+(`c0c74c0`) did. Checked live without spending: an empty question returned the flag-on
+validation message. Then one real question: "something for my 5-year-old this weekend" (Plano)
+returned two real events, the "Showing" line and the disclosure. The model's sentence was dropped
+by the fact check, cards only, as designed.
+
+**Launch-day finding.** Asked on a Sunday, "this weekend" was read as the next weekend. The parse
+rule says "the coming Saturday and Sunday", which skips today when today is Sunday. Nothing false
+was shown, and the "Showing" line made the reading visible. Logged in OPEN-ITEMS.
+
+### The lesson
+
+**An eval tells you the answers are right; it doesn't tell you the system is ready.** Both
+pre-launch fixes, the shared ceiling and the analytics, were invisible to every eval run. They
+only showed up by asking "what happens on the real host, with real money, and how will we know
+if it helped?"
