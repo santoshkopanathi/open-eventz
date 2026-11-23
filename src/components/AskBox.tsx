@@ -69,12 +69,12 @@ export default function AskBox({ city, selectedId, onSelect, onFilterView }: {
 
       {result && (
         <div className="flex flex-col gap-3">
-          {'showing' in result && (
-            <div className="flex flex-wrap items-baseline gap-x-3" style={muted}>
-              <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>{result.showing}</span>
-              <button type="button" onClick={clear} className="ml-auto underline" style={{ fontSize: '12px', color: 'var(--color-ink-50)' }}>Clear</button>
-            </div>
-          )}
+          {/* The one Clear for every kind of result. Each kind used to add its own, so an
+              off-topic answer (which also carries `showing`) drew two. */}
+          <div className="flex flex-wrap items-baseline gap-x-3" style={muted}>
+            {'showing' in result && result.showing && <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>{result.showing}</span>}
+            <button type="button" onClick={clear} className="ml-auto underline" style={{ fontSize: '12px', color: 'var(--color-ink-50)' }}>Clear</button>
+          </div>
           {'notes' in result && result.notes.map(n => (
             <div key={n} className="flex gap-2.5" style={{ border: '1px solid var(--color-border)', backgroundColor: 'var(--color-fill-subtle)', borderRadius: 'var(--radius-input)', padding: '9px 12px', fontSize: '13px', color: 'var(--color-ink)' }}>
               <div style={{ width: 3, borderRadius: 2, backgroundColor: 'var(--color-border-strong)', flexShrink: 0 }} />{n}
@@ -107,16 +107,10 @@ export default function AskBox({ city, selectedId, onSelect, onFilterView }: {
             </>
           )}
           {result.kind === 'off_topic' && (
-            <div className="flex flex-wrap items-baseline gap-x-3">
-              <p style={{ fontSize: '15px', color: 'var(--color-ink-body)' }}>{result.offTopic}</p>
-              <button type="button" onClick={clear} className="underline" style={{ fontSize: '12px', color: 'var(--color-ink-50)' }}>Clear</button>
-            </div>
+            <p style={{ fontSize: '15px', color: 'var(--color-ink-body)' }}>{result.offTopic}</p>
           )}
           {(result.kind === 'error' || result.kind === 'unavailable') && (
-            <div className="flex flex-wrap items-baseline gap-x-3">
-              <p style={muted}>Ask isn&rsquo;t available right now. The filters below still work.</p>
-              <button type="button" onClick={clear} className="underline" style={{ fontSize: '12px', color: 'var(--color-ink-50)' }}>Clear</button>
-            </div>
+            <p style={muted}>Ask isn&rsquo;t available right now. The filters below still work.</p>
           )}
           {result.kind !== 'error' && result.kind !== 'unavailable' && result.kind !== 'off_topic' && (
             <p className="font-mono uppercase" style={{ fontSize: '11px', letterSpacing: '0.1em', color: 'var(--color-ink-25)' }}>All events below</p>
