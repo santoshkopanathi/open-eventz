@@ -5,6 +5,7 @@ import {
   inferredPriceVisibility,
   lastIngest,
   ingestHistory,
+  centralDate,
   llmCost,
   type IngestRun,
 } from './technical-metrics'
@@ -72,6 +73,29 @@ describe('inferredPriceVisibility', () => {
       freeConfirmed: 1, freeInferred: 1, paidConfirmed: 1, paidInferred: 1, unknown: 1, total: 5,
     })
   })
+
+  test('counts only the requested source — Kaleidoscope Park is reported on its own', () => {
+    const mixed: Event[] = [
+      ev({ source: 'play-frisco', price_class: 'paid', price_confidence: 'confirmed' }),
+      ev({ source: 'kaleidoscope-park', price_class: 'free', price_confidence: 'confirmed' }),
+      ev({ source: 'kaleidoscope-park', price_class: 'free', price_confidence: 'inferred' }),
+    ]
+    expect(inferredPriceVisibility(mixed, 'kaleidoscope-park')).toEqual({
+      freeConfirmed: 1, freeInferred: 1, paidConfirmed: 0, paidInferred: 0, unknown: 0, total: 2,
+    })
+  })
+})
+
+describe('inferredAgeVisibility by source', () => {
+  test('Kaleidoscope Park events are counted under their own source, not Play Frisco', () => {
+    const mixed: Event[] = [
+      ...EVENTS,
+      ev({ source: 'kaleidoscope-park', kid_relevant: true, age_confidence: 'high', age_buckets: ['family'] }),
+      ev({ source: 'kaleidoscope-park', kid_relevant: false }),
+    ]
+    expect(inferredAgeVisibility(mixed, 'kaleidoscope-park')).toEqual({ family: 1, specific: 0, nothing: 0, hidden: 1, total: 2 })
+    expect(inferredAgeVisibility(mixed).total).toBe(4) // default stays Play Frisco
+  })
 })
 
 const RUNS: IngestRun[] = [
@@ -102,5 +126,20 @@ describe('ingestHistory', () => {
     expect(h[h.length - 1]).toEqual({ date: '2026-07-21', status: 'warn' })
     expect(h[h.length - 2]).toEqual({ date: '2026-07-20', status: 'ok' })
     expect(h[0].status).toBe('none') // 14 days ago, no run
+  })
+
+  test('buckets runs by Central day, not UTC day', () => {
+    // 02:56 UTC on 11-18 is 20:56 Central on 11-17 — it belongs to the 17th.
+    const late: IngestRun[] = [{ ...RUNS[0], ran_at: '2026-11-18T02:56:00Z', status: 'err' }]
+    const h = ingestHistory(late, '2026-11-18', 2)
+    expect(h).toEqual([{ date: '2026-11-17', status: 'err' }, { date: '2026-11-18', status: 'none' }])
+  })
+})
+
+describe('centralDate', () => {
+  test('evening in Central is still today, though UTC has rolled over', () => {
+    expect(centralDate('2026-11-23T03:30:00Z')).toBe('2026-11-22') // 21:30 CST
+    expect(centralDate('2026-07-21T04:30:00Z')).toBe('2026-07-20') // 23:30 CDT
+    expect(centralDate('2026-07-21T12:00:00Z')).toBe('2026-07-21')
   })
 })

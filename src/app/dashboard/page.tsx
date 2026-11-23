@@ -1,7 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { fetchAnalyticsRows } from '@/lib/bigquery'
 import {
-  inferredAgeVisibility, inferredPriceVisibility, lastIngest, ingestHistory, llmCost, type IngestRun,
+  inferredAgeVisibility, inferredPriceVisibility, lastIngest, ingestHistory, centralDate, llmCost, type IngestRun,
 } from '@/lib/technical-metrics'
 import {
   weeklyActiveDiscoverers, computeFunnel, returnVisitRate, referral, topEvents,
@@ -18,6 +18,13 @@ export const dynamic = 'force-dynamic'
 const HEARTBEAT_MAX_AGE_HOURS = 30
 const HEARTBEAT_SOURCES: EventSource[] = ['frisco-library', 'plano-library', 'play-frisco', 'kaleidoscope-park']
 
+// The sources whose age and price Claude infers. `confirmedLabel` names where a stated price
+// comes from on that source, since "Cost field" is a Play Frisco thing.
+const INFERRED_SOURCES: { source: EventSource; label: string; confirmedLabel: string }[] = [
+  { source: 'play-frisco', label: 'Play Frisco', confirmedLabel: 'Cost field' },
+  { source: 'kaleidoscope-park', label: 'Kaleidoscope Park', confirmedLabel: 'stated by source' },
+]
+
 export default async function DashboardPage() {
   const db = supabaseAdmin()
 
@@ -31,10 +38,13 @@ export default async function DashboardPage() {
     db.from('events').select('*', { count: 'exact', head: true }).eq('is_free', true),
     db.from('events').select('*', { count: 'exact', head: true }).eq('is_free', false),
     db.from('events').select('*', { count: 'exact', head: true }).is('is_free', null),
-    db.from('events').select('source, is_free, kid_relevant, age_buckets, age_confidence, price_class, price_confidence').eq('source', 'play-frisco'),
-    db.from('ingest_runs').select('*').order('ran_at', { ascending: false }).limit(30),
+    // Every LLM-classified source. Kaleidoscope Park was left out when it was added as the second one.
+    db.from('events').select('source, is_free, kid_relevant, age_buckets, age_confidence, price_class, price_confidence').in('source', INFERRED_SOURCES.map(s => s.source)),
+    // 60 rows: four source rows a night plus any hand-run re-ingests. At 30, a busy week pushed the
+    // oldest days of the 7-day history out of the result and they drew as blank "no run" days.
+    db.from('ingest_runs').select('*').order('ran_at', { ascending: false }).limit(60),
   ])
-  const pfEvents = (pfEventsRes.data ?? []) as unknown as Event[]
+  const inferredEvents = (pfEventsRes.data ?? []) as unknown as Event[]
   const runs = (runsRes.data ?? []) as unknown as IngestRun[]
 
   // Pipeline heartbeat — the same question the Heartbeat workflow asks, through the same pure
@@ -72,9 +82,12 @@ export default async function DashboardPage() {
       ],
       free: free.count ?? 0, paid: paid.count ?? 0, unknown: unknown.count ?? 0,
     },
-    ageVis: inferredAgeVisibility(pfEvents),
-    priceVis: inferredPriceVisibility(pfEvents),
-    history: ingestHistory(runs, new Date().toISOString().slice(0, 10), 14),
+    inferred: INFERRED_SOURCES.map(s => ({
+      ...s,
+      ageVis: inferredAgeVisibility(inferredEvents, s.source),
+      priceVis: inferredPriceVisibility(inferredEvents, s.source),
+    })),
+    history: ingestHistory(runs, centralDate(new Date()), 7),
     cost: llmCost(runs),
     runs,
   }

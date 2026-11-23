@@ -49,7 +49,8 @@ export function perSourceCounts(events: EventRow[]): {
 }
 
 // ---------------------------------------------------------------------------
-// Play Frisco — inferred-age visibility. Four buckets that must sum to the total:
+// Inferred-age visibility for one LLM-classified source (Play Frisco, Kaleidoscope Park). Four
+// buckets that must sum to the total:
 //   family   — "~ Family ✦" (appears under every age filter)
 //   specific — "✦" only (inferred specific age)
 //   nothing  — kid-relevant but low confidence → no badge, invisible to age filters
@@ -57,8 +58,8 @@ export function perSourceCounts(events: EventRow[]): {
 // ---------------------------------------------------------------------------
 export interface AgeVisibility { family: number; specific: number; nothing: number; hidden: number; total: number }
 
-export function inferredAgeVisibility(events: EventRow[]): AgeVisibility {
-  const pf = events.filter(e => e.source === 'play-frisco')
+export function inferredAgeVisibility(events: EventRow[], source: EventSource = 'play-frisco'): AgeVisibility {
+  const pf = events.filter(e => e.source === source)
   let family = 0, specific = 0, nothing = 0, hidden = 0
   for (const e of pf) {
     if (e.kid_relevant === false) { hidden++; continue }
@@ -74,8 +75,9 @@ export function inferredAgeVisibility(events: EventRow[]): AgeVisibility {
 }
 
 // ---------------------------------------------------------------------------
-// Play Frisco — inferred free vs paid. Splits price by confirmed (structured Cost:
-// field, no ✦) vs inferred (LLM read, wears the ✦), plus unknown (no badge). The
+// Inferred free vs paid for one LLM-classified source. Splits price by confirmed (stated by the
+// source — Play Frisco's structured Cost:
+// field, Kaleidoscope's declared free; no ✦) vs inferred (LLM read, wears the ✦), plus unknown (no badge). The
 // `freeInferred` count is the "free by assumption" exposure (free-by-default, not stated).
 // ---------------------------------------------------------------------------
 export interface PriceVisibility {
@@ -87,8 +89,8 @@ export interface PriceVisibility {
   total: number
 }
 
-export function inferredPriceVisibility(events: EventRow[]): PriceVisibility {
-  const pf = events.filter(e => e.source === 'play-frisco')
+export function inferredPriceVisibility(events: EventRow[], source: EventSource = 'play-frisco'): PriceVisibility {
+  const pf = events.filter(e => e.source === source)
   const v: PriceVisibility = { freeConfirmed: 0, freeInferred: 0, paidConfirmed: 0, paidInferred: 0, unknown: 0, total: pf.length }
   for (const e of pf) {
     const confirmed = e.price_confidence === 'confirmed'
@@ -110,14 +112,22 @@ export function lastIngest(runs: IngestRun[]): IngestRun | null {
 // ---------------------------------------------------------------------------
 // Ingest history — status per day for the last `days` days (most recent last).
 // A day with multiple runs takes its worst status (err > warn > ok); no run → 'none'.
+// Days are Central calendar days, not UTC: the nightly run lands ~06:00 Central, and from 18:00
+// Central onward UTC is already "tomorrow", so a UTC day drew tonight as a blank no-run bar.
 // ---------------------------------------------------------------------------
+const CENTRAL_DATE = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago', year: 'numeric', month: '2-digit', day: '2-digit' })
+/** The America/Chicago calendar date (YYYY-MM-DD) of an instant. */
+export function centralDate(at: string | Date): string {
+  return CENTRAL_DATE.format(typeof at === 'string' ? new Date(at) : at)
+}
+
 const RANK: Record<string, number> = { none: 0, ok: 1, warn: 2, err: 3 }
 const RANK_INV = ['none', 'ok', 'warn', 'err'] as const
 
 export function ingestHistory(runs: IngestRun[], todayISODate: string, days = 14): { date: string; status: 'none' | 'ok' | 'warn' | 'err' }[] {
   const worstByDate = new Map<string, number>()
   for (const r of runs) {
-    const d = r.ran_at.slice(0, 10)
+    const d = centralDate(r.ran_at)
     worstByDate.set(d, Math.max(worstByDate.get(d) ?? 0, RANK[r.status] ?? 0))
   }
   const out: { date: string; status: 'none' | 'ok' | 'warn' | 'err' }[] = []

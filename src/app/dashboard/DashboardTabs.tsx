@@ -19,8 +19,7 @@ type Technical = {
   lastIngest: IngestRun | null
   totalEvents: number
   counts: { bySource: { source: string; total: number }[]; free: number; paid: number; unknown: number }
-  ageVis: AgeVisibility
-  priceVis: PriceVisibility
+  inferred: { source: string; label: string; confirmedLabel: string; ageVis: AgeVisibility; priceVis: PriceVisibility }[]
   history: { date: string; status: string }[]
   cost: { lastRunUsd: number; cumulativeUsd: number; totalCalls: number }
   runs: IngestRun[]
@@ -40,6 +39,17 @@ type Functional = {
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return <div className={`rounded-xl border p-4 ${className}`} style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-card)' }}>{children}</div>
+}
+// A label with an explanation on hover or keyboard focus. Native `title` was not enough: it waits
+// about a second, never shows on touch or focus, and gives no hint that there is anything to read.
+function Tip({ label, text, align = 'left' }: { label: React.ReactNode; text: string; align?: 'left' | 'right' }) {
+  return (
+    <span className="relative inline-flex items-center gap-1 group cursor-help outline-none" tabIndex={0} aria-label={`${typeof label === 'string' ? label : ''}: ${text}`}>
+      <span className="underline decoration-dotted underline-offset-2">{label}</span>
+      <span aria-hidden className="text-[9px] opacity-70">ⓘ</span>
+      <span role="tooltip" className={`pointer-events-none absolute top-full mt-1 z-20 w-64 rounded-md px-2.5 py-2 text-[11px] font-normal normal-case tracking-normal leading-snug text-left shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus:opacity-100 group-focus:visible transition-opacity ${align === 'right' ? 'right-0' : 'left-0'}`} style={{ background: '#1F1D2B', color: '#F5F4FA' }}>{text}</span>
+    </span>
+  )
 }
 function Section({ children }: { children: React.ReactNode }) {
   return <h3 className="text-[11px] font-bold uppercase tracking-wider mt-5 mb-2 pb-1 border-b" style={{ color: PERI, borderColor: 'var(--color-border)' }}>{children}</h3>
@@ -64,6 +74,8 @@ export default function DashboardTabs({ technical: t, functional: f }: { technic
   const latestWad = f.wadSeries.at(-1)?.wad ?? 0
   const prevWad = f.wadSeries.at(-2)?.wad ?? 0
   const fn = f.funnel
+  // Oldest row the cost tiles add up — the query is a row limit, so the window is stated, not assumed.
+  const runsSince = t.runs.length ? t.runs[t.runs.length - 1].ran_at.slice(0, 10) : null
   const banner = f.status === 'no-key' ? 'BigQuery credentials not configured (GCP_SA_KEY_B64 missing).'
     : f.status === 'no-data' ? `No GA4 data in BigQuery yet. ${f.message ?? ''} Metrics populate as events arrive and the Daily export runs.`
     : f.status === 'error' ? `BigQuery query failed: ${f.message}` : null
@@ -268,7 +280,7 @@ export default function DashboardTabs({ technical: t, functional: f }: { technic
                 </div>
               </Card>
               <Card>
-                <div className="text-[13px] font-semibold mb-2">Ingest History — 14 days</div>
+                <div className="text-[13px] font-semibold mb-2">Ingest History — 7 days</div>
                 <div className="flex items-end gap-1 h-24">
                   {t.history.map(d => <div key={d.date} title={`${d.date}: ${d.status}`} className="flex-1 rounded-sm" style={{ height: d.status === 'none' ? '15%' : '100%', background: STATUS[d.status] }} />)}
                 </div>
@@ -276,33 +288,42 @@ export default function DashboardTabs({ technical: t, functional: f }: { technic
               </Card>
             </div>
 
-            <Section>Play Frisco — Inferred Age Visibility</Section>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {([['~ Family ✦ shown', t.ageVis.family, PRIMARY], ['✦ only shown', t.ageVis.specific, BLUE], ['Nothing shown (low conf.)', t.ageVis.nothing, '#9A9898'], ['Hidden (not kid-relevant)', t.ageVis.hidden, ERR]] as [string, number, string][]).map(([l, n, c]) => (
-                <Card key={l}><div className="text-[11px] font-bold" style={{ color: c }}>{l}</div><div className="text-2xl font-extrabold mt-1">{n} <span className="text-sm font-normal text-gray-400">{t.ageVis.total ? pct(n / t.ageVis.total) : '0%'}</span></div></Card>
-              ))}
-            </div>
+            {t.inferred.map(({ source, label, confirmedLabel, ageVis, priceVis }) => (
+              <div key={source}>
+                <Section>{label} — Inferred Age Visibility <span className="normal-case font-normal tracking-normal">({ageVis.total} events)</span></Section>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {([
+                    ['~ Family ✦ shown', ageVis.family, PRIMARY, 'The card shows "Family ✦": Claude judged it an all-ages family event. The ✦ marks an age we worked out, not one the source stated.'],
+                    ['✦ only shown', ageVis.specific, BLUE, 'The card shows a specific age range with the ✦, e.g. "Ages 5–8 ✦": Claude worked out a range from the description. The source gave no age.'],
+                    ['Nothing shown (low conf.)', ageVis.nothing, '#9A9898', 'No age badge on the card. Should be near zero: since v1.3 a low-confidence or missing guess falls back to "Family ✦". If it climbs, Claude stopped returning ages.'],
+                    ['Hidden (not kid-relevant)', ageVis.hidden, ERR, 'Not shown to parents at all: Claude judged it not a kids or family event (or adults-only).'],
+                  ] as [string, number, string, string][]).map(([l, n, c, tip], i) => (
+                    <Card key={l}><div className="text-[11px] font-bold" style={{ color: c }}><Tip label={l} text={tip} align={i % 2 ? 'right' : 'left'} /></div><div className="text-2xl font-extrabold mt-1">{n} <span className="text-sm font-normal text-gray-400">{ageVis.total ? pct(n / ageVis.total) : '0%'}</span></div></Card>
+                  ))}
+                </div>
 
-            <Section>Play Frisco — Inferred Free vs Paid</Section>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              {([['Free ✦ (inferred)', t.priceVis.freeInferred], ['Free (Cost field)', t.priceVis.freeConfirmed], ['Paid ✦ (inferred)', t.priceVis.paidInferred], ['Paid (Cost field)', t.priceVis.paidConfirmed], ['Unknown (no badge)', t.priceVis.unknown]] as [string, number][]).map(([l, n]) => (
-                <Card key={l}><div className="text-2xl font-extrabold">{n} <span className="text-sm font-normal text-gray-400">{t.priceVis.total ? pct(n / t.priceVis.total) : '0%'}</span></div><div className="text-[11px]" style={{ color: 'var(--color-text-3,#9A9898)' }}>{l}</div></Card>
-              ))}
-            </div>
-            <p className="text-[11px] mt-2" style={{ color: 'var(--color-text-3,#9A9898)' }}><strong>Free ✦ (inferred) = {t.priceVis.freeInferred}</strong> is the &ldquo;free by assumption&rdquo; exposure.</p>
+                <Section>{label} — Inferred Free vs Paid</Section>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  {([['Free ✦ (inferred)', priceVis.freeInferred], [`Free (${confirmedLabel})`, priceVis.freeConfirmed], ['Paid ✦ (inferred)', priceVis.paidInferred], [`Paid (${confirmedLabel})`, priceVis.paidConfirmed], ['Unknown (no badge)', priceVis.unknown]] as [string, number][]).map(([l, n]) => (
+                    <Card key={l}><div className="text-2xl font-extrabold">{n} <span className="text-sm font-normal text-gray-400">{priceVis.total ? pct(n / priceVis.total) : '0%'}</span></div><div className="text-[11px]" style={{ color: 'var(--color-text-3,#9A9898)' }}>{l}</div></Card>
+                  ))}
+                </div>
+                <p className="text-[11px] mt-2" style={{ color: 'var(--color-text-3,#9A9898)' }}><strong>Free ✦ (inferred) = {priceVis.freeInferred}</strong> is the &ldquo;free by assumption&rdquo; exposure.</p>
+              </div>
+            ))}
 
             <Section>LLM Inference — Cost &amp; Model</Section>
             <div className="grid grid-cols-3 gap-3">
-              <Card><div className="text-[11px]" style={{ color: 'var(--color-text-3,#9A9898)' }}>Calls (lifetime)</div><div className="text-2xl font-extrabold">{t.cost.totalCalls}</div></Card>
-              <Card><div className="text-[11px]" style={{ color: 'var(--color-text-3,#9A9898)' }}>Cost last run</div><div className="text-2xl font-extrabold" style={{ color: GREEN }}>${t.cost.lastRunUsd.toFixed(3)}</div></Card>
-              <Card><div className="text-[11px]" style={{ color: 'var(--color-text-3,#9A9898)' }}>Cost cumulative</div><div className="text-2xl font-extrabold" style={{ color: GREEN }}>${t.cost.cumulativeUsd.toFixed(3)}</div></Card>
+              <Card><div className="text-[11px]" style={{ color: 'var(--color-text-3,#9A9898)' }}><Tip label="Calls (lifetime)" text={`Claude calls added up over the last ${t.runs.length} ingest rows${runsSince ? ` (since ${runsSince})` : ''}, not a true lifetime total. Each night writes one row per source. An event already classified is a cache hit and makes no call, so a quiet night adds 0.`} /></div><div className="text-2xl font-extrabold">{t.cost.totalCalls}</div></Card>
+              <Card><div className="text-[11px]" style={{ color: 'var(--color-text-3,#9A9898)' }}><Tip label="Cost last run" text="Estimated cost of the single most recent ingest row: one source, not the whole night. The two libraries never call Claude, and cached events make no call, so this is often $0.000. Estimate = calls × $0.006, not the billed amount." /></div><div className="text-2xl font-extrabold" style={{ color: GREEN }}>${t.cost.lastRunUsd.toFixed(3)}</div></Card>
+              <Card><div className="text-[11px]" style={{ color: 'var(--color-text-3,#9A9898)' }}><Tip align="right" label="Cost cumulative" text={`Estimated cost added up over the same last ${t.runs.length} ingest rows${runsSince ? ` (since ${runsSince})` : ''}. Calls × $0.006, not the billed amount. Covers the nightly ingest only: Ask Open Eventz and the CI evals are not included.`} /></div><div className="text-2xl font-extrabold" style={{ color: GREEN }}>${t.cost.cumulativeUsd.toFixed(3)}</div></Card>
             </div>
             <div className="mt-2 p-2.5 rounded text-[11px]" style={{ background: '#D1FAE5', color: GREEN }}>✓ Model: <strong>claude-sonnet-4-6</strong> over Haiku — cost difference &lt;$0.03 at this scale; accuracy the deciding factor.</div>
 
             <Section>Ingest Log — Last 7 Runs</Section>
             <Card className="p-0 overflow-hidden">
               <table className="w-full text-xs">
-                <thead><tr className="text-left" style={{ color: 'var(--color-text-3,#9A9898)' }}><th className="p-2.5 font-bold uppercase text-[10px]">When</th><th className="font-bold uppercase text-[10px]">Status</th><th className="font-bold uppercase text-[10px]">Frisco</th><th className="font-bold uppercase text-[10px]">Plano</th><th className="font-bold uppercase text-[10px]">Play&nbsp;Frisco</th><th className="font-bold uppercase text-[10px]">Upserted</th><th className="font-bold uppercase text-[10px]">LLM</th><th className="font-bold uppercase text-[10px]">Cost</th><th className="font-bold uppercase text-[10px]">Dur</th></tr></thead>
+                <thead><tr className="text-left" style={{ color: 'var(--color-text-3,#9A9898)' }}><th className="p-2.5 font-bold uppercase text-[10px]">When</th><th className="font-bold uppercase text-[10px]">Status</th><th className="font-bold uppercase text-[10px]">Frisco</th><th className="font-bold uppercase text-[10px]">Plano</th><th className="font-bold uppercase text-[10px]">Play&nbsp;Frisco</th><th className="font-bold uppercase text-[10px]">Upserted</th><th className="font-bold uppercase text-[10px]"><Tip align="right" label="LLM" text="Claude calls this run made. 0 is normal: the libraries never call Claude, and an event already classified on an earlier night is a cache hit. Only new events on Play Frisco and Kaleidoscope Park make calls." /></th><th className="font-bold uppercase text-[10px]"><Tip align="right" label="Cost" text="Estimated cost of this run: LLM calls × $0.006. An estimate for the dashboard, not the billed amount." /></th><th className="font-bold uppercase text-[10px]">Dur</th></tr></thead>
                 <tbody>
                   {t.runs.slice(0, 7).map(r => (
                     <tr key={r.id} className="border-t" style={{ borderColor: 'var(--color-border)' }}>
